@@ -317,6 +317,35 @@ describe('PUT /request/:requestId (movie)', () => {
     assert.strictEqual(saved.rootFolder, '/updated/movies');
   });
 
+  it('clears stored overrides when the fields are omitted', async () => {
+    const requestRepo = getRepository(MediaRequest);
+    const mediaRequest = await seedRequest();
+
+    const agent = await loginAs('admin@seerr.dev', 'test1234');
+
+    await agent.put(`/request/${mediaRequest.id}`).send({
+      mediaType: MediaType.MOVIE,
+      serverId: 3,
+      profileId: 7,
+      rootFolder: '/updated/movies',
+      tags: [1, 2],
+    });
+
+    const res = await agent.put(`/request/${mediaRequest.id}`).send({
+      mediaType: MediaType.MOVIE,
+      serverId: 3,
+    });
+
+    assert.strictEqual(res.status, 200);
+
+    const saved = await requestRepo.findOneOrFail({
+      where: { id: mediaRequest.id },
+    });
+    assert.strictEqual(saved.rootFolder, null);
+    assert.strictEqual(saved.profileId, null);
+    assert.strictEqual(saved.tags, null);
+  });
+
   it('refuses to modify a request that is no longer pending', async () => {
     const requestRepo = getRepository(MediaRequest);
     const mediaRequest = await seedRequest(MediaRequestStatus.APPROVED);
