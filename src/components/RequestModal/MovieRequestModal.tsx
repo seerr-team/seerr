@@ -7,7 +7,7 @@ import useToasts from '@app/hooks/useToasts';
 import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
-import { MediaStatus } from '@server/constants/media';
+import { MediaRequestStatus, MediaStatus } from '@server/constants/media';
 import type { MediaRequest } from '@server/entity/MediaRequest';
 import type { NonFunctionProperties } from '@server/interfaces/api/common';
 import type { QuotaResponse } from '@server/interfaces/api/userInterfaces';
@@ -33,6 +33,8 @@ const messages = defineMessages('components.RequestModal', {
   errorediting: 'Something went wrong while editing the request.',
   requestedited: 'Request for <strong>{title}</strong> edited successfully!',
   requestApproved: 'Request for <strong>{title}</strong> approved!',
+  requestRetried:
+    'Request for <strong>{title}</strong> updated and resubmitted.',
   requesterror: 'Something went wrong while submitting the request.',
   pendingapproval: 'Your request is pending approval.',
 });
@@ -176,6 +178,9 @@ const MovieRequestModal = ({
   const updateRequest = async (alsoApproveRequest = false) => {
     setIsUpdating(true);
 
+    // The PUT resubmits a failed request itself; /approve would 409 on it.
+    const isFailedResubmit = editRequest?.status === MediaRequestStatus.FAILED;
+
     try {
       await axios.put(`/api/v1/request/${editRequest?.id}`, {
         mediaType: 'movie',
@@ -186,7 +191,7 @@ const MovieRequestModal = ({
         tags: requestOverrides?.tags,
       });
 
-      if (alsoApproveRequest) {
+      if (alsoApproveRequest && !isFailedResubmit) {
         await axios.post(`/api/v1/request/${editRequest?.id}/approve`);
       }
       mutate('/api/v1/request?filter=all&take=10&sort=modified&skip=0');
@@ -195,9 +200,11 @@ const MovieRequestModal = ({
       addToast(
         <span>
           {intl.formatMessage(
-            alsoApproveRequest
-              ? messages.requestApproved
-              : messages.requestedited,
+            isFailedResubmit
+              ? messages.requestRetried
+              : alsoApproveRequest
+                ? messages.requestApproved
+                : messages.requestedited,
             {
               title: data?.title,
               strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
