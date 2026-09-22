@@ -4,6 +4,7 @@ import Button from '@app/components/Common/Button';
 import CachedImage from '@app/components/Common/CachedImage';
 import Tooltip from '@app/components/Common/Tooltip';
 import RequestModal from '@app/components/RequestModal';
+import SeasonOverrideFlow from '@app/components/RequestModal/SeasonOverrideFlow';
 import StatusBadge from '@app/components/StatusBadge';
 import useDeepLinks from '@app/hooks/useDeepLinks';
 import useToasts from '@app/hooks/useToasts';
@@ -33,6 +34,7 @@ import type { MediaRequest } from '@server/entity/MediaRequest';
 import type { NonFunctionProperties } from '@server/interfaces/api/common';
 import type { MovieDetails } from '@server/models/Movie';
 import type { TvDetails } from '@server/models/Tv';
+import { externalSeasonNumber } from '@server/utils/seasonHelpers';
 import axios from 'axios';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -89,7 +91,13 @@ const RequestCardError = ({ requestData }: RequestCardErrorProps) => {
       requestData?.is4k ? 'downloadStatus4k' : 'downloadStatus'
     ],
     requestData?.type === 'tv'
-      ? (requestData?.seasons ?? []).map((season) => season.seasonNumber)
+      ? (requestData?.seasons ?? []).map((season) =>
+          externalSeasonNumber(
+            requestData?.media?.seasons?.find(
+              (s) => s.seasonNumber === season.seasonNumber
+            ) ?? season
+          )
+        )
       : []
   );
 
@@ -243,6 +251,7 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
     'approve' | 'decline' | null
   >(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showOverrideFlow, setShowOverrideFlow] = useState(false);
   const url =
     request.type === 'movie'
       ? `/api/v1/movie/${request.media.tmdbId}`
@@ -342,7 +351,13 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
   const requestDownloadStatus = getRequestDownloadStatus(
     requestData.media[requestData.is4k ? 'downloadStatus4k' : 'downloadStatus'],
     requestData.type === 'tv'
-      ? requestData.seasons.map((season) => season.seasonNumber)
+      ? requestData.seasons.map((season) =>
+          externalSeasonNumber(
+            requestData.media.seasons.find(
+              (s) => s.seasonNumber === season.seasonNumber
+            ) ?? season
+          )
+        )
       : []
   );
 
@@ -359,6 +374,23 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
           revalidate();
           setShowEditModal(false);
         }}
+      />
+      <SeasonOverrideFlow
+        show={showOverrideFlow}
+        requestId={requestData.id}
+        tmdbId={requestData.media.tmdbId}
+        seasonNumbers={requestData.seasons.map((season) => season.seasonNumber)}
+        subTitle={isMovie(title) ? title.title : title.name}
+        backdrop={
+          title.backdropPath
+            ? `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${title.backdropPath}`
+            : undefined
+        }
+        onComplete={() => {
+          revalidate();
+          setShowOverrideFlow(false);
+        }}
+        onCancel={() => setShowOverrideFlow(false)}
       />
       <div
         className="relative flex w-72 overflow-hidden rounded-xl bg-gray-800 bg-cover bg-center p-4 text-gray-400 shadow ring-1 ring-gray-700 sm:w-96"
@@ -533,25 +565,17 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
             {requestData.status === MediaRequestStatus.FAILED &&
               canSearchAnotherListing(requestData.failureReason) &&
               title && (
-                <Link
-                  href={`/search?query=${encodeURIComponent(
-                    isMovie(title) ? title.title : title.name
-                  )}`}
-                  passHref
-                  legacyBehavior
+                <Button
+                  buttonType="default"
+                  buttonSize="sm"
+                  title={intl.formatMessage(globalMessages.findlisting)}
+                  onClick={() => setShowOverrideFlow(true)}
                 >
-                  <Button
-                    as="a"
-                    buttonType="default"
-                    buttonSize="sm"
-                    title={intl.formatMessage(globalMessages.findlisting)}
-                  >
-                    <MagnifyingGlassIcon style={{ marginRight: '0' }} />
-                    <span className="ml-1.5 hidden sm:block">
-                      {intl.formatMessage(globalMessages.findlisting)}
-                    </span>
-                  </Button>
-                </Link>
+                  <MagnifyingGlassIcon style={{ marginRight: '0' }} />
+                  <span className="ml-1.5 hidden sm:block">
+                    {intl.formatMessage(globalMessages.findlisting)}
+                  </span>
+                </Button>
               )}
             {requestData.status === MediaRequestStatus.PENDING &&
               hasPermission(Permission.MANAGE_REQUESTS) && (
