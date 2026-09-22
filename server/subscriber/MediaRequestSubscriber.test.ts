@@ -248,7 +248,7 @@ describe('MediaRequestSubscriber sendToSonarr, TVDB ID resolution', () => {
     assert.strictEqual(addSeries.callCount(), 1);
   });
 
-  it('skips the backfill when another media row already owns the ID', async () => {
+  it('persists the resolved TVDB ID even when another media row owns it', async () => {
     tvShow = fakeShow(90003, [{ season_number: 1, air_date: '2020-01-05' }]);
     const addSeries = stubProviders({
       resolveTvdbId: 184871,
@@ -268,7 +268,7 @@ describe('MediaRequestSubscriber sendToSonarr, TVDB ID resolution', () => {
     const { entity, media } = await seedApprovedRequest(90003, [1]);
     await run(entity);
 
-    assert.strictEqual((await storedMedia(media.id)).tvdbId, null);
+    assert.strictEqual((await storedMedia(media.id)).tvdbId, 184871);
     assert.strictEqual(addSeries.callCount(), 1);
   });
 
