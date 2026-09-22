@@ -1,4 +1,5 @@
 import TheMovieDb from '@server/api/themoviedb';
+import type { MediaRequestFailureReason } from '@server/constants/media';
 import {
   MediaRequestStatus,
   MediaStatus,
@@ -568,6 +569,9 @@ export class MediaRequest {
   @Column({ type: 'integer' })
   @Index()
   public status: MediaRequestStatus;
+
+  @Column({ type: 'integer', nullable: true })
+  public failureReason?: MediaRequestFailureReason | null;
 
   @ManyToOne(() => Media, (media) => media.requests, {
     eager: true,
