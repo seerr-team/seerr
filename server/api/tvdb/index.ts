@@ -8,11 +8,15 @@ import type {
   TmdbTvSeasonResult,
 } from '@server/api/themoviedb/interfaces';
 import {
+  TVDB_SOURCE_TYPE_TMDB_TV,
   convertTmdbLanguageToTvdbWithFallback,
   type TvdbBaseResponse,
   type TvdbEpisode,
   type TvdbLoginResponse,
+  type TvdbRemoteId,
+  type TvdbSearchByRemoteIdResult,
   type TvdbSeasonDetails,
+  type TvdbSeriesBaseRecord,
   type TvdbTvDetails,
 } from '@server/api/tvdb/interfaces';
 import cacheManager, { type AvailableCacheIds } from '@server/lib/cache';
@@ -149,7 +153,7 @@ class Tvdb extends ExternalAPI implements TvShowProvider {
       try {
         await this.refreshToken();
 
-        const validTvdbId = this.getTvdbIdFromTmdb(tmdbTvShow);
+        const validTvdbId = await this.getTvdbIdFromTmdb(tmdbTvShow);
 
         if (this.isValidTvdbId(validTvdbId)) {
           return this.enrichTmdbShowWithTvdbData(tmdbTvShow, validTvdbId);
@@ -178,7 +182,7 @@ class Tvdb extends ExternalAPI implements TvShowProvider {
       try {
         await this.refreshToken();
 
-        const tvdbId = this.getTvdbIdFromTmdb(tmdbTvShow);
+        const tvdbId = await this.getTvdbIdFromTmdb(tmdbTvShow);
 
         if (this.isValidTvdbId(tvdbId)) {
           return await this.enrichTmdbShowWithTvdbData(tmdbTvShow, tvdbId);
@@ -210,7 +214,7 @@ class Tvdb extends ExternalAPI implements TvShowProvider {
       try {
         await this.refreshToken();
 
-        const tvdbId = this.getTvdbIdFromTmdb(tmdbTvShow);
+        const tvdbId = await this.getTvdbIdFromTmdb(tmdbTvShow);
 
         if (!this.isValidTvdbId(tvdbId)) {
           return await this.tmdb.getTvSeason({ tvId, seasonNumber, language });
@@ -234,10 +238,82 @@ class Tvdb extends ExternalAPI implements TvShowProvider {
     }
   }
 
+  public async resolveTvdbId(tmdbId: number): Promise<number | null> {
+    try {
+      await this.refreshToken();
+
+      const response = await this.get<
+        TvdbBaseResponse<TvdbSearchByRemoteIdResult[]>
+      >(
+        `/search/remoteid/${tmdbId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${this.token}`,
+          },
+        },
+        Tvdb.DEFAULT_CACHE_TTL
+      );
+
+      const candidates = (response?.data ?? [])
+        .map((result) => result.series)
+        .filter((series): series is TvdbSeriesBaseRecord => !!series);
+
+      const matches: number[] = [];
+
+      // the search matches a bare id against every remote source, so a hit can
+      // be a series that merely shares the number in another id space
+      for (const candidate of candidates) {
+        const remoteIds = await this.fetchTvdbSeriesRemoteIds(candidate.id);
+
+        if (
+          remoteIds.some(
+            (remoteId) =>
+              remoteId.type === TVDB_SOURCE_TYPE_TMDB_TV &&
+              String(remoteId.id) === String(tmdbId)
+          )
+        ) {
+          matches.push(candidate.id);
+        }
+      }
+
+      if (matches.length !== 1) {
+        return null;
+      }
+
+      return matches[0];
+    } catch (error) {
+      logger.error(
+        `[TVDB] Failed to resolve TVDB ID from TMDB ID ${tmdbId}: ${error.message}`
+      );
+      return null;
+    }
+  }
+
+  private async fetchTvdbSeriesRemoteIds(
+    tvdbId: number
+  ): Promise<TvdbRemoteId[]> {
+    const resp = await this.get<TvdbBaseResponse<TvdbTvDetails>>(
+      `/series/${tvdbId}/extended`,
+      {
+        headers: {
+          Authorization: `Bearer ${this.token}`,
+        },
+      },
+      Tvdb.DEFAULT_CACHE_TTL
+    );
+
+    return resp?.data?.remoteIds ?? [];
+  }
+
   private async enrichTmdbShowWithTvdbData(
     tmdbTvShow: TmdbTvDetails,
     tvdbId: ValidTvdbId
   ): Promise<TmdbTvDetails> {
+    const show = {
+      ...tmdbTvShow,
+      external_ids: { ...tmdbTvShow.external_ids, tvdb_id: tvdbId },
+    };
+
     try {
       await this.refreshToken();
 
@@ -245,15 +321,15 @@ class Tvdb extends ExternalAPI implements TvShowProvider {
       const seasons = this.processSeasons(tvdbData);
 
       if (!seasons.length) {
-        return tmdbTvShow;
+        return show;
       }
 
-      return { ...tmdbTvShow, seasons };
+      return { ...show, seasons };
     } catch (error) {
       logger.error(
-        `Failed to enrich TMDB show with TVDB data: ${error.message} token: ${this.token}`
+        `Failed to enrich TMDB show with TVDB data: ${error.message}`
       );
-      return tmdbTvShow;
+      return show;
     }
   }
 
@@ -547,8 +623,14 @@ class Tvdb extends ExternalAPI implements TvShowProvider {
     };
   }
 
-  private getTvdbIdFromTmdb(tmdbTvShow: TmdbTvDetails): TvdbId {
-    return tmdbTvShow?.external_ids?.tvdb_id ?? TvdbIdStatus.INVALID;
+  private async getTvdbIdFromTmdb(tmdbTvShow: TmdbTvDetails): Promise<TvdbId> {
+    const tvdbId = tmdbTvShow?.external_ids?.tvdb_id;
+
+    if (tvdbId) {
+      return tvdbId;
+    }
+
+    return (await this.resolveTvdbId(tmdbTvShow.id)) ?? TvdbIdStatus.INVALID;
   }
 
   private isValidTvdbId(tvdbId: TvdbId): tvdbId is ValidTvdbId {
