@@ -151,4 +151,40 @@ describe('PlexTvAPI.getWatchlist metadata fetching', () => {
       'only odd-numbered watchlist items should be returned'
     );
   });
+
+  it('fails the sync when metadata requests return auth errors', async () => {
+    const itemCount = 3;
+
+    const api = new TestPlexTvAPI('test-token');
+    api.installAdapter(async (config) => {
+      const url = config.url;
+
+      if (isWatchlistRequest(url)) {
+        return axiosResponse(config, watchlistResponse(itemCount), {
+          etag: 'test-etag',
+        });
+      }
+
+      if (isMetadataRequest(url)) {
+        const error = new Error(
+          'Request failed with status code 401'
+        ) as Error & {
+          response: { status: number };
+        };
+        error.response = { status: 401 };
+        throw error;
+      }
+
+      throw new Error(`Unexpected request: ${url}`);
+    });
+
+    const result = await api.getWatchlist({ size: itemCount });
+
+    assert.deepStrictEqual(result, {
+      offset: 0,
+      size: itemCount,
+      totalSize: 0,
+      items: [],
+    });
+  });
 });

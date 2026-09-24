@@ -317,7 +317,10 @@ class PlexTvAPI extends ExternalAPI {
           `Item with ratingKey ${watchlistItem.ratingKey} not found, it may have been removed from the server.`,
           { label: 'Plex.TV Metadata API' }
         );
-      } else {
+        return null;
+      }
+
+      if (e.code === 'ETIMEDOUT' || e.code === 'ENETUNREACH') {
         logger.warn(
           `Failed to fetch metadata for ratingKey ${watchlistItem.ratingKey}`,
           {
@@ -325,8 +328,10 @@ class PlexTvAPI extends ExternalAPI {
             errorMessage: e.message,
           }
         );
+        return null;
       }
-      return null;
+
+      throw e;
     }
 
     const metadata =
