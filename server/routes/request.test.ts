@@ -18,6 +18,7 @@ import OverrideRule from '@server/entity/OverrideRule';
 import Season from '@server/entity/Season';
 import SeasonRequest from '@server/entity/SeasonRequest';
 import { User } from '@server/entity/User';
+import { Permission } from '@server/lib/permissions';
 import type { RadarrSettings, SonarrSettings } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import { checkUser } from '@server/middleware/auth';
@@ -1405,6 +1406,73 @@ describe('POST /request (tv), override rules', () => {
 
     assert.strictEqual(res.status, 201);
     assert.strictEqual(res.body.rootFolder, null);
+  });
+});
+
+describe('POST /request, override rules and requester choices', () => {
+  async function requestWithRule(permissions: number) {
+    configureRadarr([{ id: 1, isDefault: true, is4k: false }]);
+    getSettings().sonarr = [];
+
+    const userRepo = getRepository(User);
+    const requester = await userRepo.findOneOrFail({
+      where: { email: 'demo@seerr.dev' },
+    });
+    requester.permissions = permissions;
+    await userRepo.save(requester);
+
+    await getRepository(OverrideRule).save(
+      new OverrideRule({
+        radarrServiceId: 1,
+        rootFolder: '/rule',
+        profileId: 7,
+        tags: '2',
+      })
+    );
+
+    const agent = await loginAs('demo@seerr.dev', 'test1234');
+    return agent.post('/request').send({
+      mediaType: MediaType.MOVIE,
+      mediaId: 88010,
+      serverId: 1,
+      rootFolder: '/chosen',
+      tags: [],
+    });
+  }
+
+  it('keeps what an advanced requester sets and fills the rest from the rule', async () => {
+    const res = await requestWithRule(
+      Permission.REQUEST | Permission.REQUEST_ADVANCED
+    );
+
+    assert.strictEqual(res.status, 201);
+    assert.strictEqual(res.body.rootFolder, '/chosen');
+    assert.strictEqual(res.body.profileId, 7);
+    assert.deepStrictEqual(res.body.tags, []);
+  });
+
+  it('keeps what a request manager sets and fills the rest from the rule', async (t) => {
+    // Manage Requests auto-approves; keep it from calling Radarr
+    t.mock.method(
+      MediaRequestSubscriber.prototype,
+      'sendToRadarr',
+      async () => undefined
+    );
+    const res = await requestWithRule(
+      Permission.REQUEST | Permission.MANAGE_REQUESTS
+    );
+
+    assert.strictEqual(res.status, 201);
+    assert.strictEqual(res.body.rootFolder, '/chosen');
+    assert.strictEqual(res.body.profileId, 7);
+    assert.deepStrictEqual(res.body.tags, []);
+  });
+
+  it('applies the rule over what a regular requester sets', async () => {
+    const res = await requestWithRule(Permission.REQUEST);
+
+    assert.strictEqual(res.status, 201);
+    assert.strictEqual(res.body.rootFolder, '/rule');
   });
 });
 

@@ -262,42 +262,47 @@ export class MediaRequest {
       }
     }
 
-    // Apply overrides if the user is not an admin or has the "advanced request" permission
-    const useOverrides = !user.hasPermission([Permission.MANAGE_REQUESTS], {
-      type: 'or',
-    });
-
     let rootFolder = requestBody.rootFolder;
     let profileId = requestBody.profileId;
     let tags = requestBody.tags;
 
-    if (useOverrides) {
-      const overrideRulesResult = await overrideRules({
-        mediaType: requestBody.mediaType,
-        is4k: requestBody.is4k || false,
-        tmdbMedia,
-        requestUser,
-        tags,
+    const ruleResult = await overrideRules({
+      mediaType: requestBody.mediaType,
+      is4k: requestBody.is4k || false,
+      tmdbMedia,
+      requestUser,
+      tags,
+    });
+    const isAdvanced = user.hasPermission(
+      [Permission.MANAGE_REQUESTS, Permission.REQUEST_ADVANCED],
+      { type: 'or' }
+    );
+    // Advanced users pick these in the modal, so we don't want to override them if they are set
+    const overrideRulesResult = isAdvanced
+      ? {
+          rootFolder: rootFolder ? null : ruleResult.rootFolder,
+          profileId: profileId ? null : ruleResult.profileId,
+          tags: tags ? null : ruleResult.tags,
+        }
+      : ruleResult;
+    if (overrideRulesResult.rootFolder) {
+      rootFolder = overrideRulesResult.rootFolder;
+    }
+    if (overrideRulesResult.profileId) {
+      profileId = overrideRulesResult.profileId;
+    }
+    if (overrideRulesResult.tags) {
+      tags = overrideRulesResult.tags;
+    }
+    if (
+      overrideRulesResult.rootFolder ||
+      overrideRulesResult.profileId ||
+      overrideRulesResult.tags
+    ) {
+      logger.debug('Override rule applied.', {
+        label: 'Override Rules',
+        overrides: overrideRulesResult,
       });
-      if (overrideRulesResult.rootFolder) {
-        rootFolder = overrideRulesResult.rootFolder;
-      }
-      if (overrideRulesResult.profileId) {
-        profileId = overrideRulesResult.profileId;
-      }
-      if (overrideRulesResult.tags) {
-        tags = overrideRulesResult.tags;
-      }
-      if (
-        overrideRulesResult.rootFolder ||
-        overrideRulesResult.profileId ||
-        overrideRulesResult.tags
-      ) {
-        logger.debug('Override rule applied.', {
-          label: 'Override Rules',
-          overrides: overrideRulesResult,
-        });
-      }
     }
 
     if (requestBody.mediaType === MediaType.MOVIE) {
