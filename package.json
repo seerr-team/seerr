@@ -180,7 +180,7 @@
     "typescript-eslint": "^8.58.2"
   },
   "engines": {
-    "node": "^22.19.0",
+    "node": "^24.0.0",
     "pnpm": "^10.0.0"
   },
   "config": {
