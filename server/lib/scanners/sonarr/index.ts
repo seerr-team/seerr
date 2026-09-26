@@ -12,13 +12,14 @@ import { MediaStatus, MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import type {
+  ProcessableEpisode,
   ProcessableSeason,
   RunnableScanner,
   StatusBase,
 } from '@server/lib/scanners/baseScanner';
 import BaseScanner from '@server/lib/scanners/baseScanner';
 import type { SonarrSettings } from '@server/lib/settings';
-import { getSettings } from '@server/lib/settings';
+import { MetadataProviderType, getSettings } from '@server/lib/settings';
 import { uniqWith } from 'lodash';
 
 type SyncStatus = StatusBase & {
@@ -173,9 +174,10 @@ class SonarrScanner
       }
 
       const tmdbId = tvShow.id;
-      const metadataProvider = tvShow.keywords.results.some(
+      const isAnime = tvShow.keywords.results.some(
         (keyword: TmdbKeyword) => keyword.id === ANIME_KEYWORD_ID
-      )
+      );
+      const metadataProvider = isAnime
         ? await getMetadataProvider('anime')
         : await getMetadataProvider('tv');
 
@@ -184,6 +186,36 @@ class SonarrScanner
       }
 
       const settings = getSettings();
+      const shouldTrackEpisodes =
+        settings.main.enableEpisodeAvailability &&
+        (isAnime
+          ? settings.metadataSettings.anime === MetadataProviderType.TVDB
+          : settings.metadataSettings.tv === MetadataProviderType.TVDB);
+
+      let episodesBySeason = new Map<number, ProcessableEpisode[]>();
+      if (shouldTrackEpisodes && sonarrSeries.id != null) {
+        try {
+          const episodes = await this.sonarrApi.getEpisodes(sonarrSeries.id);
+          episodesBySeason = episodes.reduce((map, episode) => {
+            const seasonEpisodes = map.get(episode.seasonNumber) ?? [];
+            seasonEpisodes.push({
+              episodeNumber: episode.episodeNumber,
+              hasFile: episode.hasFile,
+            });
+            map.set(episode.seasonNumber, seasonEpisodes);
+            return map;
+          }, new Map<number, ProcessableEpisode[]>());
+        } catch (e) {
+          this.log(
+            'Failed to fetch Sonarr episodes for availability',
+            'error',
+            {
+              errorMessage: e.message,
+              title: sonarrSeries.title,
+            }
+          );
+        }
+      }
 
       const filteredSeasons = tvShow.seasons
         .filter(
@@ -218,6 +250,7 @@ class SonarrScanner
           totalEpisodes: season.statistics?.totalEpisodeCount ?? 0,
           processing: season.monitored && totalAvailableEpisodes === 0,
           is4kOverride: server4k,
+          episodeDetails: episodesBySeason.get(season.seasonNumber),
         });
       }
 
