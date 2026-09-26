@@ -285,14 +285,16 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
       type: DiscoverSliderType.TMDB_MOVIE_STREAMING_SERVICES,
       title: intl.formatMessage(sliderTitles.tmdbmoviestreamingservices),
       dataUrl: '/api/v1/discover/movies',
-      params: 'watchRegion=$regionValue&watchProviders=$providersValue',
+      params:
+        'watchRegion=$regionValue&watchProviders=$providersValue&excludeWatchProviders=$excludeProvidersValue',
       titlePlaceholderText: intl.formatMessage(messages.slidernameplaceholder),
     },
     {
       type: DiscoverSliderType.TMDB_TV_STREAMING_SERVICES,
       title: intl.formatMessage(sliderTitles.tmdbtvstreamingservices),
       dataUrl: '/api/v1/discover/tv',
-      params: 'watchRegion=$regionValue&watchProviders=$providersValue',
+      params:
+        'watchRegion=$regionValue&watchProviders=$providersValue&excludeWatchProviders=$excludeProvidersValue',
       titlePlaceholderText: intl.formatMessage(messages.slidernameplaceholder),
     },
   ];
@@ -444,11 +446,20 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
                 activeProviders={
                   slider?.data
                     ?.split(',')[1]
-                    .split('|')
+                    ?.split('|')
                     .map((v) => Number(v)) ?? []
                 }
-                onChange={(region, providers) => {
-                  setFieldValue('data', `${region},${providers.join('|')}`);
+                excludeProviders={
+                  slider?.data
+                    ?.split(',')[2]
+                    ?.split('|')
+                    .map((v) => Number(v)) ?? []
+                }
+                onChange={(region, providers, excludes) => {
+                  setFieldValue(
+                    'data',
+                    `${region},${providers.join('|')},${excludes.join('|')}`
+                  );
                 }}
               />
             );
@@ -461,11 +472,20 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
                 activeProviders={
                   slider?.data
                     ?.split(',')[1]
-                    .split('|')
+                    ?.split('|')
                     .map((v) => Number(v)) ?? []
                 }
-                onChange={(region, providers) => {
-                  setFieldValue('data', `${region},${providers.join('|')}`);
+                excludeProviders={
+                  slider?.data
+                    ?.split(',')[2]
+                    ?.split('|')
+                    .map((v) => Number(v)) ?? []
+                }
+                onChange={(region, providers, excludes) => {
+                  setFieldValue(
+                    'data',
+                    `${region},${providers.join('|')},${excludes.join('|')}`
+                  );
                 }}
               />
             );
@@ -554,6 +574,10 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
                           .replace(
                             '$providersValue',
                             encodeURIExtraParams(values?.data.split(',')[1])
+                          )
+                          .replace(
+                            '$excludeProvidersValue',
+                            encodeURIExtraParams(values?.data.split(',')[2])
                           )
                       : activeOption.params?.replace(
                           '$value',
