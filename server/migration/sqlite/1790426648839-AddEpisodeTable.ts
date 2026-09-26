@@ -1,7 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddEpisodeTable1788195151277 implements MigrationInterface {
-  name = 'AddEpisodeTable1788195151277';
+export class AddEpisodeTable1790426648839 implements MigrationInterface {
+  name = 'AddEpisodeTable1790426648839';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
