@@ -3,6 +3,7 @@ export enum ApiErrorCode {
   InvalidCredentials = 'INVALID_CREDENTIALS',
   InvalidAuthToken = 'INVALID_AUTH_TOKEN',
   InvalidEmail = 'INVALID_EMAIL',
+  InvalidPhoneNumber = 'INVALID_PHONE_NUMBER',
   NotAdmin = 'NOT_ADMIN',
   NoAdminUser = 'NO_ADMIN_USER',
   ConnectionError = 'CONNECTION_ERROR',
