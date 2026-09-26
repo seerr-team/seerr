@@ -103,6 +103,7 @@ interface DiscoverMovieOptions {
   keywords?: string;
   excludeKeywords?: string;
   sortBy?: MovieSortOptions;
+  releaseType?: string;
   watchRegion?: string;
   watchProviders?: string;
   certification?: string;
@@ -696,6 +697,7 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
     voteAverageLte,
     voteCountGte,
     voteCountLte,
+    releaseType,
     watchProviders,
     watchRegion,
     certification,
@@ -714,6 +716,28 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
         .toISOString()
         .split('T')[0];
 
+      // "Minimum Release" is cumulative: picking Digital (4) should also
+      // match Physical (5) and TV (6), so expand the selected type up to 6.
+      // with_release_type is a no-op on TMDB unless it's paired with a
+      // release_date range, so when it's set we filter on release_date instead
+      // of primary_release_date (the field the plain Release Date filter uses).
+      const releaseTypeFilter = releaseType
+        ? Array.from(
+            { length: 6 - Number(releaseType) + 1 },
+            (_, i) => Number(releaseType) + i
+          ).join('|')
+        : undefined;
+      const releaseDateField = releaseType
+        ? 'release_date'
+        : 'primary_release_date';
+
+      // The UI defaults the "To" date to today when a release type is picked,
+      // but a direct API call might not, and without an upper bound
+      // with_release_type does nothing. Fall back to today so it still filters.
+      const today = new Date().toISOString().split('T')[0];
+      const releaseDateLte =
+        primaryReleaseDateLte ?? (releaseType ? today : undefined);
+
       const data = await this.get<TmdbSearchMovieResponse>('/discover/movie', {
         params: {
           sort_by: sortBy,
@@ -730,14 +754,15 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
                 : this.originalLanguage,
           // Set our release date values, but check if one is set and not the other,
           // so we can force a past date or a future date. TMDB Requires both values if one is set!
-          'primary_release_date.gte':
-            !primaryReleaseDateGte && primaryReleaseDateLte
+          [`${releaseDateField}.gte`]:
+            !primaryReleaseDateGte && releaseDateLte
               ? defaultPastDate
               : primaryReleaseDateGte,
-          'primary_release_date.lte':
-            !primaryReleaseDateLte && primaryReleaseDateGte
+          [`${releaseDateField}.lte`]:
+            !releaseDateLte && primaryReleaseDateGte
               ? defaultFutureDate
-              : primaryReleaseDateLte,
+              : releaseDateLte,
+          with_release_type: releaseTypeFilter,
           with_genres: genre,
           with_companies: studio,
           with_keywords: keywords,
