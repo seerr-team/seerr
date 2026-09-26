@@ -266,9 +266,22 @@ export class MediaRequest {
     let profileId = requestBody.profileId;
     let tags = requestBody.tags;
 
+    // Match rules against the server the request will be sent to; an
+    // omitted or unknown serverId falls back to the default server
+    const requestedServiceId =
+      requestBody.serverId !== undefined &&
+      requestBody.serverId >= 0 &&
+      (requestBody.mediaType === MediaType.MOVIE
+        ? settings.radarr
+        : settings.sonarr
+      ).some((server) => server.id === requestBody.serverId)
+        ? requestBody.serverId
+        : undefined;
+
     const ruleResult = await overrideRules({
       mediaType: requestBody.mediaType,
       is4k: requestBody.is4k || false,
+      serviceId: requestedServiceId,
       tmdbMedia,
       requestUser,
       tags,

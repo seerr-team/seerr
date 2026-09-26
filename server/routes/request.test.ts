@@ -1318,6 +1318,99 @@ describe('POST /request (movie), override rules', () => {
     assert.strictEqual(res.status, 201);
     assert.strictEqual(res.body.rootFolder, null);
   });
+
+  it('applies the selected server override rule when a specific server is requested', async () => {
+    configureRadarr([
+      { id: 1, isDefault: true, is4k: false },
+      { id: 2, is4k: false },
+    ]);
+    getSettings().sonarr = [];
+
+    const userRepo = getRepository(User);
+    const friend = await userRepo.findOneOrFail({
+      where: { email: 'demo@seerr.dev' },
+    });
+
+    const overrideRuleRepo = getRepository(OverrideRule);
+    await overrideRuleRepo.save(
+      new OverrideRule({
+        radarrServiceId: 2,
+        users: String(friend.id),
+        rootFolder: '/selected/movies',
+      })
+    );
+
+    const agent = await loginAs('demo@seerr.dev', 'test1234');
+    const res = await agent.post('/request').send({
+      mediaType: MediaType.MOVIE,
+      mediaId: 88007,
+      serverId: 2,
+    });
+
+    assert.strictEqual(res.status, 201);
+    assert.strictEqual(res.body.rootFolder, '/selected/movies');
+  });
+
+  it('does not apply the default server override rule when another server is requested', async () => {
+    configureRadarr([
+      { id: 1, isDefault: true, is4k: false },
+      { id: 2, is4k: false },
+    ]);
+    getSettings().sonarr = [];
+
+    const userRepo = getRepository(User);
+    const friend = await userRepo.findOneOrFail({
+      where: { email: 'demo@seerr.dev' },
+    });
+
+    const overrideRuleRepo = getRepository(OverrideRule);
+    await overrideRuleRepo.save(
+      new OverrideRule({
+        radarrServiceId: 1,
+        users: String(friend.id),
+        rootFolder: '/default/movies',
+      })
+    );
+
+    const agent = await loginAs('demo@seerr.dev', 'test1234');
+    const res = await agent.post('/request').send({
+      mediaType: MediaType.MOVIE,
+      mediaId: 88008,
+      serverId: 2,
+    });
+
+    assert.strictEqual(res.status, 201);
+    assert.strictEqual(res.body.rootFolder, null);
+  });
+
+  it('falls back to the default server override rule when the requested server does not exist', async () => {
+    configureRadarr([{ id: 1, isDefault: true, is4k: false }]);
+    getSettings().sonarr = [];
+
+    const userRepo = getRepository(User);
+    const friend = await userRepo.findOneOrFail({
+      where: { email: 'demo@seerr.dev' },
+    });
+
+    const overrideRuleRepo = getRepository(OverrideRule);
+    await overrideRuleRepo.save(
+      new OverrideRule({
+        radarrServiceId: 1,
+        users: String(friend.id),
+        rootFolder: '/default/movies',
+      })
+    );
+
+    const agent = await loginAs('demo@seerr.dev', 'test1234');
+    const res = await agent.post('/request').send({
+      mediaType: MediaType.MOVIE,
+      mediaId: 88009,
+      serverId: 7,
+    });
+
+    assert.strictEqual(res.status, 201);
+    assert.strictEqual(res.body.rootFolder, '/default/movies');
+  });
 });
 
 describe('POST /request (tv), override rules', () => {
@@ -1406,6 +1499,102 @@ describe('POST /request (tv), override rules', () => {
 
     assert.strictEqual(res.status, 201);
     assert.strictEqual(res.body.rootFolder, null);
+  });
+
+  it('applies the selected server override rule when a specific server is requested', async () => {
+    configureSonarr([
+      { id: 1, isDefault: true, is4k: false },
+      { id: 2, is4k: false },
+    ]);
+    getSettings().radarr = [];
+
+    const userRepo = getRepository(User);
+    const friend = await userRepo.findOneOrFail({
+      where: { email: 'demo@seerr.dev' },
+    });
+
+    const overrideRuleRepo = getRepository(OverrideRule);
+    await overrideRuleRepo.save(
+      new OverrideRule({
+        sonarrServiceId: 2,
+        users: String(friend.id),
+        rootFolder: '/selected/tv',
+      })
+    );
+
+    const agent = await loginAs('demo@seerr.dev', 'test1234');
+    const res = await agent.post('/request').send({
+      mediaType: MediaType.TV,
+      mediaId: 88011,
+      seasons: [1],
+      serverId: 2,
+    });
+
+    assert.strictEqual(res.status, 201);
+    assert.strictEqual(res.body.rootFolder, '/selected/tv');
+  });
+
+  it('does not apply the default server override rule when another server is requested', async () => {
+    configureSonarr([
+      { id: 1, isDefault: true, is4k: false },
+      { id: 2, is4k: false },
+    ]);
+    getSettings().radarr = [];
+
+    const userRepo = getRepository(User);
+    const friend = await userRepo.findOneOrFail({
+      where: { email: 'demo@seerr.dev' },
+    });
+
+    const overrideRuleRepo = getRepository(OverrideRule);
+    await overrideRuleRepo.save(
+      new OverrideRule({
+        sonarrServiceId: 1,
+        users: String(friend.id),
+        rootFolder: '/default/tv',
+      })
+    );
+
+    const agent = await loginAs('demo@seerr.dev', 'test1234');
+    const res = await agent.post('/request').send({
+      mediaType: MediaType.TV,
+      mediaId: 88012,
+      seasons: [1],
+      serverId: 2,
+    });
+
+    assert.strictEqual(res.status, 201);
+    assert.strictEqual(res.body.rootFolder, null);
+  });
+
+  it('falls back to the default server override rule when the requested server does not exist', async () => {
+    configureSonarr([{ id: 1, isDefault: true, is4k: false }]);
+    getSettings().radarr = [];
+
+    const userRepo = getRepository(User);
+    const friend = await userRepo.findOneOrFail({
+      where: { email: 'demo@seerr.dev' },
+    });
+
+    const overrideRuleRepo = getRepository(OverrideRule);
+    await overrideRuleRepo.save(
+      new OverrideRule({
+        sonarrServiceId: 1,
+        users: String(friend.id),
+        rootFolder: '/default/tv',
+      })
+    );
+
+    const agent = await loginAs('demo@seerr.dev', 'test1234');
+    const res = await agent.post('/request').send({
+      mediaType: MediaType.TV,
+      mediaId: 88013,
+      seasons: [1],
+      serverId: 7,
+    });
+
+    assert.strictEqual(res.status, 201);
+    assert.strictEqual(res.body.rootFolder, '/default/tv');
   });
 });
 
