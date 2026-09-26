@@ -40,6 +40,17 @@ export interface TmdbCollectionResult {
   original_language: string;
 }
 
+export interface TmdbCollectionSearchResult {
+  id: number;
+  adult: boolean;
+  name: string;
+  original_name: string;
+  original_language: string;
+  overview: string;
+  poster_path?: string;
+  backdrop_path?: string;
+}
+
 export interface TmdbPersonResult {
   id: number;
   name: string;
@@ -71,6 +82,10 @@ export interface TmdbSearchMovieResponse extends TmdbPaginatedResponse {
 
 export interface TmdbSearchTvResponse extends TmdbPaginatedResponse {
   results: TmdbTvResult[];
+}
+
+export interface TmdbSearchCollectionResponse extends TmdbPaginatedResponse {
+  results: TmdbCollectionSearchResult[];
 }
 
 export interface TmdbUpcomingMoviesResponse extends TmdbPaginatedResponse {
