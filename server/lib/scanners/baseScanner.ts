@@ -570,11 +570,26 @@ class BaseScanner<T> {
             (s) => s.status4k === MediaStatus.AVAILABLE
           );
 
+        let mediaTvdbId = tvdbId;
+
+        if (mediaTvdbId) {
+          const tvdbConflict = await mediaRepository.findOne({
+            where: { tvdbId: mediaTvdbId },
+          });
+
+          if (tvdbConflict) {
+            this.log(
+              `Skipping TVDB ID ${mediaTvdbId} for ${title}, already owned by TMDB ${tvdbConflict.tmdbId}`
+            );
+            mediaTvdbId = undefined;
+          }
+        }
+
         const newMedia = new Media({
           mediaType: MediaType.TV,
           seasons: newSeasons,
           tmdbId,
-          tvdbId,
+          tvdbId: mediaTvdbId,
           mediaAddedAt,
           serviceId: !is4k ? serviceId : undefined,
           serviceId4k: is4k ? serviceId : undefined,
@@ -643,7 +658,23 @@ class BaseScanner<T> {
                   ? MediaStatus.PROCESSING
                   : MediaStatus.UNKNOWN,
         });
-        await mediaRepository.save(newMedia);
+
+        try {
+          await mediaRepository.save(newMedia);
+        } catch (e) {
+          if (!newMedia.tvdbId) {
+            throw e;
+          }
+
+          // the ownership check above is per-tmdbId, so a concurrent entry for
+          // the same series can claim the ID between checking and saving
+          this.log(
+            `Dropped TVDB ID ${newMedia.tvdbId} for ${title} after a conflict on save`
+          );
+          newMedia.tvdbId = undefined;
+          await mediaRepository.save(newMedia);
+        }
+
         this.log(`Saved ${title}`);
       }
     });
