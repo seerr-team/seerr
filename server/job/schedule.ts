@@ -205,7 +205,11 @@ export const startJobs = (): void => {
       logger.debug('Starting scheduled job: Download Sync', {
         label: 'Jobs',
       });
-      downloadTracker.updateDownloads();
+      downloadTracker.updateDownloads().catch((e) => {
+        logger.error(`Failed to update download tracker: ${e.message}`, {
+          label: 'Jobs',
+        });
+      });
     }),
   });
 
