@@ -9,7 +9,9 @@ import {
 } from '@app/components/Discover/constants';
 import FilterSlideover from '@app/components/Discover/FilterSlideover';
 import useDiscover from '@app/hooks/useDiscover';
+import useFilterByLanguages from '@app/hooks/useFilterByLanguages';
 import { useUpdateQueryParams } from '@app/hooks/useUpdateQueryParams';
+import { FilterByLanguage } from '@app/types/filters';
 import ErrorPage from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
 import { BarsArrowDownIcon, FunnelIcon } from '@heroicons/react/24/solid';
@@ -64,6 +66,13 @@ const DiscoverMovies = () => {
     preparedFilters
   );
   const [showFilters, setShowFilters] = useState(false);
+
+  const filteredTitles = useFilterByLanguages({
+    titles,
+    movie: true,
+    tv: false,
+    key: FilterByLanguage.DISCOVER_MOVIES,
+  });
 
   if (error) {
     return <ErrorPage statusCode={500} />;
@@ -133,10 +142,11 @@ const DiscoverMovies = () => {
         </div>
       </div>
       <ListView
-        items={titles}
+        items={filteredTitles}
         isEmpty={isEmpty}
         isLoading={
-          isLoadingInitialData || (isLoadingMore && (titles?.length ?? 0) > 0)
+          isLoadingInitialData ||
+          (isLoadingMore && (filteredTitles?.length ?? 0) > 0)
         }
         isReachingEnd={isReachingEnd}
         onScrollBottom={fetchMore}
