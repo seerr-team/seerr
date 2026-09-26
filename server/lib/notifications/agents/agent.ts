@@ -8,6 +8,8 @@ import type { Notification } from '..';
 
 export interface NotificationPayload {
   event?: string;
+  mediaType?: 'movie' | 'series';
+  is4k?: boolean;
   subject: string;
   notifySystem: boolean;
   notifyAdmin: boolean;

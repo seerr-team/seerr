@@ -7,6 +7,7 @@ import {
 import { getRepository } from '@server/datasource';
 import type { MediaRequestBody } from '@server/interfaces/api/requestInterfaces';
 import notificationManager, { Notification } from '@server/lib/notifications';
+import { formatNotificationEvent } from '@server/lib/notifications/eventMessages';
 import overrideRules from '@server/lib/overrideRules';
 import { Permission } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
@@ -712,41 +713,21 @@ export class MediaRequest {
     const tmdb = new TheMovieDb();
 
     try {
-      const mediaType = entity.type === MediaType.MOVIE ? 'Movie' : 'Series';
-      let event: string | undefined;
+      const mediaType = entity.type === MediaType.MOVIE ? 'movie' : 'series';
+      const is4k = entity.is4k;
+      const event = formatNotificationEvent(type, mediaType, is4k);
       let notifyAdmin = true;
       let notifySystem = true;
 
       switch (type) {
         case Notification.MEDIA_AVAILABLE:
-          event = `${entity.is4k ? '4K ' : ''}${mediaType} Now Available`;
-          notifyAdmin = false;
-          break;
         case Notification.MEDIA_APPROVED:
-          event = `${entity.is4k ? '4K ' : ''}${mediaType} Request Approved`;
-          notifyAdmin = false;
-          break;
         case Notification.MEDIA_DECLINED:
-          event = `${entity.is4k ? '4K ' : ''}${mediaType} Request Declined`;
           notifyAdmin = false;
-          break;
-        case Notification.MEDIA_PENDING:
-          event = `New ${entity.is4k ? '4K ' : ''}${mediaType} Request`;
           break;
         case Notification.MEDIA_AUTO_REQUESTED:
-          event = `${
-            entity.is4k ? '4K ' : ''
-          }${mediaType} Request Automatically Submitted`;
           notifyAdmin = false;
           notifySystem = false;
-          break;
-        case Notification.MEDIA_AUTO_APPROVED:
-          event = `${
-            entity.is4k ? '4K ' : ''
-          }${mediaType} Request Automatically Approved`;
-          break;
-        case Notification.MEDIA_FAILED:
-          event = `${entity.is4k ? '4K ' : ''}${mediaType} Request Failed`;
           break;
       }
 
@@ -759,6 +740,8 @@ export class MediaRequest {
           notifySystem,
           notifyUser: notifyAdmin ? undefined : entity.requestedBy,
           event,
+          mediaType,
+          is4k,
           subject: `${movie.title}${
             movie.release_date ? ` (${movie.release_date.slice(0, 4)})` : ''
           }`,
@@ -778,6 +761,8 @@ export class MediaRequest {
           notifySystem,
           notifyUser: notifyAdmin ? undefined : entity.requestedBy,
           event,
+          mediaType,
+          is4k,
           subject: `${tv.name}${
             tv.first_air_date ? ` (${tv.first_air_date.slice(0, 4)})` : ''
           }`,

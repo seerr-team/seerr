@@ -4,6 +4,7 @@ import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
 import { getIntl } from '@server/i18n';
 import globalMessages from '@server/i18n/globalMessages';
+import { resolveNotificationEvent } from '@server/lib/notifications/eventMessages';
 import type { NotificationAgentTelegram } from '@server/lib/settings';
 import { NotificationAgentKey, getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
@@ -74,9 +75,11 @@ class TelegramAgent
     const { applicationUrl, applicationTitle } = settings.main;
     const { embedPoster } = settings.notifications.agents.telegram;
 
+    const event = resolveNotificationEvent(type, payload, locale);
+
     /* eslint-disable no-useless-escape */
     let message = `\*${this.escapeText(
-      payload.event ? `${payload.event} - ${payload.subject}` : payload.subject
+      event ? `${event} - ${payload.subject}` : payload.subject
     )}\*`;
     if (payload.message) {
       message += `\n${this.escapeText(payload.message)}`;
