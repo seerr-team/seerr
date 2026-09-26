@@ -33,6 +33,7 @@ const PersonDetails = () => {
   const intl = useIntl();
   const router = useRouter();
   const [currentMediaType, setCurrentMediaType] = useState<string>('all');
+  const [currentJobType, setCurrentJobType] = useState<string>('all');
   const { data, error } = useSWR<PersonDetailsType>(
     `/api/v1/person/${router.query.personId}`
   );
@@ -85,6 +86,10 @@ const PersonDetails = () => {
       }
       return 1;
     });
+  }, [combinedCredits, currentMediaType]);
+
+  const uniqueJobs = useMemo(() => {
+    return [...new Set(sortedCrew.flatMap((obj) => obj.job.split(', ')))];
   }, [combinedCredits, currentMediaType]);
 
   if (!data && !error) {
@@ -158,6 +163,34 @@ const PersonDetails = () => {
     </div>
   );
 
+  const jobPicker = (
+    <div className="mb-2 flex flex-grow sm:mb-0 sm:mr-2 lg:flex-grow-0">
+      <span className="inline-flex cursor-default items-center rounded-l-md border border-r-0 border-gray-500 bg-gray-800 px-3 text-sm text-gray-100">
+        <CircleStackIcon className="h-6 w-6" />
+      </span>
+      <select
+        id="jobType"
+        name="jobType"
+        onChange={(e) => {
+          setCurrentJobType(e.target.value);
+        }}
+        value={currentJobType}
+        className="rounded-r-only"
+      >
+        <option key="all" value="all">
+          {intl.formatMessage(globalMessages.all)}
+        </option>
+        {uniqueJobs?.map((job) => {
+          return (
+            <option key={job} value={job}>
+              {job}
+            </option>
+          );
+        })}
+      </select>
+    </div>
+  );
+
   const cast = (sortedCast ?? []).length > 0 && (
     <>
       <div className="slider-header">
@@ -202,38 +235,46 @@ const PersonDetails = () => {
   const crew = (sortedCrew ?? []).length > 0 && (
     <>
       <div className="slider-header">
-        <div className="slider-title">
+        <div className="slider-title flex w-full justify-center justify-between">
           <span>{intl.formatMessage(messages.crewmember)}</span>
+          <div>{jobPicker}</div>
         </div>
       </div>
       <ul className="cards-vertical">
-        {sortedCrew?.map((media, index) => {
-          return (
-            <li key={`list-crew-item-${media.id}-${index}`}>
-              <TitleCard
-                key={media.id}
-                id={media.id}
-                title={media.mediaType === 'movie' ? media.title : media.name}
-                userScore={media.voteAverage}
-                year={
-                  media.mediaType === 'movie'
-                    ? media.releaseDate
-                    : media.firstAirDate
-                }
-                image={media.posterPath}
-                summary={media.overview}
-                mediaType={media.mediaType as 'movie' | 'tv'}
-                status={media.mediaInfo?.status}
-                canExpand
-              />
-              {media.job && (
-                <div className="mt-2 w-full truncate text-center text-xs text-gray-300">
-                  {media.job}
-                </div>
-              )}
-            </li>
-          );
-        })}
+        {sortedCrew
+          ?.filter((media) => {
+            return (
+              currentJobType === 'all' ||
+              media.job.split(', ').includes(currentJobType)
+            );
+          })
+          .map((media, index) => {
+            return (
+              <li key={`list-crew-item-${media.id}-${index}`}>
+                <TitleCard
+                  key={media.id}
+                  id={media.id}
+                  title={media.mediaType === 'movie' ? media.title : media.name}
+                  userScore={media.voteAverage}
+                  year={
+                    media.mediaType === 'movie'
+                      ? media.releaseDate
+                      : media.firstAirDate
+                  }
+                  image={media.posterPath}
+                  summary={media.overview}
+                  mediaType={media.mediaType as 'movie' | 'tv'}
+                  status={media.mediaInfo?.status}
+                  canExpand
+                />
+                {media.job && (
+                  <div className="mt-2 w-full truncate text-center text-xs text-gray-300">
+                    {media.job}
+                  </div>
+                )}
+              </li>
+            );
+          })}
       </ul>
     </>
   );
