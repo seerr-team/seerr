@@ -1,5 +1,9 @@
 import TheMovieDb from '@server/api/themoviedb';
 import Media from '@server/entity/Media';
+import {
+  filterMixedResults,
+  getUserContentRatingLimits,
+} from '@server/lib/contentRating';
 import logger from '@server/logger';
 import {
   mapCastCredits,
@@ -40,6 +44,20 @@ personRoutes.get('/:id/combined_credits', async (req, res, next) => {
       personId: Number(req.params.id),
       language: (req.query.language as string) ?? req.locale,
     });
+
+    // Credit entries carry media_type, so the mixed filter applies
+    // per-title rating limits directly to a filmography.
+    const limits = getUserContentRatingLimits(req.user);
+    if (limits) {
+      combinedCredits.cast = await filterMixedResults(
+        combinedCredits.cast,
+        limits
+      );
+      combinedCredits.crew = await filterMixedResults(
+        combinedCredits.crew,
+        limits
+      );
+    }
 
     const castMedia = await Media.getRelatedMedia(
       req.user,

@@ -5,9 +5,15 @@ import type { User } from '@app/hooks/useUser';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
+import {
+  getMovieRatingOptions,
+  getTvRatingOptions,
+} from '@server/constants/contentRatings';
+import type { UserSettingsParentalControlsResponse } from '@server/interfaces/api/userSettingsInterfaces';
 import { hasPermission } from '@server/lib/permissions';
+import type { AxiosResponse } from 'axios';
 import axios from 'axios';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 interface BulkEditProps {
@@ -22,7 +28,23 @@ const messages = defineMessages('components.UserList', {
   userssaved: 'User permissions saved successfully!',
   userfail: 'Something went wrong while saving user permissions.',
   edituser: 'Edit User Permissions',
+  contentfiltering: 'Content Filtering',
+  maxmovierating: 'Max Movie Rating',
+  maxtvrating: 'Max TV Rating',
+  blockunrated: 'Block Unrated Content',
+  norestriction: 'No Restriction',
+  maxtvratingUnratedWarning:
+    'Setting a TV rating limit hides shows that have no US TV rating. Most popular shows are rated; much of the wider catalog is not.',
+  variesacrossusers: 'Varies across selected users',
 });
+
+type ParentalControlField = 'maxMovieRating' | 'maxTvRating' | 'blockUnrated';
+
+function commonValue<T>(values: T[]): T | undefined {
+  if (values.length === 0) return undefined;
+  const first = values[0];
+  return values.every((v) => v === first) ? first : undefined;
+}
 
 const BulkEditModal = ({
   selectedUserIds,
@@ -37,11 +59,116 @@ const BulkEditModal = ({
   const [currentPermission, setCurrentPermission] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
 
+  const [currentMaxMovieRating, setCurrentMaxMovieRating] = useState('');
+  const [currentMaxTvRating, setCurrentMaxTvRating] = useState('');
+  const [currentBlockUnrated, setCurrentBlockUnrated] = useState(false);
+
+  const [mixedMovieRating, setMixedMovieRating] = useState(false);
+  const [mixedTvRating, setMixedTvRating] = useState(false);
+  const [mixedBlockUnrated, setMixedBlockUnrated] = useState(false);
+
+  const [touchedFields, setTouchedFields] = useState<Set<ParentalControlField>>(
+    new Set()
+  );
+  // Read when the fetch resolves so an edit made while it was in flight
+  // is not overwritten with the server value.
+  const touchedFieldsRef = useRef<Set<ParentalControlField>>(new Set());
+
+  const [isLoadingParentalControls, setIsLoadingParentalControls] =
+    useState(true);
+
+  const blockUnratedRef = useRef<HTMLInputElement>(null);
+
+  const markTouched = (field: ParentalControlField) => {
+    setTouchedFields((prev) => {
+      const next = new Set(prev).add(field);
+      touchedFieldsRef.current = next;
+      return next;
+    });
+  };
+
   useEffect(() => {
     if (onSaving) {
       onSaving(isSaving);
     }
   }, [isSaving, onSaving]);
+
+  const fetchParentalControls = useCallback(async () => {
+    if (!selectedUserIds.length) {
+      setIsLoadingParentalControls(false);
+      return;
+    }
+
+    setIsLoadingParentalControls(true);
+    setMixedMovieRating(false);
+    setMixedTvRating(false);
+    setMixedBlockUnrated(false);
+    setTouchedFields(new Set());
+    touchedFieldsRef.current = new Set();
+
+    try {
+      const results = await Promise.allSettled(
+        selectedUserIds.map((id) =>
+          axios.get<UserSettingsParentalControlsResponse>(
+            `/api/v1/user/${id}/settings/parental-controls`
+          )
+        )
+      );
+
+      const settings = results
+        .filter(
+          (
+            r
+          ): r is PromiseFulfilledResult<
+            AxiosResponse<UserSettingsParentalControlsResponse>
+          > => r.status === 'fulfilled'
+        )
+        .map((r) => r.value.data);
+
+      if (settings.length === 0) return;
+
+      const movieRatings = settings.map((s) => s.maxMovieRating ?? '');
+      const tvRatings = settings.map((s) => s.maxTvRating ?? '');
+      const blockUnrateds = settings.map((s) => s.blockUnrated ?? false);
+
+      const commonMovie = commonValue(movieRatings);
+      const commonTv = commonValue(tvRatings);
+      const commonUnrated = commonValue(blockUnrateds);
+
+      if (commonMovie === undefined) {
+        setMixedMovieRating(true);
+      } else if (!touchedFieldsRef.current.has('maxMovieRating')) {
+        setCurrentMaxMovieRating(commonMovie);
+      }
+
+      if (commonTv === undefined) {
+        setMixedTvRating(true);
+      } else if (!touchedFieldsRef.current.has('maxTvRating')) {
+        setCurrentMaxTvRating(commonTv);
+      }
+
+      if (commonUnrated === undefined) {
+        setMixedBlockUnrated(true);
+      } else if (!touchedFieldsRef.current.has('blockUnrated')) {
+        setCurrentBlockUnrated(commonUnrated);
+      }
+    } catch {
+      // Controls start at their defaults
+    } finally {
+      setIsLoadingParentalControls(false);
+    }
+  }, [selectedUserIds]);
+
+  useEffect(() => {
+    fetchParentalControls();
+  }, [fetchParentalControls]);
+
+  useEffect(() => {
+    if (blockUnratedRef.current) {
+      blockUnratedRef.current.indeterminate =
+        mixedBlockUnrated && !touchedFields.has('blockUnrated');
+    }
+  }, [mixedBlockUnrated, touchedFields]);
 
   const updateUsers = async () => {
     try {
@@ -49,6 +176,15 @@ const BulkEditModal = ({
       const { data: updated } = await axios.put<User[]>(`/api/v1/user`, {
         ids: selectedUserIds,
         permissions: currentPermission,
+        ...(touchedFields.has('maxMovieRating')
+          ? { maxMovieRating: currentMaxMovieRating }
+          : {}),
+        ...(touchedFields.has('maxTvRating')
+          ? { maxTvRating: currentMaxTvRating }
+          : {}),
+        ...(touchedFields.has('blockUnrated')
+          ? { blockUnrated: currentBlockUnrated }
+          : {}),
       });
       if (onComplete) {
         onComplete(updated);
@@ -87,6 +223,12 @@ const BulkEditModal = ({
     }
   }, [users, selectedUserIds]);
 
+  const showMixedMovieHint =
+    mixedMovieRating && !touchedFields.has('maxMovieRating');
+  const showMixedTvHint = mixedTvRating && !touchedFields.has('maxTvRating');
+  const showMixedUnratedHint =
+    mixedBlockUnrated && !touchedFields.has('blockUnrated');
+
   return (
     <Modal
       title={intl.formatMessage(messages.edituser)}
@@ -104,6 +246,113 @@ const BulkEditModal = ({
           onUpdate={(newPermission) => setCurrentPermission(newPermission)}
         />
       </div>
+      {hasPermission(
+        Permission.MANAGE_USERS,
+        currentUser?.permissions ?? 0
+      ) && (
+        <div className="mb-6">
+          <h3 className="heading">
+            {intl.formatMessage(messages.contentfiltering)}
+            {isLoadingParentalControls && (
+              <span className="ml-2 text-xs font-normal text-gray-400">
+                {intl.formatMessage(globalMessages.loading)}
+              </span>
+            )}
+          </h3>
+          <div className="form-row">
+            <label htmlFor="maxMovieRating" className="text-label">
+              {intl.formatMessage(messages.maxmovierating)}
+            </label>
+            <div className="form-input-area">
+              <div className="form-input-field">
+                <select
+                  id="maxMovieRating"
+                  disabled={isLoadingParentalControls}
+                  value={
+                    showMixedMovieHint ? '__mixed__' : currentMaxMovieRating
+                  }
+                  onChange={(e) => {
+                    markTouched('maxMovieRating');
+                    setCurrentMaxMovieRating(e.target.value);
+                  }}
+                >
+                  {showMixedMovieHint && (
+                    <option value="__mixed__" disabled>
+                      {intl.formatMessage(messages.variesacrossusers)}
+                    </option>
+                  )}
+                  <option value="">
+                    {intl.formatMessage(messages.norestriction)}
+                  </option>
+                  {getMovieRatingOptions().map((rating) => (
+                    <option key={rating.value} value={rating.value}>
+                      {rating.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+          <div className="form-row">
+            <label htmlFor="maxTvRating" className="text-label">
+              {intl.formatMessage(messages.maxtvrating)}
+            </label>
+            <div className="form-input-area">
+              <div className="form-input-field">
+                <select
+                  id="maxTvRating"
+                  disabled={isLoadingParentalControls}
+                  value={showMixedTvHint ? '__mixed__' : currentMaxTvRating}
+                  onChange={(e) => {
+                    markTouched('maxTvRating');
+                    setCurrentMaxTvRating(e.target.value);
+                  }}
+                >
+                  {showMixedTvHint && (
+                    <option value="__mixed__" disabled>
+                      {intl.formatMessage(messages.variesacrossusers)}
+                    </option>
+                  )}
+                  <option value="">
+                    {intl.formatMessage(messages.norestriction)}
+                  </option>
+                  {getTvRatingOptions().map((rating) => (
+                    <option key={rating.value} value={rating.value}>
+                      {rating.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="mt-2 text-sm text-gray-400">
+                {intl.formatMessage(messages.maxtvratingUnratedWarning)}
+              </div>
+            </div>
+          </div>
+          <div className="form-row">
+            <label htmlFor="blockUnrated" className="checkbox-label">
+              {intl.formatMessage(messages.blockunrated)}
+            </label>
+            <div className="form-input-area flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="blockUnrated"
+                ref={blockUnratedRef}
+                disabled={isLoadingParentalControls}
+                checked={currentBlockUnrated}
+                onChange={(e) => {
+                  markTouched('blockUnrated');
+                  setCurrentBlockUnrated(e.target.checked);
+                }}
+              />
+              {showMixedUnratedHint && (
+                <span className="text-xs text-gray-400">
+                  {intl.formatMessage(messages.variesacrossusers)}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </Modal>
   );
 };

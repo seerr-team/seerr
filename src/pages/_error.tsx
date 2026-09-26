@@ -12,6 +12,7 @@ interface ErrorProps {
 
 const messages = defineMessages('pages', {
   errormessagewithcode: '{statusCode} - {error}',
+  forbidden: 'Forbidden',
   internalservererror: 'Internal Server Error',
   serviceunavailable: 'Service Unavailable',
   somethingwentwrong: 'Something Went Wrong',
@@ -24,6 +25,8 @@ const ErrorPage: NextPage<ErrorProps> = ({ statusCode }) => {
 
   const getErrorMessage = (statusCode?: number) => {
     switch (statusCode) {
+      case 403:
+        return intl.formatMessage(messages.forbidden);
       case 500:
         return intl.formatMessage(messages.internalservererror);
       case 503:

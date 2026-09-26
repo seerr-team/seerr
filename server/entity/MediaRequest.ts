@@ -1,11 +1,20 @@
 import TheMovieDb from '@server/api/themoviedb';
 import {
+  shouldFilterMovie,
+  shouldFilterTv,
+} from '@server/constants/contentRatings';
+import {
   MediaRequestStatus,
   MediaStatus,
   MediaType,
 } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import type { MediaRequestBody } from '@server/interfaces/api/requestInterfaces';
+import {
+  getMovieCertification,
+  getTvCertification,
+  getUserContentRatingLimits,
+} from '@server/lib/contentRating';
 import notificationManager, { Notification } from '@server/lib/notifications';
 import overrideRules from '@server/lib/overrideRules';
 import { Permission } from '@server/lib/permissions';
@@ -40,6 +49,7 @@ export class QuotaRestrictedError extends Error {}
 export class DuplicateMediaRequestError extends Error {}
 export class NoSeasonsAvailableError extends Error {}
 export class BlocklistedMediaError extends Error {}
+export class ContentRatingRestrictedError extends Error {}
 
 type MediaRequestOptions = {
   isAutoRequest?: boolean;
@@ -170,6 +180,43 @@ export class MediaRequest {
       requestBody.mediaType === MediaType.MOVIE
         ? await tmdb.getMovie({ movieId: requestBody.mediaId })
         : await tmdb.getTvShow({ tvId: requestBody.mediaId });
+
+    const ratingLimits = getUserContentRatingLimits(requestUser);
+    if (ratingLimits) {
+      if (
+        requestBody.mediaType === MediaType.MOVIE &&
+        'release_dates' in tmdbMedia
+      ) {
+        const cert = getMovieCertification(tmdbMedia);
+        if (
+          shouldFilterMovie(
+            cert,
+            ratingLimits.maxMovieRating,
+            ratingLimits.blockUnrated
+          )
+        ) {
+          throw new ContentRatingRestrictedError(
+            'This content is restricted by your parental controls.'
+          );
+        }
+      } else if (
+        requestBody.mediaType === MediaType.TV &&
+        'content_ratings' in tmdbMedia
+      ) {
+        const cert = getTvCertification(tmdbMedia);
+        if (
+          shouldFilterTv(
+            cert,
+            ratingLimits.maxTvRating,
+            ratingLimits.blockUnrated
+          )
+        ) {
+          throw new ContentRatingRestrictedError(
+            'This content is restricted by your parental controls.'
+          );
+        }
+      }
+    }
 
     let media = await mediaRepository.findOne({
       where: {
