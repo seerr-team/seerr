@@ -7,7 +7,7 @@ import useToasts from '@app/hooks/useToasts';
 import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
-import { MediaStatus } from '@server/constants/media';
+import { MediaRequestStatus, MediaStatus } from '@server/constants/media';
 import type { MediaRequest } from '@server/entity/MediaRequest';
 import type { NonFunctionProperties } from '@server/interfaces/api/common';
 import type { QuotaResponse } from '@server/interfaces/api/userInterfaces';
@@ -42,7 +42,7 @@ interface RequestModalProps extends React.HTMLAttributes<HTMLDivElement> {
   is4k?: boolean;
   editRequest?: NonFunctionProperties<MediaRequest>;
   onCancel?: () => void;
-  onComplete?: (newStatus: MediaStatus) => void;
+  onComplete?: (newStatus: MediaStatus, is4k: boolean) => void;
   onUpdating?: (isUpdating: boolean) => void;
 }
 
@@ -103,16 +103,10 @@ const MovieRequestModal = ({
       if (response.data) {
         if (onComplete) {
           onComplete(
-            hasPermission(
-              is4k ? Permission.AUTO_APPROVE_4K : Permission.AUTO_APPROVE
-            ) ||
-              hasPermission(
-                is4k
-                  ? Permission.AUTO_APPROVE_4K_MOVIE
-                  : Permission.AUTO_APPROVE_MOVIE
-              )
+            response.data.status === MediaRequestStatus.APPROVED
               ? MediaStatus.PROCESSING
-              : MediaStatus.PENDING
+              : MediaStatus.PENDING,
+            is4k
           );
         }
         addToast(
@@ -141,7 +135,6 @@ const MovieRequestModal = ({
     onComplete,
     addToast,
     intl,
-    hasPermission,
   ]);
 
   const cancelRequest = async () => {
@@ -156,7 +149,7 @@ const MovieRequestModal = ({
 
       if (response.status === 204) {
         if (onComplete) {
-          onComplete(MediaStatus.UNKNOWN);
+          onComplete(MediaStatus.UNKNOWN, is4k);
         }
         addToast(
           <span>
@@ -211,7 +204,7 @@ const MovieRequestModal = ({
       );
 
       if (onComplete) {
-        onComplete(MediaStatus.PENDING);
+        onComplete(MediaStatus.PENDING, is4k);
       }
     } catch {
       addToast(<span>{intl.formatMessage(messages.errorediting)}</span>, {

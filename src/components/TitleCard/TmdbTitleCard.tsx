@@ -67,6 +67,9 @@ const TmdbTitleCard = ({
       }
       image={title.posterPath}
       status={title.mediaInfo?.status}
+      status4k={title.mediaInfo?.status4k}
+      inProgress={(title.mediaInfo?.downloadStatus ?? []).length > 0}
+      inProgress4k={(title.mediaInfo?.downloadStatus4k ?? []).length > 0}
       summary={title.overview}
       title={title.title}
       userScore={title.voteAverage}
@@ -84,6 +87,9 @@ const TmdbTitleCard = ({
       }
       image={title.posterPath}
       status={title.mediaInfo?.status}
+      status4k={title.mediaInfo?.status4k}
+      inProgress={(title.mediaInfo?.downloadStatus ?? []).length > 0}
+      inProgress4k={(title.mediaInfo?.downloadStatus4k ?? []).length > 0}
       summary={title.overview}
       title={title.name}
       userScore={title.voteAverage}

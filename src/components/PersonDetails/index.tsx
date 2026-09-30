@@ -183,6 +183,11 @@ const PersonDetails = () => {
                 summary={media.overview}
                 mediaType={media.mediaType as 'movie' | 'tv'}
                 status={media.mediaInfo?.status}
+                status4k={media.mediaInfo?.status4k}
+                inProgress={(media.mediaInfo?.downloadStatus ?? []).length > 0}
+                inProgress4k={
+                  (media.mediaInfo?.downloadStatus4k ?? []).length > 0
+                }
                 canExpand
               />
               {media.character && (
@@ -224,6 +229,11 @@ const PersonDetails = () => {
                 summary={media.overview}
                 mediaType={media.mediaType as 'movie' | 'tv'}
                 status={media.mediaInfo?.status}
+                status4k={media.mediaInfo?.status4k}
+                inProgress={(media.mediaInfo?.downloadStatus ?? []).length > 0}
+                inProgress4k={
+                  (media.mediaInfo?.downloadStatus4k ?? []).length > 0
+                }
                 canExpand
               />
               {media.job && (

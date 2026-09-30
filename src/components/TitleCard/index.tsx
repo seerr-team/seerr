@@ -8,6 +8,7 @@ import RequestModal from '@app/components/RequestModal';
 import ErrorCard from '@app/components/TitleCard/ErrorCard';
 import Placeholder from '@app/components/TitleCard/Placeholder';
 import { useIsTouch } from '@app/hooks/useIsTouch';
+import useSettings from '@app/hooks/useSettings';
 import useToasts from '@app/hooks/useToasts';
 import { Permission, UserType, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
@@ -39,8 +40,10 @@ interface TitleCardProps {
   userScore?: number;
   mediaType: MediaType;
   status?: MediaStatus;
+  status4k?: MediaStatus;
   canExpand?: boolean;
   inProgress?: boolean;
+  inProgress4k?: boolean;
   isAddedToWatchlist?: number | boolean;
   mutateParent?: () => void;
 }
@@ -62,17 +65,21 @@ const TitleCard = ({
   year,
   title,
   status,
+  status4k,
   mediaType,
   isAddedToWatchlist = false,
   inProgress = false,
+  inProgress4k = false,
   canExpand = false,
   mutateParent,
 }: TitleCardProps) => {
   const isTouch = useIsTouch();
   const intl = useIntl();
   const { user, hasPermission } = useUser();
+  const settings = useSettings();
   const [isUpdating, setIsUpdating] = useState(false);
   const [currentStatus, setCurrentStatus] = useState(status);
+  const [currentStatus4k, setCurrentStatus4k] = useState(status4k);
   const [showDetail, setShowDetail] = useState(false);
   const [showRequestModal, setShowRequestModal] = useState(false);
   const { addToast } = useToasts();
@@ -90,10 +97,21 @@ const TitleCard = ({
     setCurrentStatus(status);
   }, [status]);
 
-  const requestComplete = useCallback((newStatus: MediaStatus) => {
-    setCurrentStatus(newStatus);
-    setShowRequestModal(false);
-  }, []);
+  useEffect(() => {
+    setCurrentStatus4k(status4k);
+  }, [status4k]);
+
+  const requestComplete = useCallback(
+    (newStatus: MediaStatus, is4k = false) => {
+      if (is4k) {
+        setCurrentStatus4k(newStatus);
+      } else {
+        setCurrentStatus(newStatus);
+      }
+      setShowRequestModal(false);
+    },
+    []
+  );
 
   const requestUpdating = useCallback(
     (status: boolean) => setIsUpdating(status),
@@ -314,6 +332,20 @@ const TitleCard = ({
     type: 'or',
   });
 
+  const show4kStatus =
+    ((mediaType === 'movie' && settings.currentSettings.movie4kEnabled) ||
+      (mediaType === 'tv' && settings.currentSettings.series4kEnabled)) &&
+    hasPermission(
+      [
+        Permission.MANAGE_REQUESTS,
+        Permission.REQUEST_4K,
+        mediaType === 'movie'
+          ? Permission.REQUEST_4K_MOVIE
+          : Permission.REQUEST_4K_TV,
+      ],
+      { type: 'or' }
+    );
+
   return (
     <div
       className={canExpand ? 'w-full' : 'w-36 sm:w-36 md:w-44'}
@@ -456,15 +488,28 @@ const TitleCard = ({
                   </Button>
                 </Tooltip>
               )}
-            {currentStatus && currentStatus !== MediaStatus.UNKNOWN && (
-              <div className="flex flex-col items-center gap-1">
-                <div className="pointer-events-none z-40 flex">
+            {((currentStatus && currentStatus !== MediaStatus.UNKNOWN) ||
+              (show4kStatus &&
+                currentStatus4k &&
+                currentStatus4k !== MediaStatus.UNKNOWN)) && (
+              <div className="pointer-events-none z-40 flex flex-col items-end gap-1">
+                {currentStatus && currentStatus !== MediaStatus.UNKNOWN && (
                   <StatusBadgeMini
                     status={currentStatus}
                     inProgress={inProgress}
                     shrink
                   />
-                </div>
+                )}
+                {show4kStatus &&
+                  currentStatus4k &&
+                  currentStatus4k !== MediaStatus.UNKNOWN && (
+                    <StatusBadgeMini
+                      status={currentStatus4k}
+                      inProgress={inProgress4k}
+                      is4k
+                      shrink
+                    />
+                  )}
               </div>
             )}
           </div>
