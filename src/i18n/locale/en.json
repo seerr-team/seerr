@@ -572,6 +572,7 @@
   "components.RequestModal.QuotaDisplay.seasonlimit": "{limit, plural, one {season} other {seasons}}",
   "components.RequestModal.SearchByNameModal.nomatches": "We were unable to find a match for this series.",
   "components.RequestModal.SearchByNameModal.notvdbiddescription": "We were unable to automatically match this series. Please select the correct match below.",
+  "components.RequestModal.SearchByNameModal.showmore": "Show more results",
   "components.RequestModal.alreadyrequested": "Already Requested",
   "components.RequestModal.approve": "Approve Request",
   "components.RequestModal.autoapproval": "Automatic Approval",
