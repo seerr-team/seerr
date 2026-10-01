@@ -15,7 +15,7 @@ These settings are stored in the `settings.json` file located in the Seerr data 
 
 Apart from the settings, all other data—including user accounts, media requests, blocklist etc. are stored in the database (either SQLite or PostgreSQL).
 
-# Backup
+## Backup
 
 ### SQLite
 
@@ -48,7 +48,7 @@ Depending on how your PostgreSQL instance is configured, you may need to add the
 pg_dump -U <database_user> -d <database_name> -f /tmp/seerr_db.sql
 ```
 
-# Restore
+## Restore
 
 ### SQLite
 
