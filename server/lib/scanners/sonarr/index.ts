@@ -36,9 +36,9 @@ class SonarrScanner
   private sonarrApi: SonarrAPI;
   private scannedTvdbIds: Set<number> = new Set();
   private scanned4kTvdbIds: Set<number> = new Set();
-  // Keyed on tmdbId: media.tvdbId can be null. Excludes unmonitored titles.
-  private processingTmdbIds: Set<number> = new Set();
-  private processing4kTmdbIds: Set<number> = new Set();
+  // Season numbers keyed on tmdbId, as media.tvdbId can be null. Excludes unmonitored seasons.
+  private processingTmdbIds: Map<number, Set<number>> = new Map();
+  private processing4kTmdbIds: Map<number, Set<number>> = new Map();
   private didScanStandard = false;
   private didScan4k = false;
   private serverReturnedEmpty = false;
@@ -144,13 +144,18 @@ class SonarrScanner
         this.didScan4k = false;
       }
 
-      await this.resolveStatusResets((media, is4k) => {
+      await this.resolveStatusResets((media, is4k, seasonNumber) => {
         const scanComplete = is4k ? this.didScan4k : this.didScanStandard;
         const processingIds = is4k
           ? this.processing4kTmdbIds
           : this.processingTmdbIds;
 
-        return scanComplete && !processingIds.has(media.tmdbId);
+        return (
+          scanComplete &&
+          (seasonNumber === undefined
+            ? !processingIds.has(media.tmdbId)
+            : !processingIds.get(media.tmdbId)?.has(seasonNumber))
+        );
       });
 
       await this.cleanupOrphanedShows();
@@ -236,11 +241,18 @@ class SonarrScanner
         });
       }
 
-      if (processableSeasons.some((season) => season.processing)) {
-        if (server4k) {
-          this.processing4kTmdbIds.add(tmdbId);
-        } else {
-          this.processingTmdbIds.add(tmdbId);
+      const processing = server4k
+        ? this.processing4kTmdbIds
+        : this.processingTmdbIds;
+
+      for (const season of processableSeasons) {
+        if (season.processing) {
+          processing.set(
+            tmdbId,
+            (processing.get(tmdbId) ?? new Set<number>()).add(
+              season.seasonNumber
+            )
+          );
         }
       }
 
