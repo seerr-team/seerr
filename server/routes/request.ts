@@ -25,6 +25,12 @@ import { Permission } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { isAuthenticated } from '@server/middleware/auth';
+import requestLock, {
+  mediaKey,
+  mediaLock,
+  requestKey,
+  userKey,
+} from '@server/utils/requestLock';
 import { Router } from 'express';
 
 const requestRoutes = Router();
@@ -462,143 +468,235 @@ requestRoutes.put<{ requestId: string }>(
   async (req, res, next) => {
     const requestRepository = getRepository(MediaRequest);
     const userRepository = getRepository(User);
+    const requestId = Number(req.params.requestId);
     try {
-      const request = await requestRepository.findOne({
-        where: {
-          id: Number(req.params.requestId),
-        },
-      });
-
-      if (!request) {
-        return next({ status: 404, message: 'Request not found.' });
-      }
-
-      if (
-        (request.requestedBy.id !== req.user?.id ||
-          (req.body.mediaType !== 'tv' &&
-            !req.user?.hasPermission(Permission.REQUEST_ADVANCED))) &&
-        !req.user?.hasPermission(Permission.MANAGE_REQUESTS)
-      ) {
-        return next({
-          status: 403,
-          message: 'You do not have permission to modify this request.',
+      // Ordering is request then owner here, user then media on create, so no cycle
+      return await requestLock.dispatch(requestKey(requestId), async () => {
+        const request = await requestRepository.findOne({
+          where: {
+            id: requestId,
+          },
         });
-      }
 
-      if (request.status !== MediaRequestStatus.PENDING) {
-        return next({
-          status: 409,
-          message: 'Only pending requests can be modified.',
-        });
-      }
-
-      let requestUser = request.requestedBy;
-
-      if (
-        req.body.userId &&
-        req.body.userId !== request.requestedBy.id &&
-        !req.user?.hasPermission([
-          Permission.MANAGE_USERS,
-          Permission.MANAGE_REQUESTS,
-        ])
-      ) {
-        return next({
-          status: 403,
-          message: 'You do not have permission to modify the request user.',
-        });
-      } else if (req.body.userId) {
-        requestUser = await userRepository.findOneOrFail({
-          where: { id: req.body.userId },
-        });
-      }
-
-      if (req.body.mediaType === MediaType.MOVIE) {
-        request.serverId = req.body.serverId;
-        request.profileId = req.body.profileId;
-        request.rootFolder = req.body.rootFolder;
-        request.tags = req.body.tags;
-        request.requestedBy = requestUser as User;
-
-        await requestRepository.save(request);
-      } else if (req.body.mediaType === MediaType.TV) {
-        const mediaRepository = getRepository(Media);
-        request.serverId = req.body.serverId;
-        request.profileId = req.body.profileId;
-        request.rootFolder = req.body.rootFolder;
-        request.languageProfileId = req.body.languageProfileId;
-        request.tags = req.body.tags;
-        request.requestedBy = requestUser as User;
-
-        const requestedSeasons = req.body.seasons as number[] | undefined;
-
-        if (!requestedSeasons || requestedSeasons.length === 0) {
-          throw new Error(
-            'Missing seasons. If you want to cancel a series request, use the DELETE method.'
-          );
+        if (!request) {
+          return next({ status: 404, message: 'Request not found.' });
         }
 
-        // Get existing media so we can work with all the requests
-        const media = await mediaRepository.findOneOrFail({
-          where: { tmdbId: request.media.tmdbId, mediaType: MediaType.TV },
-          relations: { requests: true },
-        });
-
-        // Get all requested seasons that are not part of this request we are editing
-        const existingSeasons = media.requests
-          .filter(
-            (r) =>
-              r.is4k === request.is4k &&
-              r.id !== request.id &&
-              r.status !== MediaRequestStatus.DECLINED &&
-              r.status !== MediaRequestStatus.COMPLETED
-          )
-          .reduce((seasons, r) => {
-            const combinedSeasons = r.seasons.map(
-              (season) => season.seasonNumber
-            );
-
-            return [...seasons, ...combinedSeasons];
-          }, [] as number[]);
-
-        const filteredSeasons = requestedSeasons.filter(
-          (rs) => !existingSeasons.includes(rs)
-        );
-
-        if (filteredSeasons.length === 0) {
+        if (
+          (request.requestedBy.id !== req.user?.id ||
+            (req.body.mediaType !== 'tv' &&
+              !req.user?.hasPermission(Permission.REQUEST_ADVANCED))) &&
+          !req.user?.hasPermission(Permission.MANAGE_REQUESTS)
+        ) {
           return next({
-            status: 202,
-            message: 'No seasons available to request',
+            status: 403,
+            message: 'You do not have permission to modify this request.',
           });
         }
 
-        const newSeasons = filteredSeasons.filter(
-          (sn) => !request.seasons.map((s) => s.seasonNumber).includes(sn)
-        );
-
-        request.seasons = request.seasons.filter((rs) =>
-          filteredSeasons.includes(rs.seasonNumber)
-        );
-
-        if (newSeasons.length > 0) {
-          logger.debug('Adding new seasons to request', {
-            label: 'Media Request',
-            newSeasons,
+        if (request.status !== MediaRequestStatus.PENDING) {
+          return next({
+            status: 409,
+            message: 'Only pending requests can be modified.',
           });
-          request.seasons.push(
-            ...newSeasons.map(
-              (ns) =>
-                new SeasonRequest({
-                  seasonNumber: ns,
-                  status: MediaRequestStatus.PENDING,
-                })
-            )
-          );
         }
 
-        await requestRepository.save(request);
-      }
+        const previousOwnerId = request.requestedBy.id;
+        let requestUser = request.requestedBy;
 
-      return res.status(200).json(request);
+        if (
+          req.body.userId &&
+          req.body.userId !== request.requestedBy.id &&
+          !req.user?.hasPermission([
+            Permission.MANAGE_USERS,
+            Permission.MANAGE_REQUESTS,
+          ])
+        ) {
+          return next({
+            status: 403,
+            message: 'You do not have permission to modify the request user.',
+          });
+        } else if (req.body.userId) {
+          requestUser = await userRepository.findOneOrFail({
+            where: { id: req.body.userId },
+          });
+        }
+
+        // Reassignment moves every season on the request onto the new owner's
+        // quota, so it is charged in full rather than as a delta
+        const ownerChanging = requestUser.id !== previousOwnerId;
+
+        return requestLock.dispatch(userKey(requestUser.id), async () => {
+          if (req.body.mediaType === MediaType.MOVIE) {
+            if (ownerChanging && !request.ignoreQuota) {
+              const quotas = await requestUser.getQuota();
+
+              if (quotas.movie.restricted) {
+                return next({
+                  status: 403,
+                  message: 'Movie Quota exceeded.',
+                });
+              }
+            }
+
+            request.serverId = req.body.serverId;
+            request.profileId = req.body.profileId;
+            request.rootFolder = req.body.rootFolder;
+            request.tags = req.body.tags;
+            request.requestedBy = requestUser as User;
+
+            await requestRepository.save(request);
+          } else if (req.body.mediaType === MediaType.TV) {
+            const mediaRepository = getRepository(Media);
+            request.serverId = req.body.serverId;
+            request.profileId = req.body.profileId;
+            request.rootFolder = req.body.rootFolder;
+            request.languageProfileId = req.body.languageProfileId;
+            request.tags = req.body.tags;
+            request.requestedBy = requestUser as User;
+
+            const requestedSeasons = req.body.seasons as number[] | undefined;
+
+            if (!requestedSeasons || requestedSeasons.length === 0) {
+              throw new Error(
+                'Missing seasons. If you want to cancel a series request, use the DELETE method.'
+              );
+            }
+
+            // Same key as create, so an edit cannot claim a season that a new
+            // request is taking at the same moment
+            return mediaLock.dispatch(
+              mediaKey(MediaType.TV, request.media.tmdbId),
+              async () => {
+                // Get existing media so we can work with all the requests
+                const media = await mediaRepository.findOneOrFail({
+                  where: {
+                    tmdbId: request.media.tmdbId,
+                    mediaType: MediaType.TV,
+                  },
+                  relations: { requests: true },
+                });
+
+                // Get all requested seasons that are not part of this request we are editing
+                const existingSeasons = media.requests
+                  .filter(
+                    (r) =>
+                      r.is4k === request.is4k &&
+                      r.id !== request.id &&
+                      r.status !== MediaRequestStatus.DECLINED &&
+                      r.status !== MediaRequestStatus.COMPLETED
+                  )
+                  .reduce((seasons, r) => {
+                    const combinedSeasons = r.seasons.map(
+                      (season) => season.seasonNumber
+                    );
+
+                    return [...seasons, ...combinedSeasons];
+                  }, [] as number[]);
+
+                const currentSeasons = request.seasons.map(
+                  (s) => s.seasonNumber
+                );
+
+                // Seasons the media already covers cannot be requested again, while
+                // the ones this request holds stay on it
+                const coveredSeasons = (media.seasons ?? [])
+                  .filter(
+                    (season) =>
+                      season[request.is4k ? 'status4k' : 'status'] !==
+                        MediaStatus.UNKNOWN &&
+                      season[request.is4k ? 'status4k' : 'status'] !==
+                        MediaStatus.DELETED
+                  )
+                  .map((season) => season.seasonNumber)
+                  .filter((sn) => !currentSeasons.includes(sn));
+
+                const filteredSeasons = requestedSeasons.filter(
+                  (rs) => !existingSeasons.includes(rs)
+                );
+
+                const keptSeasons = filteredSeasons.filter((sn) =>
+                  currentSeasons.includes(sn)
+                );
+
+                const newSeasons = filteredSeasons.filter(
+                  (sn) =>
+                    !currentSeasons.includes(sn) && !coveredSeasons.includes(sn)
+                );
+
+                const resultingSeasonCount =
+                  keptSeasons.length + newSeasons.length;
+
+                if (resultingSeasonCount === 0) {
+                  return next({
+                    status: 202,
+                    message: 'No seasons available to request',
+                  });
+                }
+
+                if (!request.ignoreQuota) {
+                  const quotas = await requestUser.getQuota();
+
+                  // Only the seasons getQuota already counted for this owner are
+                  // paid for, so the edit is charged for everything it left out
+                  const quotaWindowStart = new Date();
+                  if (quotas.tv.days) {
+                    quotaWindowStart.setDate(
+                      quotaWindowStart.getDate() - quotas.tv.days
+                    );
+                  }
+
+                  const countedAlready =
+                    !ownerChanging &&
+                    (!quotas.tv.days || request.createdAt > quotaWindowStart);
+
+                  const priorSeasonCount = countedAlready
+                    ? request.seasons.length
+                    : 0;
+                  const requiredSeasons =
+                    resultingSeasonCount - priorSeasonCount;
+
+                  if (
+                    quotas.tv.limit &&
+                    requiredSeasons > (quotas.tv.remaining ?? 0)
+                  ) {
+                    return next({
+                      status: 403,
+                      message: 'Series Quota exceeded.',
+                    });
+                  }
+                }
+
+                request.seasons = request.seasons.filter((rs) =>
+                  keptSeasons.includes(rs.seasonNumber)
+                );
+
+                if (newSeasons.length > 0) {
+                  logger.debug('Adding new seasons to request', {
+                    label: 'Media Request',
+                    newSeasons,
+                  });
+                  request.seasons.push(
+                    ...newSeasons.map(
+                      (ns) =>
+                        new SeasonRequest({
+                          seasonNumber: ns,
+                          status: MediaRequestStatus.PENDING,
+                        })
+                    )
+                  );
+                }
+
+                await requestRepository.save(request);
+
+                return res.status(200).json(request);
+              }
+            );
+          }
+
+          return res.status(200).json(request);
+        });
+      });
     } catch (e) {
       next({ status: 500, message: e.message });
     }
@@ -607,27 +705,30 @@ requestRoutes.put<{ requestId: string }>(
 
 requestRoutes.delete('/:requestId', async (req, res, next) => {
   const requestRepository = getRepository(MediaRequest);
+  const requestId = Number(req.params.requestId);
 
   try {
-    const request = await requestRepository.findOneOrFail({
-      where: { id: Number(req.params.requestId) },
-      relations: { requestedBy: true, modifiedBy: true },
-    });
-
-    if (
-      !req.user?.hasPermission(Permission.MANAGE_REQUESTS) &&
-      (request.requestedBy.id !== req.user?.id ||
-        request.status !== MediaRequestStatus.PENDING)
-    ) {
-      return next({
-        status: 401,
-        message: 'You do not have permission to delete this request.',
+    return await requestLock.dispatch(requestKey(requestId), async () => {
+      const request = await requestRepository.findOneOrFail({
+        where: { id: requestId },
+        relations: { requestedBy: true, modifiedBy: true },
       });
-    }
 
-    await requestRepository.remove(request);
+      if (
+        !req.user?.hasPermission(Permission.MANAGE_REQUESTS) &&
+        (request.requestedBy.id !== req.user?.id ||
+          request.status !== MediaRequestStatus.PENDING)
+      ) {
+        return next({
+          status: 401,
+          message: 'You do not have permission to delete this request.',
+        });
+      }
 
-    return res.status(204).send();
+      await requestRepository.remove(request);
+
+      return res.status(204).send();
+    });
   } catch (e) {
     logger.error('Something went wrong deleting a request.', {
       label: 'API',
@@ -644,26 +745,29 @@ requestRoutes.post<{
   isAuthenticated(Permission.MANAGE_REQUESTS),
   async (req, res, next) => {
     const requestRepository = getRepository(MediaRequest);
+    const requestId = Number(req.params.requestId);
 
     try {
-      const request = await requestRepository.findOneOrFail({
-        where: { id: Number(req.params.requestId) },
-        relations: { requestedBy: true, modifiedBy: true },
-      });
-
-      if (request.status !== MediaRequestStatus.FAILED) {
-        return next({
-          status: 409,
-          message: 'Only failed requests can be retried.',
+      return await requestLock.dispatch(requestKey(requestId), async () => {
+        const request = await requestRepository.findOneOrFail({
+          where: { id: requestId },
+          relations: { requestedBy: true, modifiedBy: true },
         });
-      }
 
-      // this also triggers updating the parent media's status & sending to *arr
-      request.status = MediaRequestStatus.APPROVED;
-      request.modifiedBy = req.user;
-      await requestRepository.save(request);
+        if (request.status !== MediaRequestStatus.FAILED) {
+          return next({
+            status: 409,
+            message: 'Only failed requests can be retried.',
+          });
+        }
 
-      return res.status(200).json(request);
+        // this also triggers updating the parent media's status & sending to *arr
+        request.status = MediaRequestStatus.APPROVED;
+        request.modifiedBy = req.user;
+        await requestRepository.save(request);
+
+        return res.status(200).json(request);
+      });
     } catch (e) {
       logger.error('Error processing request retry', {
         label: 'Media Request',
@@ -682,41 +786,44 @@ requestRoutes.post<{
   isAuthenticated(Permission.MANAGE_REQUESTS),
   async (req, res, next) => {
     const requestRepository = getRepository(MediaRequest);
+    const requestId = Number(req.params.requestId);
 
     try {
-      const request = await requestRepository.findOneOrFail({
-        where: { id: Number(req.params.requestId) },
-        relations: { requestedBy: true, modifiedBy: true },
-      });
-
-      let newStatus: MediaRequestStatus;
-
-      switch (req.params.status) {
-        case 'approve':
-          newStatus = MediaRequestStatus.APPROVED;
-          break;
-        case 'decline':
-          newStatus = MediaRequestStatus.DECLINED;
-          break;
-        default:
-          return next({
-            status: 400,
-            message: 'Status must be approve or decline.',
-          });
-      }
-
-      if (request.status !== MediaRequestStatus.PENDING) {
-        return next({
-          status: 409,
-          message: 'Only pending requests can be approved or declined.',
+      return await requestLock.dispatch(requestKey(requestId), async () => {
+        const request = await requestRepository.findOneOrFail({
+          where: { id: requestId },
+          relations: { requestedBy: true, modifiedBy: true },
         });
-      }
 
-      request.status = newStatus;
-      request.modifiedBy = req.user;
-      await requestRepository.save(request);
+        let newStatus: MediaRequestStatus;
 
-      return res.status(200).json(request);
+        switch (req.params.status) {
+          case 'approve':
+            newStatus = MediaRequestStatus.APPROVED;
+            break;
+          case 'decline':
+            newStatus = MediaRequestStatus.DECLINED;
+            break;
+          default:
+            return next({
+              status: 400,
+              message: 'Status must be approve or decline.',
+            });
+        }
+
+        if (request.status !== MediaRequestStatus.PENDING) {
+          return next({
+            status: 409,
+            message: 'Only pending requests can be approved or declined.',
+          });
+        }
+
+        request.status = newStatus;
+        request.modifiedBy = req.user;
+        await requestRepository.save(request);
+
+        return res.status(200).json(request);
+      });
     } catch (e) {
       logger.error('Error processing request update', {
         label: 'Media Request',

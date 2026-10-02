@@ -34,7 +34,11 @@ movieRoutes.get('/:id', async (req, res, next) => {
       },
     });
 
-    const data = mapMovieDetails(tmdbMovie, media, onUserWatchlist);
+    const data = mapMovieDetails(
+      tmdbMovie,
+      media?.filter(req.user),
+      onUserWatchlist
+    );
 
     // TMDB issue where it doesnt fallback to English when no overview is available in requested locale.
     if (!data.overview) {

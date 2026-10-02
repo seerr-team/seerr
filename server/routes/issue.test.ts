@@ -13,12 +13,17 @@ import { checkUser } from '@server/middleware/auth';
 import { IssueCommentSubscriber } from '@server/subscriber/IssueCommentSubscriber';
 import { IssueSubscriber } from '@server/subscriber/IssueSubscriber';
 import { setupTestDb } from '@server/test/db';
+import {
+  assertNoCredentials,
+  seedUserSettings,
+} from '@server/test/userSettings';
 import type { Express } from 'express';
 import express from 'express';
 import session from 'express-session';
 import request from 'supertest';
 import authRoutes from './auth';
 import issueRoutes from './issue';
+import issueCommentRoutes from './issueComment';
 
 const sendIssueNotificationMock = mock.method(
   IssueSubscriber.prototype as unknown as {
@@ -51,6 +56,7 @@ function createApp() {
   app.use(checkUser);
   app.use('/auth', authRoutes);
   app.use('/issue', issueRoutes);
+  app.use('/issueComment', issueCommentRoutes);
   app.use(
     (
       err: { status?: number; message?: string },
@@ -213,5 +219,32 @@ describe('POST /issue', () => {
 
     assert.strictEqual(res.status, 404);
     assert.strictEqual(res.body.message, 'Issue user not found');
+  });
+});
+
+describe('GET /issueComment/:commentId', () => {
+  it('omits notification settings from the comment author', async () => {
+    const userRepo = getRepository(User);
+    const media = await seedMedia();
+    const friend = await userRepo.findOneOrFail({
+      where: { email: 'demo@seerr.dev' },
+    });
+    await seedUserSettings('demo@seerr.dev');
+
+    const agent = await loginAs('admin@seerr.dev', 'test1234');
+    const created = await agent.post('/issue').send({
+      issueType: IssueType.VIDEO,
+      message: 'Playback stutters near the end.',
+      mediaId: media.id,
+      userId: friend.id,
+    });
+    assert.strictEqual(created.status, 201);
+
+    const res = await agent.get(`/issueComment/${created.body.comments[0].id}`);
+
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.body.user.email, 'demo@seerr.dev');
+    assert.ok(!('settings' in res.body.user));
+    assertNoCredentials(res.body);
   });
 });

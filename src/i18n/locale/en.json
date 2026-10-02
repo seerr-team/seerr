@@ -1054,7 +1054,6 @@
   "components.Settings.SettingsMain.validationApplicationUrl": "You must provide a valid URL",
   "components.Settings.SettingsMain.validationApplicationUrlTrailingSlash": "URL must not end in a trailing slash",
   "components.Settings.SettingsMain.validationUrl": "You must provide a valid URL",
-  "components.Settings.SettingsMain.validationUrlTrailingSlash": "URL must not end in a trailing slash",
   "components.Settings.SettingsMain.versionCheck": "Version Check",
   "components.Settings.SettingsMain.versionCheckTip": "Automatically check for new versions on GitHub.",
   "components.Settings.SettingsMain.youtubeUrl": "YouTube URL",

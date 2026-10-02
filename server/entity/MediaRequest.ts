@@ -13,7 +13,11 @@ import { Permission } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { DbAwareColumn, resolveDbType } from '@server/utils/DbColumnHelper';
-import requestLock from '@server/utils/requestLock';
+import requestLock, {
+  mediaKey,
+  mediaLock,
+  userKey,
+} from '@server/utils/requestLock';
 import { truncate } from 'lodash';
 import {
   AfterInsert,
@@ -49,8 +53,22 @@ export class MediaRequest {
     user: User,
     options: MediaRequestOptions = {}
   ): Promise<MediaRequest> {
-    return requestLock.dispatch(requestBody.userId || user.id, () =>
-      MediaRequest.createRequest(requestBody, user, options)
+    // is4k is optional, and an undefined one binds as null in the duplicate query
+    const body = { ...requestBody, is4k: !!requestBody.is4k };
+
+    // Only a caller allowed to set the request user may queue on their lock
+    const lockUserId =
+      body.userId &&
+      user.hasPermission([Permission.MANAGE_USERS, Permission.MANAGE_REQUESTS])
+        ? body.userId
+        : user.id;
+
+    // No is4k in the key: one media row holds both statuses, so a 4k and a
+    // non-4k request for the same title race to create it
+    return requestLock.dispatch(userKey(lockUserId), () =>
+      mediaLock.dispatch(mediaKey(body.mediaType, body.mediaId), () =>
+        MediaRequest.createRequest(body, user, options)
+      )
     );
   }
 
@@ -245,42 +263,47 @@ export class MediaRequest {
       }
     }
 
-    // Apply overrides if the user is not an admin or has the "advanced request" permission
-    const useOverrides = !user.hasPermission([Permission.MANAGE_REQUESTS], {
-      type: 'or',
-    });
-
     let rootFolder = requestBody.rootFolder;
     let profileId = requestBody.profileId;
     let tags = requestBody.tags;
 
-    if (useOverrides) {
-      const overrideRulesResult = await overrideRules({
-        mediaType: requestBody.mediaType,
-        is4k: requestBody.is4k || false,
-        tmdbMedia,
-        requestUser,
-        tags,
+    const ruleResult = await overrideRules({
+      mediaType: requestBody.mediaType,
+      is4k: requestBody.is4k || false,
+      tmdbMedia,
+      requestUser,
+      tags,
+    });
+    const isAdvanced = user.hasPermission(
+      [Permission.MANAGE_REQUESTS, Permission.REQUEST_ADVANCED],
+      { type: 'or' }
+    );
+    // Advanced users pick these in the modal, so we don't want to override them if they are set
+    const overrideRulesResult = isAdvanced
+      ? {
+          rootFolder: rootFolder ? null : ruleResult.rootFolder,
+          profileId: profileId ? null : ruleResult.profileId,
+          tags: tags ? null : ruleResult.tags,
+        }
+      : ruleResult;
+    if (overrideRulesResult.rootFolder) {
+      rootFolder = overrideRulesResult.rootFolder;
+    }
+    if (overrideRulesResult.profileId) {
+      profileId = overrideRulesResult.profileId;
+    }
+    if (overrideRulesResult.tags) {
+      tags = overrideRulesResult.tags;
+    }
+    if (
+      overrideRulesResult.rootFolder ||
+      overrideRulesResult.profileId ||
+      overrideRulesResult.tags
+    ) {
+      logger.debug('Override rule applied.', {
+        label: 'Override Rules',
+        overrides: overrideRulesResult,
       });
-      if (overrideRulesResult.rootFolder) {
-        rootFolder = overrideRulesResult.rootFolder;
-      }
-      if (overrideRulesResult.profileId) {
-        profileId = overrideRulesResult.profileId;
-      }
-      if (overrideRulesResult.tags) {
-        tags = overrideRulesResult.tags;
-      }
-      if (
-        overrideRulesResult.rootFolder ||
-        overrideRulesResult.profileId ||
-        overrideRulesResult.tags
-      ) {
-        logger.debug('Override rule applied.', {
-          label: 'Override Rules',
-          overrides: overrideRulesResult,
-        });
-      }
     }
 
     if (requestBody.mediaType === MediaType.MOVIE) {
