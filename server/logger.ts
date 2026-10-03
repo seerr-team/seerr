@@ -15,6 +15,19 @@ const hformat = winston.format.printf(
   }
 );
 
+// logform's colorize() forces colors on, so only add it when color is wanted.
+// Same precedence as Node: FORCE_COLOR, then NO_COLOR, then whether stdout is a TTY.
+const useColor = (() => {
+  const forceColor = process.env.FORCE_COLOR;
+  if (forceColor !== undefined) {
+    return forceColor !== '0' && forceColor.toLowerCase() !== 'false';
+  }
+  if (process.env.NO_COLOR) {
+    return false;
+  }
+  return !!process.stdout.isTTY;
+})();
+
 const seerrFileTransport = new winston.transports.DailyRotateFile({
   filename: process.env.CONFIG_DIRECTORY
     ? `${process.env.CONFIG_DIRECTORY}/logs/seerr-%DATE%.log`
@@ -61,7 +74,7 @@ const logger = winston.createLogger({
   transports: [
     new winston.transports.Console({
       format: winston.format.combine(
-        winston.format.colorize(),
+        ...(useColor ? [winston.format.colorize()] : []),
         winston.format.splat(),
         winston.format.timestamp(),
         hformat
