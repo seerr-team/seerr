@@ -174,6 +174,10 @@ before(async () => {
 
 beforeEach(() => {
   sendNotificationMock.resetCalls();
+  // Settings are a process-wide singleton, so a test that configures a server
+  // would otherwise hand it to every test that runs after it
+  getSettings().radarr = [];
+  getSettings().sonarr = [];
 });
 
 setupTestDb();
@@ -337,6 +341,121 @@ describe('PUT /request/:requestId (movie)', () => {
     assert.strictEqual(saved.rootFolder, '/updated/movies');
   });
 
+  it('clears stored overrides when the fields match the service defaults', async () => {
+    configureRadarr([
+      { id: 3, activeDirectory: '/movies', activeProfileId: 1, tags: [] },
+    ]);
+
+    const requestRepo = getRepository(MediaRequest);
+    const mediaRequest = await seedRequest();
+
+    const agent = await loginAs('admin@seerr.dev', 'test1234');
+
+    await agent.put(`/request/${mediaRequest.id}`).send({
+      mediaType: MediaType.MOVIE,
+      serverId: 3,
+      profileId: 7,
+      rootFolder: '/updated/movies',
+      tags: [1, 2],
+    });
+
+    const res = await agent.put(`/request/${mediaRequest.id}`).send({
+      mediaType: MediaType.MOVIE,
+      serverId: 3,
+      profileId: 1,
+      rootFolder: '/movies',
+      tags: [],
+    });
+
+    assert.strictEqual(res.status, 200);
+
+    const saved = await requestRepo.findOneOrFail({
+      where: { id: mediaRequest.id },
+    });
+    assert.strictEqual(saved.rootFolder, null);
+    assert.strictEqual(saved.profileId, null);
+    assert.strictEqual(saved.tags, null);
+  });
+
+  it('stores overrides that differ from the service defaults', async () => {
+    configureRadarr([
+      { id: 3, activeDirectory: '/movies', activeProfileId: 1, tags: [] },
+    ]);
+
+    const requestRepo = getRepository(MediaRequest);
+    const mediaRequest = await seedRequest();
+
+    const agent = await loginAs('admin@seerr.dev', 'test1234');
+    const res = await agent.put(`/request/${mediaRequest.id}`).send({
+      mediaType: MediaType.MOVIE,
+      serverId: 3,
+      profileId: 7,
+      rootFolder: '/updated/movies',
+      tags: [1, 2],
+    });
+
+    assert.strictEqual(res.status, 200);
+
+    const saved = await requestRepo.findOneOrFail({
+      where: { id: mediaRequest.id },
+    });
+    assert.strictEqual(saved.rootFolder, '/updated/movies');
+    assert.strictEqual(saved.profileId, 7);
+    assert.deepStrictEqual(saved.tags, [1, 2]);
+  });
+
+  it('ignores the order of tags when deciding they match the defaults', async () => {
+    configureRadarr([
+      { id: 3, activeDirectory: '/movies', activeProfileId: 1, tags: [1, 2] },
+    ]);
+
+    const requestRepo = getRepository(MediaRequest);
+    const mediaRequest = await seedRequest();
+
+    const agent = await loginAs('admin@seerr.dev', 'test1234');
+    const res = await agent.put(`/request/${mediaRequest.id}`).send({
+      mediaType: MediaType.MOVIE,
+      serverId: 3,
+      tags: [2, 1],
+    });
+
+    assert.strictEqual(res.status, 200);
+
+    const saved = await requestRepo.findOneOrFail({
+      where: { id: mediaRequest.id },
+    });
+    assert.strictEqual(saved.tags, null);
+  });
+
+  it('keeps stored overrides when the fields are omitted', async () => {
+    const requestRepo = getRepository(MediaRequest);
+    const mediaRequest = await seedRequest();
+
+    const agent = await loginAs('admin@seerr.dev', 'test1234');
+
+    await agent.put(`/request/${mediaRequest.id}`).send({
+      mediaType: MediaType.MOVIE,
+      serverId: 3,
+      profileId: 7,
+      rootFolder: '/updated/movies',
+      tags: [1, 2],
+    });
+
+    const res = await agent.put(`/request/${mediaRequest.id}`).send({
+      mediaType: MediaType.MOVIE,
+      serverId: 3,
+    });
+
+    assert.strictEqual(res.status, 200);
+
+    const saved = await requestRepo.findOneOrFail({
+      where: { id: mediaRequest.id },
+    });
+    assert.strictEqual(saved.rootFolder, '/updated/movies');
+    assert.strictEqual(saved.profileId, 7);
+    assert.deepStrictEqual(saved.tags, [1, 2]);
+  });
+
   it('refuses to modify a request that is no longer pending', async () => {
     const requestRepo = getRepository(MediaRequest);
     const mediaRequest = await seedRequest(MediaRequestStatus.APPROVED);
@@ -463,6 +582,38 @@ describe('PUT /request/:requestId (tv)', () => {
       otherSaved.seasons.map((s) => s.seasonNumber),
       [3]
     );
+  });
+
+  it('keeps stored overrides when an owner without advanced permissions edits', async () => {
+    const requestRepo = getRepository(MediaRequest);
+
+    const owner = await seedUser('demo@seerr.dev');
+    const mediaRequest = await seedTvRequest(owner, [1]);
+
+    await requestRepo.save(
+      Object.assign(mediaRequest, {
+        profileId: 7,
+        rootFolder: '/anime',
+        languageProfileId: 3,
+        tags: [1, 2],
+      })
+    );
+
+    const agent = await loginAs('demo@seerr.dev', 'test1234');
+    const res = await agent.put(`/request/${mediaRequest.id}`).send({
+      mediaType: MediaType.TV,
+      seasons: [1, 2],
+    });
+
+    assert.strictEqual(res.status, 200);
+
+    const saved = await requestRepo.findOneOrFail({
+      where: { id: mediaRequest.id },
+    });
+    assert.strictEqual(saved.profileId, 7);
+    assert.strictEqual(saved.rootFolder, '/anime');
+    assert.strictEqual(saved.languageProfileId, 3);
+    assert.deepStrictEqual(saved.tags, [1, 2]);
   });
 
   it('gives a season to only one of two concurrent edits', async () => {
@@ -1473,7 +1624,8 @@ describe('POST /request, override rules and requester choices', () => {
     assert.strictEqual(res.status, 201);
     assert.strictEqual(res.body.rootFolder, '/chosen');
     assert.strictEqual(res.body.profileId, 7);
-    assert.deepStrictEqual(res.body.tags, []);
+    // The submitted tags match the service default, so they are not a choice
+    assert.deepStrictEqual(res.body.tags, [2]);
   });
 
   it('keeps what a request manager sets and fills the rest from the rule', async (t) => {
@@ -1490,7 +1642,7 @@ describe('POST /request, override rules and requester choices', () => {
     assert.strictEqual(res.status, 201);
     assert.strictEqual(res.body.rootFolder, '/chosen');
     assert.strictEqual(res.body.profileId, 7);
-    assert.deepStrictEqual(res.body.tags, []);
+    assert.deepStrictEqual(res.body.tags, [2]);
   });
 
   it('applies the rule over what a regular requester sets', async () => {
@@ -1498,6 +1650,74 @@ describe('POST /request, override rules and requester choices', () => {
 
     assert.strictEqual(res.status, 201);
     assert.strictEqual(res.body.rootFolder, '/rule');
+  });
+});
+
+describe('POST /request, service default normalisation', () => {
+  async function requestAsAdvanced(
+    body: Record<string, unknown>,
+    radarr: Partial<RadarrSettings>
+  ) {
+    configureRadarr([{ id: 1, isDefault: true, is4k: false, ...radarr }]);
+    getSettings().sonarr = [];
+
+    const userRepo = getRepository(User);
+    const requester = await userRepo.findOneOrFail({
+      where: { email: 'demo@seerr.dev' },
+    });
+    requester.permissions = Permission.REQUEST | Permission.REQUEST_ADVANCED;
+    await userRepo.save(requester);
+
+    const agent = await loginAs('demo@seerr.dev', 'test1234');
+    return agent.post('/request').send({ mediaType: MediaType.MOVIE, ...body });
+  }
+
+  it('does not store values that match the service defaults', async () => {
+    const res = await requestAsAdvanced(
+      {
+        mediaId: 88020,
+        serverId: 1,
+        rootFolder: '/movies',
+        profileId: 4,
+        tags: [9],
+      },
+      { activeDirectory: '/movies', activeProfileId: 4, tags: [9] }
+    );
+
+    assert.strictEqual(res.status, 201);
+    assert.strictEqual(res.body.rootFolder, null);
+    assert.strictEqual(res.body.profileId, null);
+    assert.strictEqual(res.body.tags, null);
+  });
+
+  it('stores values that differ from the service defaults', async () => {
+    const res = await requestAsAdvanced(
+      { mediaId: 88021, serverId: 1, rootFolder: '/elsewhere', profileId: 9 },
+      { activeDirectory: '/movies', activeProfileId: 4, tags: [] }
+    );
+
+    assert.strictEqual(res.status, 201);
+    assert.strictEqual(res.body.rootFolder, '/elsewhere');
+    assert.strictEqual(res.body.profileId, 9);
+  });
+
+  it('applies an override rule to an advanced request that changed nothing', async () => {
+    await getRepository(OverrideRule).save(
+      new OverrideRule({
+        radarrServiceId: 1,
+        rootFolder: '/rule',
+        profileId: 7,
+      })
+    );
+
+    const res = await requestAsAdvanced(
+      { mediaId: 88022, serverId: 1, rootFolder: '/movies', profileId: 4 },
+      { activeDirectory: '/movies', activeProfileId: 4, tags: [] }
+    );
+
+    assert.strictEqual(res.status, 201);
+    assert.strictEqual(res.body.rootFolder, '/rule');
+    assert.strictEqual(res.body.profileId, 7);
   });
 });
 
