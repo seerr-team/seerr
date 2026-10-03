@@ -17,7 +17,7 @@ import { IssueSubscriber } from '@server/subscriber/IssueSubscriber';
 import { MediaRequestSubscriber } from '@server/subscriber/MediaRequestSubscriber';
 import { MediaSubscriber } from '@server/subscriber/MediaSubscriber';
 import { isPgsql } from '@server/utils/dbType';
-import fs from 'fs';
+import { stringOrReadFileFromEnv } from '@server/utils/env';
 import type { TlsOptions } from 'tls';
 import type { DataSourceOptions, EntityTarget, Repository } from 'typeorm';
 import { DataSource } from 'typeorm';
@@ -64,17 +64,6 @@ function intFromEnv(envVar: string, defaultVal?: number): number | undefined {
   return defaultVal;
 }
 
-function stringOrReadFileFromEnv(envVar: string): Buffer | string | undefined {
-  if (process.env[envVar]) {
-    return process.env[envVar];
-  }
-  const filePath = process.env[`${envVar}_FILE`];
-  if (filePath) {
-    return fs.readFileSync(filePath);
-  }
-  return undefined;
-}
-
 function buildSslConfig(): TlsOptions | undefined {
   if (process.env.DB_USE_SSL?.toLowerCase() !== 'true') {
     return undefined;
@@ -84,9 +73,9 @@ function buildSslConfig(): TlsOptions | undefined {
       `${DB_SSL_PREFIX}REJECT_UNAUTHORIZED`,
       true
     ),
-    ca: stringOrReadFileFromEnv(`${DB_SSL_PREFIX}CA`),
-    key: stringOrReadFileFromEnv(`${DB_SSL_PREFIX}KEY`),
-    cert: stringOrReadFileFromEnv(`${DB_SSL_PREFIX}CERT`),
+    ca: stringOrReadFileFromEnv(`${DB_SSL_PREFIX}CA`, { asBuffer: true }),
+    key: stringOrReadFileFromEnv(`${DB_SSL_PREFIX}KEY`, { asBuffer: true }),
+    cert: stringOrReadFileFromEnv(`${DB_SSL_PREFIX}CERT`, { asBuffer: true }),
   };
 }
 
@@ -135,9 +124,10 @@ const postgresDevConfig: DataSourceOptions = {
   port: process.env.DB_SOCKET_PATH
     ? undefined
     : parseInt(process.env.DB_PORT ?? '5432'),
-  username: process.env.DB_USER,
-  password: process.env.DB_PASS,
-  database: process.env.DB_NAME ?? 'seerr',
+  username: stringOrReadFileFromEnv('DB_USER', { credential: 'db-user' }),
+  password: stringOrReadFileFromEnv('DB_PASS', { credential: 'db-pass' }),
+  database:
+    stringOrReadFileFromEnv('DB_NAME', { credential: 'db-name' }) ?? 'seerr',
   ssl: buildSslConfig(),
   poolSize: intFromEnv('DB_POOL_SIZE'),
   // Bounds pool acquisition waits so exhaustion surfaces as errors instead of a silent hang
@@ -156,9 +146,10 @@ const postgresProdConfig: DataSourceOptions = {
   port: process.env.DB_SOCKET_PATH
     ? undefined
     : parseInt(process.env.DB_PORT ?? '5432'),
-  username: process.env.DB_USER,
-  password: process.env.DB_PASS,
-  database: process.env.DB_NAME ?? 'seerr',
+  username: stringOrReadFileFromEnv('DB_USER', { credential: 'db-user' }),
+  password: stringOrReadFileFromEnv('DB_PASS', { credential: 'db-pass' }),
+  database:
+    stringOrReadFileFromEnv('DB_NAME', { credential: 'db-name' }) ?? 'seerr',
   ssl: buildSslConfig(),
   poolSize: intFromEnv('DB_POOL_SIZE'),
   // Bounds pool acquisition waits so exhaustion surfaces as errors instead of a silent hang

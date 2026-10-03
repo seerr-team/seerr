@@ -9,6 +9,8 @@ This is the recommended method for most users.
 Details on how to install Docker can be found on the [official Docker website](https://docs.docker.com/get-docker/).
 
 Refer to [Configuring Databases](/extending-seerr/database-config#postgresql-options) for details on how to configure your database.
+
+Database credentials and the API key can be supplied via Docker secrets (mounted under `/run/secrets`) using the credential names documented in [File-based secrets](/extending-seerr/database-config#file-based-secrets-docker--systemd) and [API Key](/using-seerr/settings/general#api-key).
 :::
 
 :::info
