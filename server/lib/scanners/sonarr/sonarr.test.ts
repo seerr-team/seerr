@@ -1249,6 +1249,73 @@ describe('Sonarr Scanner', () => {
       assert.strictEqual(media.status, MediaStatus.PARTIALLY_AVAILABLE);
       assert.strictEqual(request.status, MediaRequestStatus.APPROVED);
     });
+
+    it('leaves the request alone when the server downloading a season fails to scan it', async () => {
+      const mediaRepository = getRepository(Media);
+      const requestRepository = getRepository(MediaRequest);
+      const seasonRequestRepository = getRepository(SeasonRequest);
+      const request = await seedShowRequest(
+        2120,
+        760,
+        MediaStatus.PARTIALLY_AVAILABLE,
+        [MediaStatus.AVAILABLE, MediaStatus.PROCESSING],
+        [1, 2]
+      );
+
+      const delivered = await seasonRequestRepository.findOneOrFail({
+        where: { request: { id: request.id }, seasonNumber: 1 },
+      });
+      delivered.status = MediaRequestStatus.COMPLETED;
+      await seasonRequestRepository.save(delivered);
+
+      configureTwoServers();
+      queueServerResponses([
+        [
+          fakeSonarrSeries({
+            tvdbId: 760,
+            id: 200,
+            seasons: [sonarrSeason(1, true, 10), sonarrSeason(2, true, 0)],
+          }),
+        ],
+        [
+          fakeSonarrSeries({
+            tvdbId: 760,
+            id: 100,
+            seasons: [sonarrSeason(1, true, 10), sonarrSeason(2, false, 0)],
+          }),
+        ],
+      ]);
+
+      // The first lookup is the downloading server's, as it is scanned first.
+      let lookups = 0;
+      getTvShowImpl = async () => {
+        if (lookups++ === 0) {
+          throw new Error('TMDB unavailable');
+        }
+
+        return twoSeasonTmdbShow(2120);
+      };
+
+      await runWithMockTimers(() => sonarrScanner.run());
+
+      const media = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 2120 },
+        relations: ['seasons'],
+      });
+      const updated = await requestRepository.findOneOrFail({
+        where: { id: request.id },
+      });
+
+      assert.strictEqual(updated.status, MediaRequestStatus.APPROVED);
+      assert.deepStrictEqual(
+        updated.seasons.map((s) => s.seasonNumber),
+        [1, 2]
+      );
+      assert.strictEqual(
+        media.seasons.find((s) => s.seasonNumber === 2)?.status,
+        MediaStatus.PROCESSING
+      );
+    });
   });
 
   describe('abandoned season handling', () => {
