@@ -512,16 +512,25 @@ class BaseScanner<T> {
           media.mediaAddedAt = mediaAddedAt;
         }
 
-        if (serviceId !== undefined) {
+        const abandonedEntry =
+          this.declineRequestsOnStatusReset &&
+          media[is4k ? 'status4k' : 'status'] === MediaStatus.PROCESSING &&
+          !seasons.some(
+            (season) =>
+              season.processing || season[is4k ? 'episodes4k' : 'episodes'] > 0
+          );
+
+        // Letting an abandoned entry claim these would make them scan-order dependent.
+        if (!abandonedEntry && serviceId !== undefined) {
           media[is4k ? 'serviceId4k' : 'serviceId'] = serviceId;
         }
 
-        if (externalServiceId !== undefined) {
+        if (!abandonedEntry && externalServiceId !== undefined) {
           media[is4k ? 'externalServiceId4k' : 'externalServiceId'] =
             externalServiceId;
         }
 
-        if (externalServiceSlug !== undefined) {
+        if (!abandonedEntry && externalServiceSlug !== undefined) {
           media[is4k ? 'externalServiceSlug4k' : 'externalServiceSlug'] =
             externalServiceSlug;
         }

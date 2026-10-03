@@ -1127,7 +1127,7 @@ describe('Sonarr Scanner', () => {
     const abandonedOnA = seriesWithEmptySeason(100, 'abandoned-on-a', false);
     const downloadingOnB = seriesWithEmptySeason(200, 'downloading-on-b', true);
 
-    it('keeps the show processing and the request approved when another server is still downloading, scanning A then B', async () => {
+    it('keeps the show processing, its request approved and its Sonarr link on the downloading server, scanning A then B', async () => {
       const mediaRepository = getRepository(Media);
       const requestRepository = getRepository(MediaRequest);
       const request = await seedProcessingRequest(2100, 700, 1);
@@ -1150,9 +1150,12 @@ describe('Sonarr Scanner', () => {
       assert.strictEqual(media.status, MediaStatus.PROCESSING);
       assert.strictEqual(media.seasons[0].status, MediaStatus.PROCESSING);
       assert.strictEqual(updated.status, MediaRequestStatus.APPROVED);
+      assert.strictEqual(media.serviceId, 1);
+      assert.strictEqual(media.externalServiceId, downloadingOnB.id);
+      assert.strictEqual(media.externalServiceSlug, downloadingOnB.titleSlug);
     });
 
-    it('keeps the show processing and the request approved when another server is still downloading, scanning B then A', async () => {
+    it('keeps the show processing, its request approved and its Sonarr link on the downloading server, scanning B then A', async () => {
       const mediaRepository = getRepository(Media);
       const requestRepository = getRepository(MediaRequest);
       const request = await seedProcessingRequest(2100, 700, 1);
@@ -1175,6 +1178,9 @@ describe('Sonarr Scanner', () => {
       assert.strictEqual(media.status, MediaStatus.PROCESSING);
       assert.strictEqual(media.seasons[0].status, MediaStatus.PROCESSING);
       assert.strictEqual(updated.status, MediaRequestStatus.APPROVED);
+      assert.strictEqual(media.serviceId, 0);
+      assert.strictEqual(media.externalServiceId, downloadingOnB.id);
+      assert.strictEqual(media.externalServiceSlug, downloadingOnB.titleSlug);
     });
 
     const withoutSeasonTwo = fakeSonarrSeries({
