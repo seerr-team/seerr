@@ -7,11 +7,14 @@ import {
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import MediaRequest from '@server/entity/MediaRequest';
+import MediaServiceStatus from '@server/entity/MediaServiceStatus';
 import Season from '@server/entity/Season';
+import { upsertMediaServiceStatus } from '@server/lib/mediaServiceStatus';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import AsyncLock from '@server/utils/asyncLock';
 import { randomUUID } from 'crypto';
+import { In } from 'typeorm';
 
 // Default scan rates (can be overidden)
 const BUNDLE_SIZE = 20;
@@ -117,6 +120,7 @@ class BaseScanner<T> {
 
     await this.asyncLock.dispatch(tmdbId, async () => {
       const existing = await this.getExisting(tmdbId, MediaType.MOVIE);
+      let mediaId: number;
 
       if (existing) {
         let changedExisting = false;
@@ -211,6 +215,8 @@ class BaseScanner<T> {
         } else {
           this.log(`Title already exists and no changes detected for ${title}`);
         }
+
+        mediaId = existing.id;
       } else {
         if (!processing && !hasFile) {
           return;
@@ -258,6 +264,23 @@ class BaseScanner<T> {
 
         await mediaRepository.save(newMedia);
         this.log(`Saved new media: ${title}`);
+
+        mediaId = newMedia.id;
+      }
+
+      if (serviceId !== undefined) {
+        await this.upsertServiceStatus(
+          mediaId,
+          serviceId,
+          'radarr',
+          !processing && hasFile
+            ? MediaStatus.AVAILABLE
+            : processing
+              ? MediaStatus.PROCESSING
+              : MediaStatus.UNKNOWN,
+          externalServiceId,
+          externalServiceSlug
+        );
       }
     });
   }
@@ -548,6 +571,22 @@ class BaseScanner<T> {
                   : MediaStatus.UNKNOWN;
         await mediaRepository.save(media);
         this.log(`Updating existing title: ${title}`);
+
+        if (serviceId !== undefined) {
+          const { overall, perSeason } = this.computeSeasonServiceStatuses(
+            seasons,
+            is4k
+          );
+          await this.upsertServiceStatus(
+            media.id,
+            serviceId,
+            'sonarr',
+            overall,
+            externalServiceId,
+            externalServiceSlug,
+            perSeason
+          );
+        }
       } else {
         // For new media, check actual newSeasons objects instead of scanner
         // input to determine overall availability status
@@ -645,6 +684,22 @@ class BaseScanner<T> {
         });
         await mediaRepository.save(newMedia);
         this.log(`Saved ${title}`);
+
+        if (serviceId !== undefined && newMedia.id) {
+          const { overall, perSeason } = this.computeSeasonServiceStatuses(
+            seasons,
+            is4k
+          );
+          await this.upsertServiceStatus(
+            newMedia.id,
+            serviceId,
+            'sonarr',
+            overall,
+            externalServiceId,
+            externalServiceSlug,
+            perSeason
+          );
+        }
       }
     });
   }
@@ -790,6 +845,236 @@ class BaseScanner<T> {
     optional?: Record<string, unknown>
   ): void {
     logger[level](message, { label: this.scannerName, ...optional });
+  }
+
+  protected computeSeasonServiceStatuses(
+    seasons: ProcessableSeason[],
+    is4k: boolean
+  ): { overall: MediaStatus; perSeason: Record<number, MediaStatus> } {
+    const episodeField = is4k ? 'episodes4k' : 'episodes';
+    const perSeason: Record<number, MediaStatus> = {};
+
+    const statusForSeason = (s: ProcessableSeason): MediaStatus => {
+      if (s.totalEpisodes > 0 && s[episodeField] === s.totalEpisodes) {
+        return MediaStatus.AVAILABLE;
+      }
+      if (s[episodeField] > 0) {
+        return MediaStatus.PARTIALLY_AVAILABLE;
+      }
+      if (s.processing) {
+        return MediaStatus.PROCESSING;
+      }
+      return MediaStatus.UNKNOWN;
+    };
+
+    for (const s of seasons) {
+      const status = statusForSeason(s);
+      if (status !== MediaStatus.UNKNOWN) {
+        perSeason[s.seasonNumber] = status;
+      }
+    }
+
+    const relevant = seasons.filter(
+      (s) => s.seasonNumber !== 0 && s.totalEpisodes > 0
+    );
+
+    let overall: MediaStatus;
+    if (relevant.length === 0) {
+      overall = MediaStatus.UNKNOWN;
+    } else if (
+      relevant.every(
+        (s) => s[episodeField] === s.totalEpisodes && s[episodeField] > 0
+      )
+    ) {
+      overall = MediaStatus.AVAILABLE;
+    } else if (relevant.some((s) => s[episodeField] > 0)) {
+      overall = MediaStatus.PARTIALLY_AVAILABLE;
+    } else if (relevant.some((s) => s.processing)) {
+      overall = MediaStatus.PROCESSING;
+    } else {
+      overall = MediaStatus.UNKNOWN;
+    }
+
+    return { overall, perSeason };
+  }
+
+  protected async upsertServiceStatus(
+    mediaId: number,
+    serviceId: number,
+    serviceType: 'radarr' | 'sonarr',
+    status: MediaStatus,
+    externalServiceId: number | undefined,
+    externalServiceSlug: string | undefined,
+    seasonStatuses: Record<number, MediaStatus> | null = null
+  ): Promise<void> {
+    const repo = getRepository(MediaServiceStatus);
+    await upsertMediaServiceStatus(
+      repo,
+      {
+        mediaId,
+        serviceId,
+        serviceType,
+        status,
+        externalServiceId: externalServiceId ?? null,
+        externalServiceSlug: externalServiceSlug ?? null,
+        seasonStatuses,
+      },
+      ['status', 'externalServiceId', 'externalServiceSlug', 'seasonStatuses']
+    );
+
+    if (
+      status === MediaStatus.AVAILABLE ||
+      Object.values(seasonStatuses ?? {}).some(
+        (seasonStatus) => seasonStatus === MediaStatus.AVAILABLE
+      )
+    ) {
+      await this.completeAvailableServiceRequests(
+        mediaId,
+        serviceId,
+        status,
+        seasonStatuses
+      );
+    }
+  }
+
+  private async completeAvailableServiceRequests(
+    mediaId: number,
+    serviceId: number,
+    status: MediaStatus,
+    seasonStatuses: Record<number, MediaStatus> | null
+  ): Promise<void> {
+    const requestRepository = getRepository(MediaRequest);
+    const approvedRequests = await requestRepository.find({
+      where: {
+        media: { id: mediaId },
+        serverId: serviceId,
+        isServiceRequest: true,
+        status: MediaRequestStatus.APPROVED,
+      },
+    });
+
+    for (const request of approvedRequests) {
+      const isComplete =
+        request.type === MediaType.MOVIE
+          ? status === MediaStatus.AVAILABLE
+          : request.seasons.length > 0 &&
+            request.seasons.every(
+              (season) =>
+                seasonStatuses?.[season.seasonNumber] === MediaStatus.AVAILABLE
+            );
+
+      if (isComplete) {
+        request.status = MediaRequestStatus.COMPLETED;
+        await requestRepository.save(request);
+        this.log(
+          `Service request ${request.id} marked as completed (service ${serviceId})`,
+          'info'
+        );
+      }
+    }
+  }
+
+  protected async resetStaleServiceStatus({
+    serviceId,
+    serviceType,
+    mediaType,
+    seenTmdbIds,
+    serverName,
+    clearSeasonStatuses = false,
+  }: {
+    serviceId: number;
+    serviceType: 'radarr' | 'sonarr';
+    mediaType: MediaType;
+    seenTmdbIds: Set<number>;
+    serverName: string;
+    clearSeasonStatuses?: boolean;
+  }): Promise<void> {
+    if (seenTmdbIds.size === 0) {
+      this.log(
+        `No titles were processed for ${serverName}. Stale service status reset will be skipped.`,
+        'warn'
+      );
+      return;
+    }
+
+    const serviceStatusRepository = getRepository(MediaServiceStatus);
+
+    const candidates: { id: number; mediaId: number; tmdbId: number }[] =
+      await serviceStatusRepository
+        .createQueryBuilder('serviceStatus')
+        .innerJoin(Media, 'media', 'media.id = serviceStatus.mediaId')
+        .select('serviceStatus.id', 'id')
+        .addSelect('serviceStatus.mediaId', 'mediaId')
+        .addSelect('media.tmdbId', 'tmdbId')
+        .where('serviceStatus.serviceId = :serviceId', { serviceId })
+        .andWhere('serviceStatus.serviceType = :serviceType', { serviceType })
+        .andWhere('serviceStatus.status NOT IN (:...exempt)', {
+          exempt: [MediaStatus.UNKNOWN, MediaStatus.DELETED],
+        })
+        .andWhere('media.mediaType = :mediaType', { mediaType })
+        .getRawMany();
+
+    const staleCandidates = candidates.filter(
+      (candidate) => !seenTmdbIds.has(Number(candidate.tmdbId))
+    );
+    const staleIds = staleCandidates.map((candidate) => candidate.id);
+
+    const chunkSize = 500;
+    for (let i = 0; i < staleIds.length; i += chunkSize) {
+      await serviceStatusRepository
+        .createQueryBuilder()
+        .update()
+        .set(
+          clearSeasonStatuses
+            ? { status: MediaStatus.UNKNOWN, seasonStatuses: null }
+            : { status: MediaStatus.UNKNOWN }
+        )
+        .whereInIds(staleIds.slice(i, i + chunkSize))
+        .execute();
+    }
+
+    this.log(
+      `Reset ${staleIds.length} stale service status entries for ${serverName} (${
+        candidates.length - staleIds.length
+      } items retained)`,
+      'info'
+    );
+
+    await this.declineStaleServiceRequests(
+      serviceId,
+      staleCandidates.map((candidate) => Number(candidate.mediaId)),
+      serverName
+    );
+  }
+
+  private async declineStaleServiceRequests(
+    serviceId: number,
+    mediaIds: number[],
+    serverName: string
+  ): Promise<void> {
+    const requestRepository = getRepository(MediaRequest);
+
+    const chunkSize = 500;
+    for (let i = 0; i < mediaIds.length; i += chunkSize) {
+      const requests = await requestRepository.find({
+        where: {
+          media: { id: In(mediaIds.slice(i, i + chunkSize)) },
+          isServiceRequest: true,
+          serverId: serviceId,
+          status: MediaRequestStatus.APPROVED,
+        },
+        relations: { media: true },
+      });
+
+      for (const request of requests) {
+        request.status = MediaRequestStatus.DECLINED;
+        await requestRepository.save(request);
+        this.log(
+          `Declined service request ${request.id} for ${request.media.tmdbId}, no longer found in ${serverName}.`,
+          'info'
+        );
+      }
+    }
   }
 
   get protectedUpdateRate(): number {

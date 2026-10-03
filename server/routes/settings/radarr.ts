@@ -1,4 +1,5 @@
 import RadarrAPI from '@server/api/servarr/radarr';
+import { removeRequestServiceGrants } from '@server/lib/requestServices';
 import type { RadarrSettings } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
@@ -147,6 +148,8 @@ radarrRoutes.delete<{ id: string }>('/:id', async (req, res, next) => {
 
   const removed = settings.radarr.splice(radarrIndex, 1);
   await settings.save();
+
+  await removeRequestServiceGrants('radarr', removed[0].id);
 
   return res.status(200).json(removed[0]);
 });

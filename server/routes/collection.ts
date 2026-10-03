@@ -22,7 +22,7 @@ collectionRoutes.get<{ id: string }>('/:id', async (req, res, next) => {
         tmdbId: part.id,
         mediaType: MediaType.MOVIE,
       })),
-      { includeActiveRequest: true }
+      { includeActiveRequest: true, includeServiceData: true }
     );
 
     return res.status(200).json(mapCollection(collection, media));

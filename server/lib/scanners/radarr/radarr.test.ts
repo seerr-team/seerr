@@ -8,6 +8,7 @@ import {
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import MediaRequest from '@server/entity/MediaRequest';
+import MediaServiceStatus from '@server/entity/MediaServiceStatus';
 import { User } from '@server/entity/User';
 import { radarrScanner } from '@server/lib/scanners/radarr';
 import type { RadarrSettings } from '@server/lib/settings';
@@ -720,6 +721,112 @@ describe('Radarr Scanner', () => {
       assert.strictEqual(updatedMedia.status4k, MediaStatus.UNKNOWN);
       assert.strictEqual(updatedStandard.status, MediaRequestStatus.APPROVED);
       assert.strictEqual(updated4k.status, MediaRequestStatus.DECLINED);
+    });
+  });
+
+  describe('per-service status', () => {
+    async function seedServiceStatus(tmdbId: number): Promise<number> {
+      const media = new Media();
+      media.tmdbId = tmdbId;
+      media.mediaType = MediaType.MOVIE;
+      media.status = MediaStatus.AVAILABLE;
+      await getRepository(Media).save(media);
+
+      await getRepository(MediaServiceStatus).save(
+        new MediaServiceStatus({
+          mediaId: media.id,
+          serviceId: 0,
+          serviceType: 'radarr',
+          status: MediaStatus.AVAILABLE,
+        })
+      );
+
+      return media.id;
+    }
+
+    it('keeps per-service status when the server returns no movies', async () => {
+      const mediaId = await seedServiceStatus(560);
+
+      configureRadarr([{ syncEnabled: true }]);
+      getMoviesImpl = async () => [];
+
+      await runWithMockTimers(() => radarrScanner.run());
+
+      const serviceStatus = await getRepository(
+        MediaServiceStatus
+      ).findOneOrFail({ where: { mediaId, serviceId: 0 } });
+      assert.strictEqual(serviceStatus.status, MediaStatus.AVAILABLE);
+    });
+
+    it('resets per-service status for a movie removed from the server', async () => {
+      const mediaId = await seedServiceStatus(561);
+
+      configureRadarr([{ syncEnabled: true }]);
+      getMoviesImpl = async () => [fakeRadarrMovie({ tmdbId: 562, id: 98 })];
+
+      await runWithMockTimers(() => radarrScanner.run());
+
+      const serviceStatus = await getRepository(
+        MediaServiceStatus
+      ).findOneOrFail({ where: { mediaId, serviceId: 0 } });
+      assert.strictEqual(serviceStatus.status, MediaStatus.UNKNOWN);
+    });
+
+    it('declines approved requests for a server the movie was removed from', async () => {
+      const media = await getRepository(Media).save(
+        new Media({ tmdbId: 563, mediaType: MediaType.MOVIE })
+      );
+      await getRepository(MediaServiceStatus).save(
+        new MediaServiceStatus({
+          mediaId: media.id,
+          serviceId: 0,
+          serviceType: 'radarr',
+          status: MediaStatus.PROCESSING,
+        })
+      );
+      getSettings().radarr = [];
+      const requestedBy = await getRepository(User).findOneOrFail({
+        where: { email: 'admin@seerr.dev' },
+      });
+      const seedRequest = (serverId: number, status: MediaRequestStatus) =>
+        getRepository(MediaRequest).save(
+          new MediaRequest({
+            type: MediaType.MOVIE,
+            media,
+            requestedBy,
+            status,
+            is4k: false,
+            serverId,
+            isServiceRequest: true,
+          })
+        );
+      const approved = await seedRequest(0, MediaRequestStatus.APPROVED);
+      const completed = await seedRequest(0, MediaRequestStatus.COMPLETED);
+      const otherServer = await seedRequest(1, MediaRequestStatus.APPROVED);
+
+      configureRadarr([{ syncEnabled: true }]);
+      getMoviesImpl = async () => [fakeRadarrMovie({ tmdbId: 564, id: 97 })];
+
+      await runWithMockTimers(() => radarrScanner.run());
+
+      const statusOf = async (id: number) =>
+        (
+          await getRepository(MediaRequest).findOneOrFail({
+            where: { id },
+          })
+        ).status;
+      assert.strictEqual(
+        await statusOf(approved.id),
+        MediaRequestStatus.DECLINED
+      );
+      assert.strictEqual(
+        await statusOf(completed.id),
+        MediaRequestStatus.COMPLETED
+      );
+      assert.strictEqual(
+        await statusOf(otherServer.id),
+        MediaRequestStatus.APPROVED
+      );
     });
   });
 });

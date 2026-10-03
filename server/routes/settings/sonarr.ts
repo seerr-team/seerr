@@ -1,4 +1,5 @@
 import SonarrAPI from '@server/api/servarr/sonarr';
+import { removeRequestServiceGrants } from '@server/lib/requestServices';
 import type { SonarrSettings } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
@@ -121,6 +122,8 @@ sonarrRoutes.delete<{ id: string }>('/:id', async (req, res) => {
 
   const removed = settings.sonarr.splice(sonarrIndex, 1);
   await settings.save();
+
+  await removeRequestServiceGrants('sonarr', removed[0].id);
 
   return res.status(200).json(removed[0]);
 });

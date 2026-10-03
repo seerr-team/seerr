@@ -13,6 +13,7 @@ import {
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import MediaRequest from '@server/entity/MediaRequest';
+import MediaServiceStatus from '@server/entity/MediaServiceStatus';
 import Season from '@server/entity/Season';
 import { User } from '@server/entity/User';
 import { sonarrScanner } from '@server/lib/scanners/sonarr';
@@ -929,6 +930,51 @@ describe('Sonarr Scanner', () => {
       assert.strictEqual(updatedMedia.status4k, MediaStatus.UNKNOWN);
       assert.strictEqual(updatedStandard.status, MediaRequestStatus.APPROVED);
       assert.strictEqual(updated4k.status, MediaRequestStatus.DECLINED);
+    });
+  });
+
+  describe('per-service status', () => {
+    it('keeps the service status of a show whose TMDB lookup fails', async () => {
+      const media = await getRepository(Media).save(
+        new Media({
+          tmdbId: 10,
+          tvdbId: 300,
+          mediaType: MediaType.TV,
+          status: MediaStatus.AVAILABLE,
+        })
+      );
+      await getRepository(MediaServiceStatus).save(
+        new MediaServiceStatus({
+          mediaId: media.id,
+          serviceId: 0,
+          serviceType: 'sonarr',
+          status: MediaStatus.AVAILABLE,
+          seasonStatuses: { 1: MediaStatus.AVAILABLE },
+        })
+      );
+
+      configureSonarr([{ syncEnabled: true }]);
+      getSeriesImpl = async () => [
+        fakeSonarrSeries({ tvdbId: 300, id: 1 }),
+        fakeSonarrSeries({ tvdbId: 301, id: 2 }),
+      ];
+      getShowByTvdbIdImpl = async () => fakeTmdbShow(11);
+      getTvShowImpl = async ({ tvId }) => {
+        if (tvId === 10) {
+          throw new Error('TMDB unavailable');
+        }
+        return fakeTmdbShow(tvId);
+      };
+
+      await runWithMockTimers(() => sonarrScanner.run());
+
+      const serviceStatus = await getRepository(
+        MediaServiceStatus
+      ).findOneOrFail({ where: { mediaId: media.id, serviceId: 0 } });
+      assert.strictEqual(serviceStatus.status, MediaStatus.AVAILABLE);
+      assert.deepStrictEqual(serviceStatus.seasonStatuses, {
+        1: MediaStatus.AVAILABLE,
+      });
     });
   });
 });

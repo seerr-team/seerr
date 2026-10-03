@@ -22,6 +22,7 @@ import PersonCard from '@app/components/PersonCard';
 import RequestButton from '@app/components/RequestButton';
 import Slider from '@app/components/Slider';
 import StatusBadge from '@app/components/StatusBadge';
+import ServiceStatusBadges from '@app/components/StatusBadge/ServiceStatusBadges';
 import useDeepLinks from '@app/hooks/useDeepLinks';
 import useLocale from '@app/hooks/useLocale';
 import useSettings from '@app/hooks/useSettings';
@@ -32,6 +33,11 @@ import ErrorPage from '@app/pages/_error';
 import { sortCrewPriority } from '@app/utils/creditHelpers';
 import defineMessages from '@app/utils/defineMessages';
 import { refreshIntervalHelper } from '@app/utils/refreshIntervalHelper';
+import {
+  getServiceStatusItems,
+  getStandardServiceId,
+  isCoveredByServiceStatus,
+} from '@app/utils/serviceRequestStatus';
 import {
   ArrowRightCircleIcon,
   CloudIcon,
@@ -49,9 +55,11 @@ import {
   ChevronDoubleUpIcon,
 } from '@heroicons/react/24/solid';
 import { type RatingResponse } from '@server/api/ratings';
+import { ANIME_KEYWORD_ID } from '@server/api/themoviedb/constants';
 import { IssueStatus } from '@server/constants/issue';
 import { MediaStatus, MediaType } from '@server/constants/media';
 import { MediaServerType } from '@server/constants/server';
+import type { ServiceCommonServer } from '@server/interfaces/api/serviceInterfaces';
 import type { MovieDetails as MovieDetailsType } from '@server/models/Movie';
 import axios from 'axios';
 import { countries } from 'country-flag-icons';
@@ -148,6 +156,10 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
 
   const { data: ratingData } = useSWR<RatingResponse>(
     `/api/v1/movie/${router.query.movieId}/ratingscombined`
+  );
+
+  const { data: radarrServices } = useSWR<ServiceCommonServer[]>(
+    '/api/v1/service/radarr'
   );
 
   const sortedCrew = useMemo(
@@ -435,6 +447,20 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
     type: 'or',
   });
 
+  const serviceStatusItems = getServiceStatusItems({
+    services: radarrServices,
+    serviceStatuses: data.mediaInfo?.serviceStatuses,
+    requests: data.mediaInfo?.requests,
+  });
+  const showStandardStatus = !isCoveredByServiceStatus(
+    serviceStatusItems,
+    getStandardServiceId(radarrServices, data.mediaInfo, false)
+  );
+  const show4kStatus = !isCoveredByServiceStatus(
+    serviceStatusItems,
+    getStandardServiceId(radarrServices, data.mediaInfo, true)
+  );
+
   return (
     <div
       className="media-page"
@@ -508,26 +534,35 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
         </div>
         <div className="media-title">
           <div className="media-status">
-            <StatusBadge
-              status={data.mediaInfo?.status}
-              downloadItem={data.mediaInfo?.downloadStatus}
-              title={data.title}
-              inProgress={(data.mediaInfo?.downloadStatus ?? []).length > 0}
-              tmdbId={data.mediaInfo?.tmdbId}
+            <ServiceStatusBadges
+              serviceStatuses={data.mediaInfo?.serviceStatuses}
+              requests={data.mediaInfo?.requests}
               mediaType="movie"
               plexUrl={plexUrl}
-              serviceUrl={data.mediaInfo?.serviceUrl}
+              tmdbId={data.mediaInfo?.tmdbId}
+              title={data.title}
             />
-            {settings.currentSettings.movie4kEnabled &&
+            {showStandardStatus && (
+              <StatusBadge
+                status={data.mediaInfo?.status}
+                downloadItem={data.mediaInfo?.downloadStatus}
+                title={data.title}
+                inProgress={(data.mediaInfo?.downloadStatus ?? []).length > 0}
+                tmdbId={data.mediaInfo?.tmdbId}
+                mediaType="movie"
+                plexUrl={plexUrl}
+                serviceUrl={data.mediaInfo?.serviceUrl}
+              />
+            )}
+            {show4kStatus &&
+              settings.currentSettings.movie4kEnabled &&
               hasPermission(
                 [
                   Permission.MANAGE_REQUESTS,
                   Permission.REQUEST_4K,
                   Permission.REQUEST_4K_MOVIE,
                 ],
-                {
-                  type: 'or',
-                }
+                { type: 'or' }
               ) && (
                 <StatusBadge
                   status={data.mediaInfo?.status4k}
@@ -628,6 +663,9 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
             media={data.mediaInfo}
             tmdbId={data.id}
             onUpdate={() => revalidate()}
+            isAnime={data.keywords.some(
+              (keyword) => keyword.id === ANIME_KEYWORD_ID
+            )}
           />
           {(data.mediaInfo?.status === MediaStatus.AVAILABLE ||
             (settings.currentSettings.movie4kEnabled &&
@@ -659,7 +697,9 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
             (data.mediaInfo.jellyfinMediaId ||
               data.mediaInfo.jellyfinMediaId4k ||
               data.mediaInfo.status !== MediaStatus.UNKNOWN ||
-              data.mediaInfo.status4k !== MediaStatus.UNKNOWN) && (
+              data.mediaInfo.status4k !== MediaStatus.UNKNOWN ||
+              serviceStatusItems.length > 0 ||
+              (data.mediaInfo.requests ?? []).length > 0) && (
               <Tooltip content={intl.formatMessage(messages.managemovie)}>
                 <Button
                   buttonType="ghost"
@@ -973,13 +1013,15 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
                   <Link
                     href={`/discover/movies/language/${data.originalLanguage}`}
                   >
-                    {intl.formatDisplayName(data.originalLanguage, {
-                      type: 'language',
-                      fallback: 'none',
-                    }) ??
-                      data.spokenLanguages.find(
-                        (lng) => lng.iso_639_1 === data.originalLanguage
-                      )?.name}
+                    <span>
+                      {intl.formatDisplayName(data.originalLanguage, {
+                        type: 'language',
+                        fallback: 'none',
+                      }) ??
+                        data.spokenLanguages.find(
+                          (lng) => lng.iso_639_1 === data.originalLanguage
+                        )?.name}
+                    </span>
                   </Link>
                 </span>
               </div>

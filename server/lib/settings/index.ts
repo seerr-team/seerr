@@ -84,6 +84,8 @@ export interface DVRSettings {
   preventSearch: boolean;
   tagRequests: boolean;
   overrideRule: number[];
+  buttonLabel?: string;
+  animeOnly?: boolean;
 }
 
 export interface RadarrSettings extends DVRSettings {

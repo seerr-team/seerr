@@ -62,6 +62,11 @@ const messages = defineMessages('components.Settings.RadarrModal', {
   testFirstTags: 'Test connection to load tags',
   tags: 'Tags',
   enableSearch: 'Enable Automatic Search',
+  animeOnly: 'Anime Only',
+  animeOnlyHelp: 'Only show this server’s request button for anime content.',
+  buttonLabel: 'Request Button Label',
+  buttonLabelHelp:
+    'Short label shown on the request button for this server (e.g. "ITA", "ENG"). Leave blank to hide the button.',
   tagRequests: 'Tag Requests',
   tagRequestsInfo:
     "Automatically add an additional tag with the requester's user ID & display name",
@@ -242,6 +247,8 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
           syncEnabled: radarr?.syncEnabled ?? false,
           enableSearch: !radarr?.preventSearch,
           tagRequests: radarr?.tagRequests ?? false,
+          buttonLabel: radarr?.buttonLabel ?? '',
+          animeOnly: radarr?.animeOnly ?? false,
         }}
         validationSchema={RadarrSettingsSchema}
         onSubmit={async (values) => {
@@ -268,6 +275,8 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
               syncEnabled: values.syncEnabled,
               preventSearch: !values.enableSearch,
               tagRequests: values.tagRequests,
+              buttonLabel: values.buttonLabel || undefined,
+              animeOnly: values.animeOnly,
             };
             if (!radarr) {
               await axios.post('/api/v1/settings/radarr', submission);
@@ -764,6 +773,35 @@ const RadarrModal = ({ onClose, radarr, onSave }: RadarrModalProps) => {
                       id="tagRequests"
                       name="tagRequests"
                     />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label htmlFor="buttonLabel" className="text-label">
+                    {intl.formatMessage(messages.buttonLabel)}
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.buttonLabelHelp)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <div className="form-input-field">
+                      <Field
+                        type="text"
+                        id="buttonLabel"
+                        name="buttonLabel"
+                        placeholder="ITA"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label htmlFor="animeOnly" className="checkbox-label">
+                    {intl.formatMessage(messages.animeOnly)}
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.animeOnlyHelp)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <Field type="checkbox" id="animeOnly" name="animeOnly" />
                   </div>
                 </div>
               </div>

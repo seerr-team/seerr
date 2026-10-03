@@ -72,6 +72,7 @@ interface AdvancedRequesterProps {
   defaultOverrides?: RequestOverrides;
   requestUser?: User;
   requestId?: number;
+  serverFixed?: boolean;
   quota?: { movie: { limit?: number }; tv: { limit?: number } };
   onChange: (overrides: RequestOverrides) => void;
 }
@@ -84,6 +85,7 @@ const AdvancedRequester = ({
   defaultOverrides,
   requestUser,
   requestId,
+  serverFixed = false,
   quota,
   onChange,
 }: AdvancedRequesterProps) => {
@@ -430,36 +432,37 @@ const AdvancedRequester = ({
       <div className="rounded-md">
         {!!data && selectedServer !== null && (
           <div className="flex flex-col md:flex-row">
-            {data.filter((server) => server.is4k === is4k).length > 1 && (
-              <div className="mb-3 w-full flex-shrink-0 flex-grow last:pr-0 md:w-1/4 md:pr-4">
-                <label htmlFor="server">
-                  {intl.formatMessage(messages.destinationserver)}
-                </label>
-                <select
-                  id="server"
-                  name="server"
-                  value={selectedServer}
-                  onChange={(e) => setSelectedServer(Number(e.target.value))}
-                  onBlur={(e) => setSelectedServer(Number(e.target.value))}
-                  className="border-gray-700 bg-gray-800"
-                >
-                  {data
-                    .filter((server) => server.is4k === is4k)
-                    .map((server) => (
-                      <option
-                        key={`server-list-${server.id}`}
-                        value={server.id}
-                      >
-                        {server.isDefault
-                          ? intl.formatMessage(messages.default, {
-                              name: server.name,
-                            })
-                          : server.name}
-                      </option>
-                    ))}
-                </select>
-              </div>
-            )}
+            {!serverFixed &&
+              data.filter((server) => server.is4k === is4k).length > 1 && (
+                <div className="mb-3 w-full flex-shrink-0 flex-grow last:pr-0 md:w-1/4 md:pr-4">
+                  <label htmlFor="server">
+                    {intl.formatMessage(messages.destinationserver)}
+                  </label>
+                  <select
+                    id="server"
+                    name="server"
+                    value={selectedServer}
+                    onChange={(e) => setSelectedServer(Number(e.target.value))}
+                    onBlur={(e) => setSelectedServer(Number(e.target.value))}
+                    className="border-gray-700 bg-gray-800"
+                  >
+                    {data
+                      .filter((server) => server.is4k === is4k)
+                      .map((server) => (
+                        <option
+                          key={`server-list-${server.id}`}
+                          value={server.id}
+                        >
+                          {server.isDefault
+                            ? intl.formatMessage(messages.default, {
+                                name: server.name,
+                              })
+                            : server.name}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              )}
             {(isValidating ||
               !serverData ||
               serverData.profiles.length > 1) && (
@@ -511,60 +514,63 @@ const AdvancedRequester = ({
                 </select>
               </div>
             )}
-            {(isValidating ||
-              !serverData ||
-              serverData.rootFolders.length > 1) && (
-              <div className="mb-3 w-full flex-shrink-0 flex-grow last:pr-0 md:w-1/4 md:pr-4">
-                <label htmlFor="folder">
-                  {intl.formatMessage(messages.rootfolder)}
-                </label>
-                <select
-                  id="folder"
-                  name="folder"
-                  value={selectedFolder}
-                  onChange={(e) => setSelectedFolder(e.target.value)}
-                  onBlur={(e) => setSelectedFolder(e.target.value)}
-                  className="border-gray-700 bg-gray-800"
-                  disabled={isValidating || !serverData}
-                >
-                  {(isValidating || !serverData) && (
-                    <option value="">
-                      {intl.formatMessage(globalMessages.loading)}
-                    </option>
-                  )}
-                  {!isValidating &&
-                    serverData &&
-                    serverData.rootFolders.map((folder) => (
-                      <option
-                        key={`folder-list${folder.id}`}
-                        value={folder.path}
-                      >
-                        {isAnime &&
-                        serverData.server.activeAnimeDirectory === folder.path
-                          ? intl.formatMessage(messages.default, {
-                              name: intl.formatMessage(messages.folder, {
-                                path: folder.path,
-                                space: formatBytes(folder.freeSpace ?? 0),
-                              }),
-                            })
-                          : !isAnime &&
-                              serverData.server.activeDirectory === folder.path
+            {!serverFixed &&
+              (isValidating ||
+                !serverData ||
+                serverData.rootFolders.length > 1) && (
+                <div className="mb-3 w-full flex-shrink-0 flex-grow last:pr-0 md:w-1/4 md:pr-4">
+                  <label htmlFor="folder">
+                    {intl.formatMessage(messages.rootfolder)}
+                  </label>
+                  <select
+                    id="folder"
+                    name="folder"
+                    value={selectedFolder}
+                    onChange={(e) => setSelectedFolder(e.target.value)}
+                    onBlur={(e) => setSelectedFolder(e.target.value)}
+                    className="border-gray-700 bg-gray-800"
+                    disabled={isValidating || !serverData}
+                  >
+                    {(isValidating || !serverData) && (
+                      <option value="">
+                        {intl.formatMessage(globalMessages.loading)}
+                      </option>
+                    )}
+                    {!isValidating &&
+                      serverData &&
+                      serverData.rootFolders.map((folder) => (
+                        <option
+                          key={`folder-list${folder.id}`}
+                          value={folder.path}
+                        >
+                          {isAnime &&
+                          serverData.server.activeAnimeDirectory === folder.path
                             ? intl.formatMessage(messages.default, {
                                 name: intl.formatMessage(messages.folder, {
                                   path: folder.path,
                                   space: formatBytes(folder.freeSpace ?? 0),
                                 }),
                               })
-                            : intl.formatMessage(messages.folder, {
-                                path: folder.path,
-                                space: formatBytes(folder.freeSpace ?? 0),
-                              })}
-                      </option>
-                    ))}
-                </select>
-              </div>
-            )}
-            {type === 'tv' &&
+                            : !isAnime &&
+                                serverData.server.activeDirectory ===
+                                  folder.path
+                              ? intl.formatMessage(messages.default, {
+                                  name: intl.formatMessage(messages.folder, {
+                                    path: folder.path,
+                                    space: formatBytes(folder.freeSpace ?? 0),
+                                  }),
+                                })
+                              : intl.formatMessage(messages.folder, {
+                                  path: folder.path,
+                                  space: formatBytes(folder.freeSpace ?? 0),
+                                })}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              )}
+            {!serverFixed &&
+              type === 'tv' &&
               (isValidating ||
                 !serverData ||
                 (serverData.languageProfiles ?? []).length > 1) && (

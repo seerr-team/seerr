@@ -15,8 +15,10 @@ import {
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import { MediaRequest } from '@server/entity/MediaRequest';
+import MediaServiceStatus from '@server/entity/MediaServiceStatus';
 import Season from '@server/entity/Season';
 import SeasonRequest from '@server/entity/SeasonRequest';
+import { upsertMediaServiceStatus } from '@server/lib/mediaServiceStatus';
 import notificationManager, { Notification } from '@server/lib/notifications';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
@@ -43,6 +45,32 @@ const sanitizeDisplayName = (displayName: string): string => {
 
 @EventSubscriber()
 export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRequest> {
+  private getServiceLabel(entity: MediaRequest): string | undefined {
+    if (!entity.isServiceRequest || entity.serverId == null) {
+      return undefined;
+    }
+    const settings = getSettings();
+    const servers =
+      entity.type === MediaType.MOVIE ? settings.radarr : settings.sonarr;
+    const server = servers.find((s) => s.id === entity.serverId);
+    return server?.buttonLabel ?? server?.name;
+  }
+
+  private async isAlreadyAvailable(
+    manager: EntityManager,
+    entity: MediaRequest,
+    media: Media
+  ): Promise<boolean> {
+    if (entity.isServiceRequest && entity.serverId != null) {
+      const serviceStatus = await manager
+        .getRepository(MediaServiceStatus)
+        .findOne({ where: { mediaId: media.id, serviceId: entity.serverId } });
+      return serviceStatus?.status === MediaStatus.AVAILABLE;
+    }
+
+    return media[entity.is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE;
+  }
+
   private async notifyAvailableMovie(
     entity: MediaRequest,
     event?: UpdateEvent<MediaRequest>
@@ -62,14 +90,18 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
     }
 
     // Check availability using fresh media state
+    if (!latestMedia) {
+      return;
+    }
     if (
-      !latestMedia ||
+      !entity.isServiceRequest &&
       latestMedia[entity.is4k ? 'status4k' : 'status'] !== MediaStatus.AVAILABLE
     ) {
       return;
     }
 
     const tmdb = new TheMovieDb();
+    const serviceLabel = this.getServiceLabel(entity);
 
     try {
       const movie = await tmdb.getMovie({
@@ -77,7 +109,9 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
       });
 
       notificationManager.sendNotification(Notification.MEDIA_AVAILABLE, {
-        event: `${entity.is4k ? '4K ' : ''}Movie Request Now Available`,
+        event: `${entity.is4k ? '4K ' : ''}Movie Request Now Available${
+          serviceLabel ? ` in ${serviceLabel}` : ''
+        }`,
         notifyAdmin: false,
         notifySystem: true,
         notifyUser: entity.requestedBy,
@@ -127,28 +161,33 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
     }
 
     // Check availability using fresh media state
-    const requestedSeasons =
-      entity.seasons?.map((entitySeason) => entitySeason.seasonNumber) ?? [];
-    const availableSeasons = latestMedia.seasons.filter(
-      (season) =>
-        season[entity.is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE &&
-        requestedSeasons.includes(season.seasonNumber)
-    );
-    const isMediaAvailable =
-      availableSeasons.length > 0 &&
-      availableSeasons.length === requestedSeasons.length;
-
-    if (!isMediaAvailable) {
-      return;
+    if (!entity.isServiceRequest) {
+      const requestedSeasons =
+        entity.seasons?.map((entitySeason) => entitySeason.seasonNumber) ?? [];
+      const availableSeasons = latestMedia.seasons.filter(
+        (season) =>
+          season[entity.is4k ? 'status4k' : 'status'] ===
+            MediaStatus.AVAILABLE &&
+          requestedSeasons.includes(season.seasonNumber)
+      );
+      const isMediaAvailable =
+        availableSeasons.length > 0 &&
+        availableSeasons.length === requestedSeasons.length;
+      if (!isMediaAvailable) {
+        return;
+      }
     }
 
     const tmdb = new TheMovieDb();
+    const serviceLabel = this.getServiceLabel(entity);
 
     try {
       const tv = await tmdb.getTvShow({ tvId: entity.media.tmdbId });
 
       notificationManager.sendNotification(Notification.MEDIA_AVAILABLE, {
-        event: `${entity.is4k ? '4K ' : ''}Series Request Now Available`,
+        event: `${entity.is4k ? '4K ' : ''}Series Request Now Available${
+          serviceLabel ? ` in ${serviceLabel}` : ''
+        }`,
         subject: `${tv.name}${
           tv.first_air_date ? ` (${tv.first_air_date.slice(0, 4)})` : ''
         }`,
@@ -297,9 +336,7 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           return;
         }
 
-        if (
-          media[entity.is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE
-        ) {
+        if (await this.isAlreadyAvailable(manager, entity, media)) {
           logger.warn('Media already exists, marking request as COMPLETED', {
             label: 'Media Request',
             requestId: entity.id,
@@ -392,14 +429,30 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
               throw new Error('Media data not found');
             }
 
-            media[entity.is4k ? 'externalServiceId4k' : 'externalServiceId'] =
-              radarrMovie.id;
-            media[
-              entity.is4k ? 'externalServiceSlug4k' : 'externalServiceSlug'
-            ] = radarrMovie.titleSlug;
-            media[entity.is4k ? 'serviceId4k' : 'serviceId'] =
-              radarrSettings?.id;
-            await mediaRepository.save(media);
+            if (!entity.isServiceRequest) {
+              media[entity.is4k ? 'externalServiceId4k' : 'externalServiceId'] =
+                radarrMovie.id;
+              media[
+                entity.is4k ? 'externalServiceSlug4k' : 'externalServiceSlug'
+              ] = radarrMovie.titleSlug;
+              media[entity.is4k ? 'serviceId4k' : 'serviceId'] =
+                radarrSettings?.id;
+              await mediaRepository.save(media);
+            }
+
+            if (radarrSettings?.id !== undefined) {
+              await upsertMediaServiceStatus(
+                getRepository(MediaServiceStatus),
+                {
+                  mediaId: media.id,
+                  serviceId: radarrSettings.id,
+                  serviceType: 'radarr',
+                  status: MediaStatus.PROCESSING,
+                  externalServiceId: radarrMovie.id,
+                  externalServiceSlug: radarrMovie.titleSlug,
+                }
+              );
+            }
           })
           .catch(async () => {
             try {
@@ -549,9 +602,7 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           throw new Error('Media data not found');
         }
 
-        if (
-          media[entity.is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE
-        ) {
+        if (await this.isAlreadyAvailable(manager, entity, media)) {
           logger.warn('Media already exists, marking request as COMPLETED', {
             label: 'Media Request',
             requestId: entity.id,
@@ -740,14 +791,30 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
               throw new Error('Media data not found');
             }
 
-            media[entity.is4k ? 'externalServiceId4k' : 'externalServiceId'] =
-              sonarrSeries.id;
-            media[
-              entity.is4k ? 'externalServiceSlug4k' : 'externalServiceSlug'
-            ] = sonarrSeries.titleSlug;
-            media[entity.is4k ? 'serviceId4k' : 'serviceId'] =
-              sonarrSettings?.id;
-            await mediaRepository.save(media);
+            if (!entity.isServiceRequest) {
+              media[entity.is4k ? 'externalServiceId4k' : 'externalServiceId'] =
+                sonarrSeries.id;
+              media[
+                entity.is4k ? 'externalServiceSlug4k' : 'externalServiceSlug'
+              ] = sonarrSeries.titleSlug;
+              media[entity.is4k ? 'serviceId4k' : 'serviceId'] =
+                sonarrSettings?.id;
+              await mediaRepository.save(media);
+            }
+
+            if (sonarrSettings?.id !== undefined) {
+              await upsertMediaServiceStatus(
+                getRepository(MediaServiceStatus),
+                {
+                  mediaId: media.id,
+                  serviceId: sonarrSettings.id,
+                  serviceType: 'sonarr',
+                  status: MediaStatus.PROCESSING,
+                  externalServiceId: sonarrSeries.id ?? null,
+                  externalServiceSlug: sonarrSeries.titleSlug ?? null,
+                }
+              );
+            }
           })
           .catch(async () => {
             try {
@@ -851,6 +918,7 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
     const requestRepository = manager.getRepository(MediaRequest);
 
     if (
+      !entity.isServiceRequest &&
       entity.status === MediaRequestStatus.APPROVED &&
       // Do not update the status if the item is already partially available or available
       media[statusKey] !== MediaStatus.AVAILABLE &&
@@ -862,6 +930,7 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
     }
 
     if (
+      !entity.isServiceRequest &&
       media.mediaType === MediaType.MOVIE &&
       entity.status === MediaRequestStatus.DECLINED &&
       media[statusKey] !== MediaStatus.DELETED
@@ -877,6 +946,7 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
      * other requests have yet to be approved)
      */
     if (
+      !entity.isServiceRequest &&
       media.mediaType === MediaType.TV &&
       entity.status === MediaRequestStatus.DECLINED &&
       media[statusKey] === MediaStatus.PENDING
@@ -886,6 +956,7 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           media: { id: media.id },
           status: MediaRequestStatus.PENDING,
           is4k: entity.is4k,
+          isServiceRequest: false,
           id: Not(entity.id),
         },
       });
@@ -920,13 +991,20 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           (s) => s.seasonNumber === seasonRequest.seasonNumber
         );
 
-        if (season && season[statusKey] === MediaStatus.PENDING) {
+        if (
+          !entity.isServiceRequest &&
+          season &&
+          season[statusKey] === MediaStatus.PENDING
+        ) {
           const otherActiveRequests = await requestRepository
             .createQueryBuilder('request')
             .leftJoinAndSelect('request.seasons', 'season')
             .where('request.mediaId = :mediaId', { mediaId: media.id })
             .andWhere('request.id != :requestId', { requestId: entity.id })
             .andWhere('request.is4k = :is4k', { is4k: entity.is4k })
+            .andWhere('request.isServiceRequest = :isServiceRequest', {
+              isServiceRequest: false,
+            })
             .andWhere('request.status NOT IN (:...statuses)', {
               statuses: [
                 MediaRequestStatus.DECLINED,
@@ -962,6 +1040,10 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
     manager: EntityManager,
     entity: MediaRequest
   ): Promise<void> {
+    if (entity.isServiceRequest) {
+      return;
+    }
+
     const fullMedia = await manager.findOneOrFail(Media, {
       where: { id: entity.media.id },
       relations: { requests: { seasons: true }, seasons: true },
@@ -969,12 +1051,14 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
 
     const hasActive = fullMedia.requests.some(
       (request) =>
+        !request.isServiceRequest &&
         !request.is4k &&
         request.status !== MediaRequestStatus.COMPLETED &&
         request.status !== MediaRequestStatus.DECLINED
     );
     const hasActive4k = fullMedia.requests.some(
       (request) =>
+        !request.isServiceRequest &&
         request.is4k &&
         request.status !== MediaRequestStatus.COMPLETED &&
         request.status !== MediaRequestStatus.DECLINED
@@ -998,7 +1082,10 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
 
       if (needsStatusUpdate) {
         const hadCompleted = fullMedia.requests.some(
-          (r) => !r.is4k && r.status === MediaRequestStatus.COMPLETED
+          (r) =>
+            !r.isServiceRequest &&
+            !r.is4k &&
+            r.status === MediaRequestStatus.COMPLETED
         );
         cleanMedia.status = hadCompleted
           ? MediaStatus.DELETED
@@ -1007,7 +1094,10 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
 
       if (needs4kStatusUpdate) {
         const hadCompleted4k = fullMedia.requests.some(
-          (r) => r.is4k && r.status === MediaRequestStatus.COMPLETED
+          (r) =>
+            !r.isServiceRequest &&
+            r.is4k &&
+            r.status === MediaRequestStatus.COMPLETED
         );
         cleanMedia.status4k = hadCompleted4k
           ? MediaStatus.DELETED

@@ -5,15 +5,22 @@ import Modal from '@app/components/Common/Modal';
 import type { RequestOverrides } from '@app/components/RequestModal/AdvancedRequester';
 import AdvancedRequester from '@app/components/RequestModal/AdvancedRequester';
 import QuotaDisplay from '@app/components/RequestModal/QuotaDisplay';
+import { getStatusLabel } from '@app/components/StatusBadge';
 import useToasts from '@app/hooks/useToasts';
 import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
+import {
+  getLabelledServices,
+  getMediaServiceStatus,
+} from '@app/utils/serviceRequestStatus';
 import { MediaRequestStatus, MediaStatus } from '@server/constants/media';
 import type { MediaRequest } from '@server/entity/MediaRequest';
+import type { ServiceCommonServer } from '@server/interfaces/api/serviceInterfaces';
 import type { QuotaResponse } from '@server/interfaces/api/userInterfaces';
 import { Permission } from '@server/lib/permissions';
 import type { Collection } from '@server/models/Collection';
+import type { MovieResult } from '@server/models/Search';
 import axios from 'axios';
 import { useCallback, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
@@ -24,16 +31,21 @@ const messages = defineMessages('components.RequestModal', {
   requestSuccess: '<strong>{title}</strong> requested successfully!',
   requestcollectiontitle: 'Request Collection',
   requestcollection4ktitle: 'Request Collection in 4K',
+  requestcollectioninservicetitle: 'Request Collection in {label}',
   requesterror: 'Something went wrong while submitting the request.',
   selectmovies: 'Select Movie(s)',
   requestmovies: 'Request {count} {count, plural, one {Movie} other {Movies}}',
   requestmovies4k:
     'Request {count} {count, plural, one {Movie} other {Movies}} in 4K',
+  requestmoviesinservice:
+    'Request {count} {count, plural, one {Movie} other {Movies}} in {label}',
+  statusinservice: '{status} in {label}',
 });
 
 interface RequestModalProps extends React.HTMLAttributes<HTMLDivElement> {
   tmdbId: number;
   is4k?: boolean;
+  serverId?: number;
   onCancel?: () => void;
   onComplete?: (newStatus: MediaStatus) => void;
   onUpdating?: (isUpdating: boolean) => void;
@@ -45,6 +57,7 @@ const CollectionRequestModal = ({
   tmdbId,
   onUpdating,
   is4k = false,
+  serverId,
 }: RequestModalProps) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [requestOverrides, setRequestOverrides] =
@@ -63,8 +76,35 @@ const CollectionRequestModal = ({
       : null
   );
 
+  const { data: services } = useSWR<ServiceCommonServer[]>(
+    '/api/v1/service/radarr'
+  );
+  const selectedService =
+    serverId != null ? services?.find((s) => s.id === serverId) : undefined;
+  const serviceLabel = selectedService?.buttonLabel ?? selectedService?.name;
+
   const currentlyRemaining =
     (quota?.movie.remaining ?? 0) - selectedParts.length;
+
+  const getPartStatus = (part: MovieResult): MediaStatus | undefined =>
+    serverId != null
+      ? (part.mediaInfo?.serviceStatuses?.find(
+          (ss) => ss.serviceId === serverId
+        )?.status ?? MediaStatus.UNKNOWN)
+      : part.mediaInfo?.[is4k ? 'status4k' : 'status'];
+
+  const getPartRequest = (tmdbId: number): MediaRequest | undefined => {
+    const part = (data?.parts ?? []).find((part) => part.id === tmdbId);
+
+    return (part?.mediaInfo?.requests ?? []).find(
+      (request) =>
+        (serverId != null
+          ? request.isServiceRequest && request.serverId === serverId
+          : !request.isServiceRequest && request.is4k === is4k) &&
+        request.status !== MediaRequestStatus.DECLINED &&
+        request.status !== MediaRequestStatus.COMPLETED
+    );
+  };
 
   const getAllParts = (): number[] => {
     return (data?.parts ?? [])
@@ -73,31 +113,15 @@ const CollectionRequestModal = ({
   };
 
   const getAllRequestedParts = (): number[] => {
-    const requestedParts = (data?.parts ?? []).reduce(
-      (requestedParts, part) => {
-        return [
-          ...requestedParts,
-          ...(part.mediaInfo?.requests ?? [])
-            .filter(
-              (request) =>
-                request.is4k === is4k &&
-                request.status !== MediaRequestStatus.DECLINED &&
-                request.status !== MediaRequestStatus.COMPLETED
-            )
-            .map((part) => part.id),
-        ];
-      },
-      [] as number[]
-    );
+    const requestedParts = (data?.parts ?? [])
+      .filter((part) => getPartRequest(part.id))
+      .map((part) => part.id);
 
     const availableParts = (data?.parts ?? [])
       .filter(
         (part) =>
-          part.mediaInfo &&
-          (part.mediaInfo[is4k ? 'status4k' : 'status'] ===
-            MediaStatus.AVAILABLE ||
-            part.mediaInfo[is4k ? 'status4k' : 'status'] ===
-              MediaStatus.PROCESSING) &&
+          (getPartStatus(part) === MediaStatus.AVAILABLE ||
+            getPartStatus(part) === MediaStatus.PROCESSING) &&
           !requestedParts.includes(part.id)
       )
       .map((part) => part.id);
@@ -166,17 +190,6 @@ const CollectionRequestModal = ({
     );
   };
 
-  const getPartRequest = (tmdbId: number): MediaRequest | undefined => {
-    const part = (data?.parts ?? []).find((part) => part.id === tmdbId);
-
-    return (part?.mediaInfo?.requests ?? []).find(
-      (request) =>
-        request.is4k === is4k &&
-        request.status !== MediaRequestStatus.DECLINED &&
-        request.status !== MediaRequestStatus.COMPLETED
-    );
-  };
-
   useEffect(() => {
     if (onUpdating) {
       onUpdating(isUpdating);
@@ -206,6 +219,7 @@ const CollectionRequestModal = ({
             mediaId: part.id,
             mediaType: 'movie',
             is4k,
+            ...(serverId != null ? { serverId, isServiceRequest: true } : {}),
             ...overrideParams,
           });
         })
@@ -246,6 +260,7 @@ const CollectionRequestModal = ({
     intl,
     selectedParts,
     is4k,
+    serverId,
   ]);
 
   const hasAutoApprove = hasPermission(
@@ -268,23 +283,34 @@ const CollectionRequestModal = ({
       backgroundClickable
       onCancel={onCancel}
       onOk={sendRequest}
-      title={intl.formatMessage(
-        is4k
-          ? messages.requestcollection4ktitle
-          : messages.requestcollectiontitle
-      )}
+      title={
+        serverId != null
+          ? intl.formatMessage(messages.requestcollectioninservicetitle, {
+              label: serviceLabel ?? '',
+            })
+          : intl.formatMessage(
+              is4k
+                ? messages.requestcollection4ktitle
+                : messages.requestcollectiontitle
+            )
+      }
       subTitle={data?.name}
       okText={
         isUpdating
           ? intl.formatMessage(globalMessages.requesting)
           : selectedParts.length === 0
             ? intl.formatMessage(messages.selectmovies)
-            : intl.formatMessage(
-                is4k ? messages.requestmovies4k : messages.requestmovies,
-                {
+            : serverId != null
+              ? intl.formatMessage(messages.requestmoviesinservice, {
                   count: selectedParts.length,
-                }
-              )
+                  label: serviceLabel ?? '',
+                })
+              : intl.formatMessage(
+                  is4k ? messages.requestmovies4k : messages.requestmovies,
+                  {
+                    count: selectedParts.length,
+                  }
+                )
       }
       okDisabled={selectedParts.length === 0}
       okButtonType={'primary'}
@@ -368,31 +394,37 @@ const CollectionRequestModal = ({
                     })
                     .map((part) => {
                       const partRequest = getPartRequest(part.id);
-                      const partMedia =
-                        part.mediaInfo &&
-                        part.mediaInfo[is4k ? 'status4k' : 'status'] !==
-                          MediaStatus.UNKNOWN &&
-                        part.mediaInfo[is4k ? 'status4k' : 'status'] !==
-                          MediaStatus.DELETED
-                          ? part.mediaInfo
-                          : undefined;
+                      const partStatus = getPartStatus(part);
+                      const isBlocklisted =
+                        part.mediaInfo?.status === MediaStatus.BLOCKLISTED;
+                      const isInLibrary =
+                        !isBlocklisted &&
+                        partStatus !== undefined &&
+                        partStatus !== MediaStatus.UNKNOWN &&
+                        partStatus !== MediaStatus.DELETED;
+                      const serviceStatuses = getLabelledServices(services)
+                        .filter((service) => service.id !== serverId)
+                        .map((service) => ({
+                          service,
+                          status: getMediaServiceStatus(
+                            part.mediaInfo,
+                            service.id
+                          ).status,
+                        }))
+                        .filter(({ status }) => status !== MediaStatus.UNKNOWN);
 
                       return (
                         <tr key={`part-${part.id}`}>
                           <td
                             className={`whitespace-nowrap px-4 py-4 text-sm font-medium leading-5 text-gray-100 ${
-                              partMedia?.status === MediaStatus.BLOCKLISTED &&
-                              'pointer-events-none opacity-50'
+                              isBlocklisted && 'pointer-events-none opacity-50'
                             }`}
                           >
                             <span
                               role="checkbox"
                               tabIndex={0}
                               aria-checked={
-                                (!!partMedia &&
-                                  partMedia.status !==
-                                    MediaStatus.BLOCKLISTED) ||
-                                isSelectedPart(part.id)
+                                isInLibrary || isSelectedPart(part.id)
                               }
                               onClick={() => togglePart(part.id)}
                               onKeyDown={(e) => {
@@ -401,9 +433,7 @@ const CollectionRequestModal = ({
                                 }
                               }}
                               className={`relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer items-center justify-center pt-2 focus:outline-none ${
-                                (!!partMedia &&
-                                  partMedia.status !==
-                                    MediaStatus.BLOCKLISTED) ||
+                                isInLibrary ||
                                 partRequest ||
                                 (quota?.movie.limit &&
                                   currentlyRemaining <= 0 &&
@@ -415,9 +445,7 @@ const CollectionRequestModal = ({
                               <span
                                 aria-hidden="true"
                                 className={`${
-                                  (!!partMedia &&
-                                    partMedia.status !==
-                                      MediaStatus.BLOCKLISTED) ||
+                                  isInLibrary ||
                                   partRequest ||
                                   isSelectedPart(part.id)
                                     ? 'bg-indigo-500'
@@ -427,9 +455,7 @@ const CollectionRequestModal = ({
                               <span
                                 aria-hidden="true"
                                 className={`${
-                                  (!!partMedia &&
-                                    partMedia.status !==
-                                      MediaStatus.BLOCKLISTED) ||
+                                  isInLibrary ||
                                   partRequest ||
                                   isSelectedPart(part.id)
                                     ? 'translate-x-5'
@@ -440,8 +466,7 @@ const CollectionRequestModal = ({
                           </td>
                           <td
                             className={`flex items-center px-1 py-4 text-sm font-medium leading-5 text-gray-100 md:px-6 ${
-                              partMedia?.status === MediaStatus.BLOCKLISTED &&
-                              'pointer-events-none opacity-50'
+                              isBlocklisted && 'pointer-events-none opacity-50'
                             }`}
                           >
                             <div className="relative h-auto w-10 flex-shrink-0 overflow-hidden rounded-md">
@@ -473,40 +498,67 @@ const CollectionRequestModal = ({
                             </div>
                           </td>
                           <td className="whitespace-nowrap py-4 pr-2 text-sm leading-5 text-gray-200 md:px-6">
-                            {!partMedia && !partRequest && (
-                              <Badge>
-                                {intl.formatMessage(
-                                  globalMessages.notrequested
+                            <div className="flex flex-col items-start gap-1">
+                              {!isBlocklisted &&
+                                !isInLibrary &&
+                                !partRequest && (
+                                  <Badge>
+                                    {intl.formatMessage(
+                                      globalMessages.notrequested
+                                    )}
+                                  </Badge>
                                 )}
-                              </Badge>
-                            )}
-                            {!partMedia &&
-                              partRequest?.status ===
-                                MediaRequestStatus.PENDING && (
+                              {(partStatus === MediaStatus.PENDING ||
+                                (!isInLibrary &&
+                                  partRequest?.status ===
+                                    MediaRequestStatus.PENDING)) && (
                                 <Badge badgeType="warning">
                                   {intl.formatMessage(globalMessages.pending)}
                                 </Badge>
                               )}
-                            {((!partMedia &&
-                              partRequest?.status ===
-                                MediaRequestStatus.APPROVED) ||
-                              partMedia?.[is4k ? 'status4k' : 'status'] ===
-                                MediaStatus.PROCESSING) && (
-                              <Badge badgeType="primary">
-                                {intl.formatMessage(globalMessages.requested)}
-                              </Badge>
-                            )}
-                            {partMedia?.[is4k ? 'status4k' : 'status'] ===
-                              MediaStatus.AVAILABLE && (
-                              <Badge badgeType="success">
-                                {intl.formatMessage(globalMessages.available)}
-                              </Badge>
-                            )}
-                            {partMedia?.status === MediaStatus.BLOCKLISTED && (
-                              <Badge badgeType="danger">
-                                {intl.formatMessage(globalMessages.blocklisted)}
-                              </Badge>
-                            )}
+                              {(partStatus === MediaStatus.PROCESSING ||
+                                (!isInLibrary &&
+                                  partRequest?.status ===
+                                    MediaRequestStatus.APPROVED)) && (
+                                <Badge badgeType="primary">
+                                  {intl.formatMessage(globalMessages.requested)}
+                                </Badge>
+                              )}
+                              {partStatus === MediaStatus.AVAILABLE && (
+                                <Badge badgeType="success">
+                                  {intl.formatMessage(globalMessages.available)}
+                                </Badge>
+                              )}
+                              {isBlocklisted && (
+                                <Badge badgeType="danger">
+                                  {intl.formatMessage(
+                                    globalMessages.blocklisted
+                                  )}
+                                </Badge>
+                              )}
+                              {serviceStatuses.map(({ service, status }) => (
+                                <Badge
+                                  key={`part-${part.id}-service-${service.id}`}
+                                  badgeType={
+                                    status === MediaStatus.AVAILABLE ||
+                                    status === MediaStatus.PARTIALLY_AVAILABLE
+                                      ? 'success'
+                                      : status === MediaStatus.PENDING
+                                        ? 'warning'
+                                        : 'primary'
+                                  }
+                                >
+                                  {intl.formatMessage(
+                                    messages.statusinservice,
+                                    {
+                                      status: getStatusLabel(intl, status),
+                                      label:
+                                        service.buttonLabel ?? service.name,
+                                    }
+                                  )}
+                                </Badge>
+                              ))}
+                            </div>
                           </td>
                         </tr>
                       );
@@ -524,6 +576,8 @@ const CollectionRequestModal = ({
         <AdvancedRequester
           type="movie"
           is4k={is4k}
+          serverFixed={serverId != null}
+          defaultOverrides={serverId != null ? { server: serverId } : undefined}
           onChange={(overrides) => {
             setRequestOverrides(overrides);
           }}

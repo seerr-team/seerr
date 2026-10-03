@@ -11,6 +11,7 @@ import {
   MediaStatus,
   MediaType,
 } from '@server/constants/media';
+import { UserType } from '@server/constants/user';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import { MediaRequest } from '@server/entity/MediaRequest';
@@ -1626,5 +1627,324 @@ describe('DELETE /request/:requestId, orphaned season status reset', () => {
     const updated = await mediaRepo.findOneOrFail({ where: { id: media.id } });
     assert.strictEqual(updated.seasons[0].status, MediaStatus.UNKNOWN);
     assert.strictEqual(updated.seasons[0].status4k, MediaStatus.PROCESSING);
+  });
+});
+
+describe('POST /request, auto-requests', () => {
+  it('allows re-requesting a movie whose auto-requested media was deleted', async () => {
+    const demo = await getRepository(User).findOneOrFail({
+      where: { email: 'demo@seerr.dev' },
+    });
+    const media = await getRepository(Media).save(
+      new Media({
+        tmdbId: 99977,
+        mediaType: MediaType.MOVIE,
+        status: MediaStatus.DELETED,
+      })
+    );
+    await getRepository(MediaRequest).save(
+      new MediaRequest({
+        type: MediaType.MOVIE,
+        media,
+        requestedBy: demo,
+        status: MediaRequestStatus.COMPLETED,
+        is4k: false,
+        isAutoRequest: true,
+      })
+    );
+
+    const agent = await loginAs('demo@seerr.dev', 'test1234');
+    const res = await agent
+      .post('/request')
+      .send({ mediaType: MediaType.MOVIE, mediaId: 99977 });
+
+    assert.strictEqual(res.status, 201);
+  });
+});
+
+describe('POST /request, per-service slots', () => {
+  beforeEach(() => {
+    configureLanguageServers();
+  });
+
+  async function grantServices(email: string, services: string[]) {
+    const userRepo = getRepository(User);
+    const user = await userRepo.findOneOrFail({ where: { email } });
+    user.requestServices = services;
+    await userRepo.save(user);
+  }
+
+  it('keeps service-specific requests in slots separate from the standard slot', async () => {
+    await grantServices('demo@seerr.dev', ['radarr:0', 'radarr:1']);
+    const friend = await loginAs('demo@seerr.dev', 'test1234');
+    const admin = await loginAs('admin@seerr.dev', 'test1234');
+
+    const standard = await friend
+      .post('/request')
+      .send({ mediaType: 'movie', mediaId: 99901 });
+    assert.strictEqual(standard.status, 201);
+    assert.strictEqual(standard.body.isServiceRequest, false);
+
+    const advanced = await admin
+      .post('/request')
+      .send({ mediaType: 'movie', mediaId: 99901, serverId: 0 });
+    assert.strictEqual(advanced.status, 409);
+
+    const service = await friend.post('/request').send({
+      mediaType: 'movie',
+      mediaId: 99901,
+      serverId: 0,
+      isServiceRequest: true,
+    });
+    assert.strictEqual(service.status, 201);
+    assert.strictEqual(service.body.isServiceRequest, true);
+
+    const duplicateService = await friend.post('/request').send({
+      mediaType: 'movie',
+      mediaId: 99901,
+      serverId: 0,
+      isServiceRequest: true,
+    });
+    assert.strictEqual(duplicateService.status, 409);
+
+    const otherService = await friend.post('/request').send({
+      mediaType: 'movie',
+      mediaId: 99901,
+      serverId: 1,
+      isServiceRequest: true,
+    });
+    assert.strictEqual(otherService.status, 201);
+  });
+
+  it('rejects a service request without a valid serverId', async () => {
+    const friend = await loginAs('demo@seerr.dev', 'test1234');
+
+    const res = await friend
+      .post('/request')
+      .send({ mediaType: 'movie', mediaId: 99901, isServiceRequest: true });
+    assert.strictEqual(res.status, 400);
+  });
+
+  it('rejects a service request to a server that is not configured', async () => {
+    const admin = await loginAs('admin@seerr.dev', 'test1234');
+
+    const res = await admin.post('/request').send({
+      mediaType: 'movie',
+      mediaId: 99901,
+      serverId: 7,
+      isServiceRequest: true,
+    });
+    assert.strictEqual(res.status, 400);
+  });
+
+  it('rejects a service request to a service the user has no grant for', async () => {
+    await grantServices('demo@seerr.dev', ['radarr:1']);
+    const friend = await loginAs('demo@seerr.dev', 'test1234');
+
+    const res = await friend.post('/request').send({
+      mediaType: 'movie',
+      mediaId: 99901,
+      serverId: 0,
+      isServiceRequest: true,
+    });
+    assert.strictEqual(res.status, 403);
+  });
+
+  it('allows a manager to make service requests without explicit grants', async () => {
+    const admin = await loginAs('admin@seerr.dev', 'test1234');
+
+    const res = await admin.post('/request').send({
+      mediaType: 'movie',
+      mediaId: 99901,
+      serverId: 0,
+      isServiceRequest: true,
+    });
+    assert.strictEqual(res.status, 201);
+  });
+
+  it('does not claim the standard media status slot', async () => {
+    await grantServices('demo@seerr.dev', ['radarr:0']);
+    const friend = await loginAs('demo@seerr.dev', 'test1234');
+
+    const res = await friend.post('/request').send({
+      mediaType: 'movie',
+      mediaId: 99901,
+      serverId: 0,
+      isServiceRequest: true,
+    });
+    assert.strictEqual(res.status, 201);
+
+    const media = await getRepository(Media).findOneOrFail({
+      where: { tmdbId: 99901, mediaType: MediaType.MOVIE },
+    });
+    assert.strictEqual(media.status, MediaStatus.UNKNOWN);
+    assert.strictEqual(media.status4k, MediaStatus.UNKNOWN);
+  });
+
+  async function createRequester(email: string, services: string[]) {
+    const user = new User({
+      email,
+      username: email.split('@')[0],
+      userType: UserType.LOCAL,
+      permissions: Permission.REQUEST,
+      avatar: '',
+      requestServices: services,
+    });
+    await user.setPassword('test1234');
+    await getRepository(User).save(user);
+  }
+
+  function configureLanguageServers() {
+    configureRadarr([
+      { name: 'Radarr English', buttonLabel: 'ENG' },
+      { name: 'Radarr Italian', buttonLabel: 'ITA' },
+    ]);
+    configureSonarr([
+      { name: 'Sonarr English', buttonLabel: 'ENG' },
+      { name: 'Sonarr Italian', buttonLabel: 'ITA' },
+    ]);
+  }
+
+  async function findServiceRequests(tmdbId: number, mediaType: MediaType) {
+    const requests = await getRepository(MediaRequest).find({
+      where: { media: { tmdbId, mediaType } },
+      order: { serverId: 'ASC' },
+    });
+
+    return requests.map((r) => ({
+      serverId: r.serverId,
+      isServiceRequest: r.isServiceRequest,
+      status: r.status,
+      requestedBy: r.requestedBy.email,
+      seasons: r.seasons.map((season) => season.seasonNumber),
+    }));
+  }
+
+  for (const { mediaType, service, seasons } of [
+    { mediaType: MediaType.MOVIE, service: 'radarr', seasons: undefined },
+    { mediaType: MediaType.TV, service: 'sonarr', seasons: [1] },
+  ]) {
+    const ENGLISH = 0;
+    const ITALIAN = 1;
+    const requestIn = (serverId: number) => ({
+      mediaType,
+      mediaId: 99950,
+      serverId,
+      isServiceRequest: true,
+      seasons,
+    });
+
+    it(`lets another user request a ${mediaType} in Italian after it was requested in English`, async () => {
+      configureLanguageServers();
+      await grantServices('demo@seerr.dev', [`${service}:${ENGLISH}`]);
+      await createRequester('italian@seerr.dev', [`${service}:${ITALIAN}`]);
+      const userX = await loginAs('demo@seerr.dev', 'test1234');
+      const userY = await loginAs('italian@seerr.dev', 'test1234');
+
+      const english = await userX.post('/request').send(requestIn(ENGLISH));
+      assert.strictEqual(english.status, 201);
+
+      const italian = await userY.post('/request').send(requestIn(ITALIAN));
+      assert.strictEqual(italian.status, 201);
+
+      assert.deepStrictEqual(await findServiceRequests(99950, mediaType), [
+        {
+          serverId: ENGLISH,
+          isServiceRequest: true,
+          status: MediaRequestStatus.PENDING,
+          requestedBy: 'demo@seerr.dev',
+          seasons: seasons ?? [],
+        },
+        {
+          serverId: ITALIAN,
+          isServiceRequest: true,
+          status: MediaRequestStatus.PENDING,
+          requestedBy: 'italian@seerr.dev',
+          seasons: seasons ?? [],
+        },
+      ]);
+    });
+
+    it(`lets the same user request a ${mediaType} in Italian after requesting it in English`, async () => {
+      configureLanguageServers();
+      await grantServices('demo@seerr.dev', [
+        `${service}:${ENGLISH}`,
+        `${service}:${ITALIAN}`,
+      ]);
+      const userX = await loginAs('demo@seerr.dev', 'test1234');
+
+      const english = await userX.post('/request').send(requestIn(ENGLISH));
+      assert.strictEqual(english.status, 201);
+
+      const italian = await userX.post('/request').send(requestIn(ITALIAN));
+      assert.strictEqual(italian.status, 201);
+
+      assert.deepStrictEqual(await findServiceRequests(99950, mediaType), [
+        {
+          serverId: ENGLISH,
+          isServiceRequest: true,
+          status: MediaRequestStatus.PENDING,
+          requestedBy: 'demo@seerr.dev',
+          seasons: seasons ?? [],
+        },
+        {
+          serverId: ITALIAN,
+          isServiceRequest: true,
+          status: MediaRequestStatus.PENDING,
+          requestedBy: 'demo@seerr.dev',
+          seasons: seasons ?? [],
+        },
+      ]);
+    });
+  }
+
+  describe('editing a service request', () => {
+    const tvRequestIn = (serverId: number, seasons: number[]) => ({
+      mediaType: 'tv',
+      mediaId: 99960,
+      serverId,
+      isServiceRequest: true,
+      seasons,
+    });
+
+    it('does not let the owner move it to another server', async () => {
+      await grantServices('demo@seerr.dev', ['sonarr:0']);
+      const owner = await loginAs('demo@seerr.dev', 'test1234');
+
+      const created = await owner.post('/request').send(tvRequestIn(0, [1]));
+      assert.strictEqual(created.status, 201);
+
+      const res = await owner
+        .put(`/request/${created.body.id}`)
+        .send({ mediaType: 'tv', serverId: 1, seasons: [1] });
+      assert.strictEqual(res.status, 400);
+
+      const saved = await getRepository(MediaRequest).findOneOrFail({
+        where: { id: created.body.id },
+      });
+      assert.strictEqual(saved.serverId, 0);
+    });
+
+    it('only checks seasons against requests for the same server', async () => {
+      await grantServices('demo@seerr.dev', ['sonarr:0', 'sonarr:1']);
+      const owner = await loginAs('demo@seerr.dev', 'test1234');
+
+      const english = await owner.post('/request').send(tvRequestIn(0, [1, 2]));
+      assert.strictEqual(english.status, 201);
+
+      const italian = await owner.post('/request').send(tvRequestIn(1, [1]));
+      assert.strictEqual(italian.status, 201);
+
+      const res = await owner
+        .put(`/request/${italian.body.id}`)
+        .send({ mediaType: 'tv', serverId: 1, seasons: [1, 2] });
+      assert.strictEqual(res.status, 200);
+      assert.deepStrictEqual(
+        res.body.seasons
+          .map((season: { seasonNumber: number }) => season.seasonNumber)
+          .sort(),
+        [1, 2]
+      );
+    });
   });
 });

@@ -58,6 +58,7 @@ interface RequestModalProps extends React.HTMLAttributes<HTMLDivElement> {
   onComplete?: (newStatus: MediaStatus) => void;
   onUpdating?: (isUpdating: boolean) => void;
   is4k?: boolean;
+  serverId?: number;
   editRequest?: NonFunctionProperties<MediaRequest>;
 }
 
@@ -68,6 +69,7 @@ const TvRequestModal = ({
   onUpdating,
   editRequest,
   is4k = false,
+  serverId,
 }: RequestModalProps) => {
   const settings = useSettings();
   const { addToast } = useToasts();
@@ -199,6 +201,7 @@ const TvRequestModal = ({
         tvdbId: tvdbId ?? data?.externalIds.tvdbId,
         mediaType: 'tv',
         is4k,
+        ...(serverId != null ? { serverId, isServiceRequest: true } : {}),
         ignoreQuota: requestOverrides?.ignoreQuota,
         seasons: settings.currentSettings.partialRequestsEnabled
           ? selectedSeasons.sort((a, b) => a - b)
@@ -722,6 +725,7 @@ const TvRequestModal = ({
           type="tv"
           tmdbId={tmdbId}
           is4k={is4k}
+          serverFixed={serverId != null}
           isAnime={data?.keywords.some(
             (keyword) => keyword.id === ANIME_KEYWORD_ID
           )}
@@ -730,15 +734,20 @@ const TvRequestModal = ({
           requestUser={editRequest?.requestedBy}
           requestId={editRequest?.id}
           defaultOverrides={
-            editRequest
+            serverId != null
               ? {
-                  folder: editRequest.rootFolder,
-                  profile: editRequest.profileId,
-                  server: editRequest.serverId,
-                  language: editRequest.languageProfileId,
-                  tags: editRequest.tags,
+                  server: serverId,
+                  tags: editRequest?.tags,
                 }
-              : undefined
+              : editRequest
+                ? {
+                    folder: editRequest.rootFolder,
+                    profile: editRequest.profileId,
+                    server: editRequest.serverId,
+                    language: editRequest.languageProfileId,
+                    tags: editRequest.tags,
+                  }
+                : undefined
           }
         />
       )}

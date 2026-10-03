@@ -26,6 +26,7 @@ class RadarrScanner
   private radarrApi: RadarrAPI;
   private scannedTmdbIds: Set<number> = new Set();
   private scanned4kTmdbIds: Set<number> = new Set();
+  private currentServerTmdbIds: Set<number> = new Set();
   private didScanStandard = false;
   private didScan4k = false;
   private serverReturnedEmpty = false;
@@ -78,6 +79,7 @@ class RadarrScanner
           });
 
           this.items = await this.radarrApi.getMovies();
+          this.currentServerTmdbIds = new Set();
 
           const server4k = this.enable4kMovie && server.is4k;
           if (server4k) {
@@ -99,6 +101,13 @@ class RadarrScanner
           }
 
           await this.loop(this.processRadarrMovie.bind(this), { sessionId });
+          await this.resetStaleServiceStatus({
+            serviceId: server.id,
+            serviceType: 'radarr',
+            mediaType: MediaType.MOVIE,
+            seenTmdbIds: this.currentServerTmdbIds,
+            serverName: server.name,
+          });
         } else {
           this.log(`Sync not enabled. Skipping Radarr server: ${server.name}`);
         }
@@ -145,6 +154,7 @@ class RadarrScanner
     } else {
       this.scannedTmdbIds.add(radarrMovie.tmdbId);
     }
+    this.currentServerTmdbIds.add(radarrMovie.tmdbId);
 
     try {
       await this.processMovie(radarrMovie.tmdbId, {
