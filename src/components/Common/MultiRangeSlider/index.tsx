@@ -55,7 +55,9 @@ const MultiRangeSlider = ({
       <Tooltip
         content={valueMin.toString()}
         tooltipConfig={{
+          followCursorAxis: 'x',
           placement: 'top',
+          offset: { mainAxis: 8, crossAxis: 0 },
         }}
       >
         <input
@@ -76,7 +78,14 @@ const MultiRangeSlider = ({
           }}
         />
       </Tooltip>
-      <Tooltip content={valueMax}>
+      <Tooltip
+        content={valueMax}
+        tooltipConfig={{
+          followCursorAxis: 'x',
+          placement: 'top',
+          offset: { mainAxis: 8, crossAxis: 0 },
+        }}
+      >
         <input
           type="range"
           min={min}
