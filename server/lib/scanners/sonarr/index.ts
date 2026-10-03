@@ -190,22 +190,23 @@ class SonarrScanner
           (sn) => settings.main.enableSpecialEpisodes || sn.season_number !== 0
         )
         .map((season) => {
+          const external =
+            media?.seasons.find((s) => s.seasonNumber === season.season_number)
+              ?.dispatchedSeasonNumber ?? season.season_number;
           const sonarrSeason = sonarrSeries.seasons.find(
-            (s) => s.seasonNumber === season.season_number
+            (s) => s.seasonNumber === external
           );
-          if (!sonarrSeason) {
-            return {
-              seasonNumber: season.season_number,
-              episodeCount: season.episode_count,
-              monitored: false,
-              statistics: {
-                episodeFileCount: 0,
-                totalEpisodeCount: season.episode_count,
-              },
-            };
-          } else {
-            return sonarrSeason;
-          }
+
+          return {
+            // always TMDB's number, so an overridden season is never stored
+            // under the number Sonarr knows it by
+            seasonNumber: season.season_number,
+            monitored: sonarrSeason?.monitored ?? false,
+            statistics: sonarrSeason?.statistics ?? {
+              episodeFileCount: 0,
+              totalEpisodeCount: season.episode_count,
+            },
+          };
         });
 
       for (const season of filteredSeasons) {
