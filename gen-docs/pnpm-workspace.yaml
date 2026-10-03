@@ -1,0 +1,5 @@
+allowBuilds:
+  '@parcel/watcher': false
+  '@swc/core': true
+  core-js: false
+  postman-code-generators: true
