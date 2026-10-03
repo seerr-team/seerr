@@ -1,4 +1,4 @@
-import { MediaServerType } from '@server/constants/server';
+import { MediaServerType, TagRequestsFormat } from '@server/constants/server';
 import { Permission } from '@server/lib/permissions';
 import { runMigrations } from '@server/lib/settings/migrator';
 import type { AvailableLocale } from '@server/types/languages';
@@ -7,6 +7,7 @@ import fs from 'fs/promises';
 import { mergeWith } from 'lodash';
 import path from 'path';
 import webpush from 'web-push';
+export { TagRequestsFormat };
 
 // Prevents stale array entries when incoming data has fewer elements
 const mergeSettings = <T>(current: T, incoming: Partial<T>): T =>
@@ -83,6 +84,7 @@ export interface DVRSettings {
   syncEnabled: boolean;
   preventSearch: boolean;
   tagRequests: boolean;
+  tagRequestsFormat: TagRequestsFormat;
   overrideRule: number[];
 }
 
