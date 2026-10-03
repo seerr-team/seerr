@@ -12,6 +12,7 @@ import type { User } from '@server/entity/User';
 import { Watchlist } from '@server/entity/Watchlist';
 import type { DownloadingItem } from '@server/lib/downloadtracker';
 import downloadTracker from '@server/lib/downloadtracker';
+import { Permission } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { DbAwareColumn, resolveDbType } from '@server/utils/DbColumnHelper';
@@ -424,6 +425,38 @@ class Media {
         );
       }
     }
+  }
+
+  public filter(user?: User): Media {
+    const canViewIssues =
+      user?.hasPermission(
+        [
+          Permission.MANAGE_ISSUES,
+          Permission.VIEW_ISSUES,
+          Permission.CREATE_ISSUES,
+        ],
+        { type: 'or' }
+      ) ?? false;
+
+    return {
+      ...this,
+      requests: (this.requests ?? []).map((request) => ({
+        ...request,
+        requestedBy: request.requestedBy?.filter(),
+        modifiedBy: request.modifiedBy?.filter(),
+      })),
+      // the detail pages call issues.filter() without a null check
+      issues: canViewIssues
+        ? (this.issues ?? []).map(
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            ({ comments, problemSeason, problemEpisode, ...issue }) => ({
+              ...issue,
+              createdBy: issue.createdBy?.filter(),
+              modifiedBy: issue.modifiedBy?.filter(),
+            })
+          )
+        : [],
+    } as Media;
   }
 }
 

@@ -448,6 +448,11 @@ class JellyfinScanner
       await this.processJellyfinMovie(item);
     } else if (item.Type === 'Series') {
       await this.processJellyfinShow(item);
+    } else if (
+      (item.Type === 'Season' || item.Type === 'Episode') &&
+      item.SeriesId
+    ) {
+      await this.processJellyfinShow({ ...item, Id: item.SeriesId });
     }
   }
 

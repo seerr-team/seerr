@@ -15,9 +15,11 @@ import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import Season from '@server/entity/Season';
 import { User } from '@server/entity/User';
+import { jellyfinFullScanner } from '@server/lib/scanners/jellyfin';
 import type { Library } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import { setupTestDb } from '@server/test/db';
+import { runWithMockTimers } from '@server/test/runWithMockTimers';
 import assert from 'node:assert/strict';
 import { beforeEach, describe, it } from 'node:test';
 
@@ -108,7 +110,15 @@ Object.defineProperty(TheMovieDb.prototype, 'getTvShowForScan', {
   configurable: true,
 });
 
-import { jellyfinFullScanner } from '@server/lib/scanners/jellyfin';
+// both are assigned in the constructor, so the prototype stubs miss the
+// instance jellyfinFullScanner built when it was first imported
+for (const method of ['getTvShow', 'getTvShowForScan'] as const) {
+  Object.defineProperty(jellyfinFullScanner.tmdb, method, {
+    value: async (args: { tvId: number; language?: string }) =>
+      getTvShowImpl(args),
+    configurable: true,
+  });
+}
 
 setupTestDb();
 
@@ -342,7 +352,7 @@ describe('Jellyfin Scanner', () => {
         return [];
       };
 
-      await jellyfinFullScanner.run();
+      await runWithMockTimers(() => jellyfinFullScanner.run());
 
       const updated = await mediaRepository.findOneOrFail({
         where: { tmdbId: 5000 },
@@ -420,7 +430,7 @@ describe('Jellyfin Scanner', () => {
         return [];
       };
 
-      await jellyfinFullScanner.run();
+      await runWithMockTimers(() => jellyfinFullScanner.run());
 
       const updated = await mediaRepository.findOneOrFail({
         where: { tmdbId: 5001 },
@@ -497,7 +507,7 @@ describe('Jellyfin Scanner', () => {
         return [];
       };
 
-      await jellyfinFullScanner.run();
+      await runWithMockTimers(() => jellyfinFullScanner.run());
 
       const updated = await mediaRepository.findOneOrFail({
         where: { tmdbId: 5002 },

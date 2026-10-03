@@ -99,7 +99,7 @@ describe('POST /user/:id/settings/linked-accounts/jellyfin/quickconnect', () => 
   });
 
   it('links the account when the media server is Jellyfin', async () => {
-    const { agent, userId } = await loginAs('friend@seerr.dev', 'test1234');
+    const { agent, userId } = await loginAs('demo@seerr.dev', 'test1234');
 
     const res = await agent
       .post(`/user/${userId}/settings/linked-accounts/jellyfin/quickconnect`)
@@ -116,7 +116,7 @@ describe('POST /user/:id/settings/linked-accounts/jellyfin/quickconnect', () => 
   });
 
   it('returns 403 when the media server is Emby', async () => {
-    const { agent, userId } = await loginAs('friend@seerr.dev', 'test1234');
+    const { agent, userId } = await loginAs('demo@seerr.dev', 'test1234');
     getSettings().main.mediaServerType = MediaServerType.EMBY;
 
     const res = await agent

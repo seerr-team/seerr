@@ -8,7 +8,6 @@ on:
 permissions: {}
 
 env:
-  EMBEDDING_MODEL: ${{ vars.EMBEDDING_MODEL }}
   GROQ_MODEL: ${{ vars.GROQ_MODEL }}
   GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
 
@@ -52,14 +51,25 @@ jobs:
           CI: true
         run: pnpm install --frozen-lockfile
 
-      - name: Download issue index
-        uses: dawidd6/action-download-artifact@d63b86af1b34672e53c440b1b83979861906bad7 # v24
+      - name: Get latest successful run id
+        id: get-latest-run-id
+        run: |
+          RUN_ID=$(gh api \
+            /repos/${{ github.repository }}/actions/workflows/rebuild-issue-index.yml/runs \
+            --jq '[.workflow_runs[] | select(.status=="completed" and .conclusion=="success")][0].id // empty')
+          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download artifact
+        if: steps.get-latest-run-id.outputs.run_id != ''
+        continue-on-error: true
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: issue-index
-          workflow: rebuild-issue-index.yml
           path: bin/duplicate-detector
-          search_artifacts: true
-          if_no_artifact_found: warn
+          run-id: ${{ steps.get-latest-run-id.outputs.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build index if missing
         working-directory: bin/duplicate-detector

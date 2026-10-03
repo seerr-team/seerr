@@ -52,7 +52,18 @@ authRoutes.get('/me', isAuthenticated(), async (req, res) => {
     logger.warn(`User ${user.username} has no valid email address`);
   }
 
-  return res.status(200).json(user);
+  return res.status(200).json({
+    ...user.toJSON(),
+    settings: user.settings && {
+      locale: user.settings.locale,
+      discoverRegion: user.settings.discoverRegion,
+      streamingRegion: user.settings.streamingRegion,
+      originalLanguage: user.settings.originalLanguage,
+      notificationTypes: user.settings.notificationTypes,
+      watchlistSyncMovies: user.settings.watchlistSyncMovies,
+      watchlistSyncTv: user.settings.watchlistSyncTv,
+    },
+  });
 });
 
 authRoutes.post('/plex', async (req, res, next) => {
@@ -799,6 +810,26 @@ authRoutes.post(
         await userRepository.save(user);
       }
 
+      if (user.jellyfinUserId) {
+        try {
+          const { changed } = await checkAvatarChanged(user);
+
+          if (changed) {
+            user.avatar = getUserAvatarUrl(user);
+            await userRepository.save(user);
+            logger.debug('Avatar updated during Quick Connect login', {
+              userId: user.id,
+              jellyfinUserId: user.jellyfinUserId,
+            });
+          }
+        } catch (error) {
+          logger.error('Error handling avatar during Quick Connect login', {
+            label: 'Auth',
+            errorMessage: error.message,
+          });
+        }
+      }
+
       // Set session
       if (req.session) {
         req.session.userId = user.id;
@@ -897,7 +928,7 @@ authRoutes.post('/logout', async (req, res, next) => {
             await axios.delete(`${baseUrl}/Devices`, {
               params: { Id: user.jellyfinDeviceId },
               headers: {
-                'X-Emby-Authorization': `MediaBrowser Client="Seerr", Device="Seerr", DeviceId="seerr", Version="${
+                Authorization: `MediaBrowser Client="Seerr", Device="Seerr", DeviceId="seerr", Version="${
                   settings.main.mediaServerType === MediaServerType.EMBY
                     ? '1.0.0'
                     : getAppVersion()

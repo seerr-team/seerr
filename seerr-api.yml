@@ -8238,6 +8238,70 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/OverrideRule'
+  /overrideRule/advancedRequest:
+    post:
+      summary: Advanced override rule request
+      description: Processes an advanced override rule request.
+      tags:
+        - overriderule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - mediaType
+                - tmdbId
+              properties:
+                mediaType:
+                  type: string
+                tmdbId:
+                  type: number
+                  example: 1
+                is4k:
+                  type: boolean
+                  example: false
+                requestId:
+                  type: number
+                  nullable: true
+                requestUser:
+                  type: number
+                  nullable: true
+                tags:
+                  type: array
+                  items:
+                    type: number
+                  nullable: true
+                serviceId:
+                  type: number
+                  nullable: true
+      responses:
+        '200':
+          description: Advanced override rule request processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rootFolder:
+                    type: string
+                    nullable: true
+                  profileId:
+                    type: number
+                    nullable: true
+                  tags:
+                    type: array
+                    items:
+                      type: number
+                    nullable: true
+        '403':
+          description: User does not have permission to modify the request user
+        '404':
+          description: User, media or request not found
+        '500':
+          description: Unable to evaluate override rules
+
 security:
   - cookieAuth: []
   - apiKey: []

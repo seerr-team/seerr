@@ -298,7 +298,7 @@ sha256:abcd1234...
 
 ```bash
 cosign verify ghcr.io/seerr-team/seerr/seerr-chart@sha256:abcd1234... \
-  --certificate-identity "https://github.com/seerr-team/seerr/.github/workflows/helm.yml@refs/heads/main" \
+  --certificate-identity "https://github.com/seerr-team/seerr/.github/workflows/helm.yml@refs/heads/develop" \
   --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
 ```
 
@@ -316,13 +316,13 @@ The following checks were performed:
 
 ### Expected Certificate Identity
 
-The expected certificate identity for all signed Seerr images is:
+The expected certificate identity for all signed Seerr charts is:
 
 ```
-https://github.com/seerr-team/seerr/.github/workflows/helm.yml@refs/heads/main
+https://github.com/seerr-team/seerr/.github/workflows/helm.yml@refs/heads/develop
 ```
 
-This confirms that the image was:
+This confirms that the chart was:
 
 - Built by the official Seerr Release workflow
 - Produced from the seerr-team/seerr repository
@@ -339,12 +339,12 @@ This confirms that the image was:
 DIGEST=$(docker buildx imagetools inspect ghcr.io/seerr-team/seerr/seerr-chart:3.0.0 --format '{{json .Manifest.Digest}}' | tr -d '"')
 
 cosign verify ghcr.io/seerr-team/seerr/seerr-chart@"$DIGEST" \
-  --certificate-identity-regexp "https://github.com/seerr-team/seerr/.github/workflows/helm.yml@refs/heads/main" \
+  --certificate-identity-regexp "https://github.com/seerr-team/seerr/.github/workflows/helm.yml@refs/heads/develop" \
   --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
 
 cosign verify-attestation ghcr.io/seerr-team/seerr/seerr-chart@"$DIGEST" \
   --type cyclonedx \
-  --certificate-identity-regexp "https://github.com/seerr-team/seerr/.github/workflows/helm.yml@refs/heads/main" \
+  --certificate-identity-regexp "https://github.com/seerr-team/seerr/.github/workflows/helm.yml@refs/heads/develop" \
   --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
 ```
   </TabItem>
@@ -355,7 +355,7 @@ cosign verify-attestation ghcr.io/seerr-team/seerr/seerr-chart@"$DIGEST" \
 DIGEST=$(skopeo inspect docker://ghcr.io/seerr-team/seerr/seerr-chart:3.0.0 --format '{{.Digest}}')
 
 cosign verify ghcr.io/seerr-team/seerr/seerr-chart@"$DIGEST" \
-  --certificate-identity-regexp "https://github.com/seerr-team/seerr/.github/workflows/helm.yml@refs/heads/main" \
+  --certificate-identity-regexp "https://github.com/seerr-team/seerr/.github/workflows/helm.yml@refs/heads/develop" \
   --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
 ```
   </TabItem>
