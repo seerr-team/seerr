@@ -56,6 +56,8 @@ export interface ProcessableSeason {
   episodes4k: number;
   is4kOverride?: boolean;
   processing?: boolean;
+  hasNon4kContent?: boolean;
+  has4kContent?: boolean;
 }
 
 class BaseScanner<T> {
@@ -318,23 +320,21 @@ class BaseScanner<T> {
           (es) => es.seasonNumber === season.seasonNumber
         );
 
+        const seasonHasNon4k = season.hasNon4kContent ?? season.episodes > 0;
+        const seasonHas4k = season.has4kContent ?? season.episodes4k > 0;
+
         // We update the rating keys and jellyfinMediaId in the seasons loop because we need episode counts
-        if (media && season.episodes > 0 && media.ratingKey !== ratingKey) {
+        if (media && seasonHasNon4k && media.ratingKey !== ratingKey) {
           media.ratingKey = ratingKey;
         }
 
-        if (
-          media &&
-          season.episodes4k > 0 &&
-          this.enable4kShow &&
-          media.ratingKey4k !== ratingKey
-        ) {
+        if (media && seasonHas4k && media.ratingKey4k !== ratingKey) {
           media.ratingKey4k = ratingKey;
         }
 
         if (
           media &&
-          season.episodes > 0 &&
+          seasonHasNon4k &&
           media.jellyfinMediaId !== jellyfinMediaId
         ) {
           media.jellyfinMediaId = jellyfinMediaId;
@@ -342,7 +342,7 @@ class BaseScanner<T> {
 
         if (
           media &&
-          season.episodes4k > 0 &&
+          seasonHas4k &&
           this.enable4kShow &&
           media.jellyfinMediaId4k !== jellyfinMediaId
         ) {
@@ -570,6 +570,15 @@ class BaseScanner<T> {
             (s) => s.status4k === MediaStatus.AVAILABLE
           );
 
+        const scanHasNon4kContent = seasons.some(
+          (sn) => sn.hasNon4kContent ?? sn.episodes > 0
+        );
+        const scanHas4kContent = seasons.some(
+          (sn) => sn.has4kContent ?? sn.episodes4k > 0
+        );
+
+        const newMediaHasAnyContent = scanHasNon4kContent || scanHas4kContent;
+
         const newMedia = new Media({
           mediaType: MediaType.TV,
           seasons: newSeasons,
@@ -582,38 +591,11 @@ class BaseScanner<T> {
           externalServiceId4k: is4k ? externalServiceId : undefined,
           externalServiceSlug: !is4k ? externalServiceSlug : undefined,
           externalServiceSlug4k: is4k ? externalServiceSlug : undefined,
-          ratingKey: newSeasons.some(
-            (sn) =>
-              sn.status === MediaStatus.PARTIALLY_AVAILABLE ||
-              sn.status === MediaStatus.AVAILABLE
-          )
-            ? ratingKey
-            : undefined,
-          ratingKey4k:
-            this.enable4kShow &&
-            newSeasons.some(
-              (sn) =>
-                sn.status4k === MediaStatus.PARTIALLY_AVAILABLE ||
-                sn.status4k === MediaStatus.AVAILABLE
-            )
-              ? ratingKey
-              : undefined,
-          jellyfinMediaId: newSeasons.some(
-            (sn) =>
-              sn.status === MediaStatus.PARTIALLY_AVAILABLE ||
-              sn.status === MediaStatus.AVAILABLE
-          )
-            ? jellyfinMediaId
-            : undefined,
+          ratingKey: newMediaHasAnyContent ? ratingKey : undefined,
+          ratingKey4k: scanHas4kContent ? ratingKey : undefined,
+          jellyfinMediaId: newMediaHasAnyContent ? jellyfinMediaId : undefined,
           jellyfinMediaId4k:
-            this.enable4kShow &&
-            newSeasons.some(
-              (sn) =>
-                sn.status4k === MediaStatus.PARTIALLY_AVAILABLE ||
-                sn.status4k === MediaStatus.AVAILABLE
-            )
-              ? jellyfinMediaId
-              : undefined,
+            this.enable4kShow && scanHas4kContent ? jellyfinMediaId : undefined,
           status: isAllStandardSeasonsAvailable
             ? MediaStatus.AVAILABLE
             : newSeasons.some(
