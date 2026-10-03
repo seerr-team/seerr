@@ -137,6 +137,13 @@ Please be respectful to maintainers and disclose AI assistance.
 
 5. Create your patch and test your changes.
 
+   - Set `VALIDATE_API_RESPONSES=true` to have responses validated against
+     `seerr-api.yml`, so you can see whether an endpoint you changed still
+     returns what the spec says it does. A mismatch is logged and the response
+     is still served. It is meant for development and CI: error statuses are
+     mostly undocumented, 61 handlers answer 404 against 7 documented ones, so
+     every refused request writes a line. It also turns a `null` JSON body into
+     a 204, which is the response wrapper's own behaviour.
    - Be sure to follow both the [code](#contributing-code) and [UI text](#ui-text-style) guidelines.
    - Should you need to update your fork, you can do so by rebasing from `upstream`:
 
