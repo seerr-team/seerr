@@ -546,6 +546,12 @@ class BaseScanner<T> {
                 : media.status4k === MediaStatus.DELETED
                   ? MediaStatus.DELETED
                   : MediaStatus.UNKNOWN;
+        // rows created before the series had an ID would otherwise never be
+        // found by a later scan, since that lookup is by TVDB ID
+        if (tvdbId && !media.tvdbId) {
+          media.tvdbId = tvdbId;
+        }
+
         await mediaRepository.save(media);
         this.log(`Updating existing title: ${title}`);
       } else {
@@ -570,26 +576,11 @@ class BaseScanner<T> {
             (s) => s.status4k === MediaStatus.AVAILABLE
           );
 
-        let mediaTvdbId = tvdbId;
-
-        if (mediaTvdbId) {
-          const tvdbConflict = await mediaRepository.findOne({
-            where: { tvdbId: mediaTvdbId },
-          });
-
-          if (tvdbConflict) {
-            this.log(
-              `Skipping TVDB ID ${mediaTvdbId} for ${title}, already owned by TMDB ${tvdbConflict.tmdbId}`
-            );
-            mediaTvdbId = undefined;
-          }
-        }
-
         const newMedia = new Media({
           mediaType: MediaType.TV,
           seasons: newSeasons,
           tmdbId,
-          tvdbId: mediaTvdbId,
+          tvdbId,
           mediaAddedAt,
           serviceId: !is4k ? serviceId : undefined,
           serviceId4k: is4k ? serviceId : undefined,
@@ -659,22 +650,7 @@ class BaseScanner<T> {
                   : MediaStatus.UNKNOWN,
         });
 
-        try {
-          await mediaRepository.save(newMedia);
-        } catch (e) {
-          if (!newMedia.tvdbId) {
-            throw e;
-          }
-
-          // the ownership check above is per-tmdbId, so a concurrent entry for
-          // the same series can claim the ID between checking and saving
-          this.log(
-            `Dropped TVDB ID ${newMedia.tvdbId} for ${title} after a conflict on save`
-          );
-          newMedia.tvdbId = undefined;
-          await mediaRepository.save(newMedia);
-        }
-
+        await mediaRepository.save(newMedia);
         this.log(`Saved ${title}`);
       }
     });

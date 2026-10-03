@@ -931,4 +931,112 @@ describe('Sonarr Scanner', () => {
       assert.strictEqual(updated4k.status, MediaRequestStatus.DECLINED);
     });
   });
+
+  describe('split catalog', () => {
+    async function seedSplitRows() {
+      const mediaRepository = getRepository(Media);
+
+      // both TMDB entries describe the same real series, so both carry its
+      // TVDB ID
+      const plain = new Media();
+      plain.tmdbId = 500;
+      plain.tvdbId = 100;
+      plain.mediaType = MediaType.TV;
+      plain.status = MediaStatus.PROCESSING;
+      plain.seasons = [
+        new Season({ seasonNumber: 1, status: MediaStatus.PROCESSING }),
+      ];
+
+      const aliased = new Media();
+      aliased.tmdbId = 600;
+      aliased.tvdbId = 100;
+      aliased.mediaType = MediaType.TV;
+      aliased.status = MediaStatus.PROCESSING;
+      aliased.seasons = [
+        new Season({
+          seasonNumber: 1,
+          dispatchedSeasonNumber: 2,
+          status: MediaStatus.PROCESSING,
+        }),
+      ];
+
+      await mediaRepository.save([plain, aliased]);
+    }
+
+    it('processes each media row against its own season aliases', async () => {
+      await seedSplitRows();
+      configureSonarr();
+      getTvShowImpl = async ({ tvId }) => fakeTmdbShow(tvId);
+      getSeriesImpl = async () => [
+        fakeSonarrSeries({
+          seasons: [
+            {
+              seasonNumber: 1,
+              monitored: true,
+              statistics: {
+                episodeFileCount: 10,
+                totalEpisodeCount: 10,
+                episodeCount: 10,
+                percentOfEpisodes: 100,
+                sizeOnDisk: 0,
+                previousAiring: undefined,
+              },
+            },
+            {
+              seasonNumber: 2,
+              monitored: false,
+              statistics: {
+                episodeFileCount: 0,
+                totalEpisodeCount: 10,
+                episodeCount: 0,
+                percentOfEpisodes: 0,
+                sizeOnDisk: 0,
+                previousAiring: undefined,
+              },
+            },
+          ],
+        } as Partial<SonarrSeries>),
+      ];
+
+      await sonarrScanner.run();
+
+      const mediaRepository = getRepository(Media);
+      const plain = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 500 },
+      });
+      const aliased = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 600 },
+      });
+
+      // the unaliased row reads Sonarr season 1, which has every file
+      assert.strictEqual(plain.seasons.length, 1);
+      assert.strictEqual(plain.seasons[0].status, MediaStatus.AVAILABLE);
+      assert.strictEqual(plain.status, MediaStatus.AVAILABLE);
+      // the aliased row reads Sonarr season 2, which has none, so both it and
+      // its rollup are demoted from PROCESSING rather than merely skipped
+      assert.strictEqual(aliased.seasons[0].status, MediaStatus.UNKNOWN);
+      assert.strictEqual(aliased.status, MediaStatus.UNKNOWN);
+    });
+
+    it('resets every sibling row when the series leaves Sonarr', async () => {
+      await seedSplitRows();
+      configureSonarr();
+      // an unrelated series rather than none, since an empty Sonarr disables
+      // cleanup entirely so a broken server cannot wipe every show
+      getSeriesImpl = async () => [fakeSonarrSeries({ tvdbId: 999 })];
+
+      await sonarrScanner.run();
+
+      const mediaRepository = getRepository(Media);
+      const plain = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 500 },
+      });
+      const aliased = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 600 },
+      });
+
+      assert.strictEqual(plain.status, MediaStatus.UNKNOWN);
+      assert.strictEqual(aliased.status, MediaStatus.UNKNOWN);
+    });
+  });
 });
