@@ -4,7 +4,7 @@ import CachedImage from '@app/components/Common/CachedImage';
 import Tooltip from '@app/components/Common/Tooltip';
 import RequestModal from '@app/components/RequestModal';
 import useRequestOverride from '@app/hooks/useRequestOverride';
-import { useUser } from '@app/hooks/useUser';
+import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import {
@@ -46,7 +46,7 @@ interface RequestBlockProps {
 }
 
 const RequestBlock = ({ request, onUpdate }: RequestBlockProps) => {
-  const { user } = useUser();
+  const { user, hasPermission } = useUser();
   const intl = useIntl();
   const [isUpdating, setIsUpdating] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -177,16 +177,21 @@ const RequestBlock = ({ request, onUpdate }: RequestBlockProps) => {
                     <XMarkIcon />
                   </Button>
                 </Tooltip>
-                <Tooltip content={intl.formatMessage(messages.edit)}>
-                  <Button
-                    buttonType="warning"
-                    onClick={() => setShowEditModal(true)}
-                    disabled={isUpdating}
-                  >
-                    <PencilIcon className="icon-sm" />
-                  </Button>
-                </Tooltip>
               </>
+            )}
+            {(request.status === MediaRequestStatus.PENDING ||
+              (request.status === MediaRequestStatus.FAILED &&
+                hasPermission(Permission.MANAGE_REQUESTS))) && (
+              <Tooltip content={intl.formatMessage(messages.edit)}>
+                <Button
+                  buttonType="warning"
+                  className="mr-1"
+                  onClick={() => setShowEditModal(true)}
+                  disabled={isUpdating}
+                >
+                  <PencilIcon className="icon-sm" />
+                </Button>
+              </Tooltip>
             )}
             {request.status !== MediaRequestStatus.PENDING && (
               <Tooltip content={intl.formatMessage(messages.delete)}>
