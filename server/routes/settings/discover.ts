@@ -1,7 +1,35 @@
+import { DiscoverSliderType } from '@server/constants/discover';
 import { getRepository } from '@server/datasource';
 import DiscoverSlider from '@server/entity/DiscoverSlider';
+import {
+  InvalidDiscoverNetworksError,
+  sanitizeDiscoverNetworks,
+} from '@server/lib/discoverNetworks';
 import logger from '@server/logger';
 import { Router } from 'express';
+
+const applyNetworkList = (
+  existingSlider: DiscoverSlider,
+  data: string | null | undefined
+): string | null => {
+  if (
+    existingSlider.type !== DiscoverSliderType.NETWORKS ||
+    data === undefined
+  ) {
+    return null;
+  }
+
+  try {
+    existingSlider.data = sanitizeDiscoverNetworks(data);
+    return null;
+  } catch (e) {
+    if (e instanceof InvalidDiscoverNetworksError) {
+      return e.message;
+    }
+
+    throw e;
+  }
+};
 
 const discoverSettingRoutes = Router();
 
@@ -13,6 +41,9 @@ discoverSettingRoutes.post('/', async (req, res) => {
   if (!Array.isArray(sliders)) {
     return res.status(400).json({ message: 'Invalid request body.' });
   }
+
+  // Prepare all sliders and validate before saving any
+  const prepared: DiscoverSlider[] = [];
 
   for (let x = 0; x < sliders.length; x++) {
     const slider = sliders[x];
@@ -26,14 +57,20 @@ discoverSettingRoutes.post('/', async (req, res) => {
       existingSlider.enabled = slider.enabled;
       existingSlider.order = x;
 
-      // Only allow changes to the following when the slider is not built in
+      // Built-in sliders are fixed, except Networks, whose data is the shared list.
       if (!existingSlider.isBuiltIn) {
         existingSlider.title = slider.title;
         existingSlider.data = slider.data;
         existingSlider.type = slider.type;
+      } else {
+        const networkListError = applyNetworkList(existingSlider, slider.data);
+
+        if (networkListError) {
+          return res.status(400).json({ message: networkListError });
+        }
       }
 
-      await sliderRepository.save(existingSlider);
+      prepared.push(existingSlider);
     } else {
       const newSlider = new DiscoverSlider({
         isBuiltIn: false,
@@ -43,11 +80,14 @@ discoverSettingRoutes.post('/', async (req, res) => {
         order: x,
         type: slider.type,
       });
-      await sliderRepository.save(newSlider);
+      prepared.push(newSlider);
     }
   }
 
-  return res.json(sliders);
+  // All validation passed; now save everything together
+  const savedSliders = await sliderRepository.save(prepared);
+
+  return res.json(savedSliders);
 });
 
 discoverSettingRoutes.post('/add', async (req, res) => {
@@ -89,11 +129,17 @@ discoverSettingRoutes.put('/:sliderId', async (req, res, next) => {
       },
     });
 
-    // Only allow changes to the following when the slider is not built in
+    // Built-in sliders are fixed, except Networks, whose data is the shared list.
     if (!existingSlider.isBuiltIn) {
       existingSlider.title = slider.title;
       existingSlider.data = slider.data;
       existingSlider.type = slider.type;
+    } else {
+      const networkListError = applyNetworkList(existingSlider, slider.data);
+
+      if (networkListError) {
+        return res.status(400).json({ message: networkListError });
+      }
     }
 
     await sliderRepository.save(existingSlider);
