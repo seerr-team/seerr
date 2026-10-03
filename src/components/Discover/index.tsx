@@ -398,6 +398,19 @@ const Discover = () => {
               />
             );
             break;
+          case DiscoverSliderType.EXTERNAL_PROVIDER:
+            if (!slider.data) {
+              break;
+            }
+
+            sliderComponent = (
+              <MediaSlider
+                sliderKey={`external-provider-slider-${slider.id}`}
+                title={slider.title ?? ''}
+                url={`/api/v1/discover/external/${encodeURIComponent(slider.data)}`}
+              />
+            );
+            break;
         }
 
         if (isEditing) {
