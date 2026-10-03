@@ -931,4 +931,132 @@ describe('Sonarr Scanner', () => {
       assert.strictEqual(updated4k.status, MediaRequestStatus.DECLINED);
     });
   });
+
+  describe('multi-server reset handling', () => {
+    async function seedProcessingRequest(
+      tmdbId: number,
+      tvdbId: number,
+      serverId: number
+    ) {
+      const mediaRepository = getRepository(Media);
+      const requestRepository = getRepository(MediaRequest);
+      const userRepository = getRepository(User);
+
+      const requestedBy = await userRepository.findOneOrFail({
+        where: { id: 1 },
+      });
+
+      const media = await mediaRepository.save(
+        new Media({
+          tmdbId,
+          tvdbId,
+          mediaType: MediaType.TV,
+          status: MediaStatus.PROCESSING,
+          serviceId: serverId,
+          externalServiceId: 200,
+          seasons: [
+            new Season({
+              seasonNumber: 1,
+              status: MediaStatus.PROCESSING,
+              status4k: MediaStatus.UNKNOWN,
+            }),
+          ],
+        })
+      );
+
+      const settings = getSettings();
+      settings.sonarr = [];
+      settings.radarr = [];
+
+      return requestRepository.save(
+        new MediaRequest({
+          type: MediaType.TV,
+          status: MediaRequestStatus.APPROVED,
+          media,
+          requestedBy,
+          is4k: false,
+          serverId,
+        })
+      );
+    }
+
+    // getSeries takes no server argument and is called once per server.
+    function queueServerResponses(responses: SonarrSeries[][]): void {
+      let call = 0;
+      getSeriesImpl = async () => responses[call++] ?? [];
+    }
+
+    // Distinct hostnames, or run()'s uniqWith collapses the two into one server.
+    function configureTwoServers(): void {
+      configureSonarr([
+        { id: 0, hostname: 'server-a' },
+        { id: 1, hostname: 'server-b' },
+      ]);
+    }
+
+    function seriesWithEmptySeason(
+      id: number,
+      titleSlug: string,
+      monitored: boolean
+    ): SonarrSeries {
+      return fakeSonarrSeries({
+        tvdbId: 700,
+        id,
+        titleSlug,
+        seasons: [
+          {
+            seasonNumber: 1,
+            monitored,
+            statistics: {
+              episodeFileCount: 0,
+              totalEpisodeCount: 10,
+              episodeCount: 10,
+              percentOfEpisodes: 0,
+              sizeOnDisk: 0,
+              previousAiring: undefined,
+            },
+          },
+        ],
+      });
+    }
+
+    const abandonedOnA = seriesWithEmptySeason(100, 'abandoned-on-a', false);
+    const downloadingOnB = seriesWithEmptySeason(200, 'downloading-on-b', true);
+
+    it('keeps the request approved when another server is still downloading, scanning A then B', async () => {
+      const requestRepository = getRepository(MediaRequest);
+      const request = await seedProcessingRequest(2100, 700, 1);
+
+      configureTwoServers();
+      getTvShowImpl = async () => fakeTmdbShow(2100);
+      queueServerResponses([[abandonedOnA], [downloadingOnB]]);
+      getLibrarySeriesByTvdbIdImpl = async () => [downloadingOnB];
+
+      await runWithMockTimers(() => sonarrScanner.run());
+
+      const updated = await requestRepository.findOneOrFail({
+        where: { id: request.id },
+      });
+
+      assert.strictEqual(updated.status, MediaRequestStatus.APPROVED);
+    });
+
+    it('keeps the request approved when another server is still downloading, scanning B then A', async () => {
+      const requestRepository = getRepository(MediaRequest);
+      const request = await seedProcessingRequest(2100, 700, 1);
+
+      configureTwoServers();
+      getTvShowImpl = async () => fakeTmdbShow(2100);
+      queueServerResponses([[downloadingOnB], [abandonedOnA]]);
+      getLibrarySeriesByTvdbIdImpl = async () => [downloadingOnB];
+
+      await runWithMockTimers(() => sonarrScanner.run());
+
+      const updated = await requestRepository.findOneOrFail({
+        where: { id: request.id },
+      });
+
+      assert.strictEqual(updated.status, MediaRequestStatus.APPROVED);
+    });
+  });
 });
