@@ -5,6 +5,7 @@ import CachedImage from '@app/components/Common/CachedImage';
 import ConfirmButton from '@app/components/Common/ConfirmButton';
 import Tooltip from '@app/components/Common/Tooltip';
 import RequestModal from '@app/components/RequestModal';
+import SeasonOverrideFlow from '@app/components/RequestModal/SeasonOverrideFlow';
 import StatusBadge from '@app/components/StatusBadge';
 import useDeepLinks from '@app/hooks/useDeepLinks';
 import useToasts from '@app/hooks/useToasts';
@@ -34,6 +35,7 @@ import type { NonFunctionProperties } from '@server/interfaces/api/common';
 import type { RequestResultsResponse } from '@server/interfaces/api/requestInterfaces';
 import type { MovieDetails } from '@server/models/Movie';
 import type { TvDetails } from '@server/models/Tv';
+import { externalSeasonNumber } from '@server/utils/seasonHelpers';
 import axios from 'axios';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -95,7 +97,13 @@ const RequestItemError = ({
       requestData?.is4k ? 'downloadStatus4k' : 'downloadStatus'
     ],
     requestData?.type === 'tv'
-      ? (requestData?.seasons ?? []).map((season) => season.seasonNumber)
+      ? (requestData?.seasons ?? []).map((season) =>
+          externalSeasonNumber(
+            requestData?.media?.seasons?.find(
+              (s) => s.seasonNumber === season.seasonNumber
+            ) ?? season
+          )
+        )
       : []
   );
 
@@ -319,6 +327,7 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
   const intl = useIntl();
   const { user, hasPermission } = useUser();
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showOverrideFlow, setShowOverrideFlow] = useState(false);
   const url =
     request.type === 'movie'
       ? `/api/v1/movie/${request.media.tmdbId}`
@@ -432,7 +441,13 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
   const requestDownloadStatus = getRequestDownloadStatus(
     requestData.media[requestData.is4k ? 'downloadStatus4k' : 'downloadStatus'],
     requestData.type === 'tv'
-      ? requestData.seasons.map((season) => season.seasonNumber)
+      ? requestData.seasons.map((season) =>
+          externalSeasonNumber(
+            requestData.media.seasons.find(
+              (s) => s.seasonNumber === season.seasonNumber
+            ) ?? season
+          )
+        )
       : []
   );
 
@@ -449,6 +464,24 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
           revalidateList();
           setShowEditModal(false);
         }}
+      />
+      <SeasonOverrideFlow
+        show={showOverrideFlow}
+        requestId={requestData.id}
+        tmdbId={requestData.media.tmdbId}
+        seasonNumbers={requestData.seasons.map((season) => season.seasonNumber)}
+        subTitle={isMovie(title) ? title.title : title.name}
+        backdrop={
+          title.backdropPath
+            ? `https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${title.backdropPath}`
+            : undefined
+        }
+        onComplete={() => {
+          revalidate();
+          revalidateList();
+          setShowOverrideFlow(false);
+        }}
+        onCancel={() => setShowOverrideFlow(false)}
       />
       <div className="relative flex w-full flex-col justify-between overflow-hidden rounded-xl bg-gray-800 py-2 text-gray-400 shadow-md ring-1 ring-gray-700 xl:h-28 xl:flex-row">
         {title.backdropPath && (
@@ -738,18 +771,14 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
           {requestData.status === MediaRequestStatus.FAILED &&
             canSearchAnotherListing(requestData.failureReason) &&
             title && (
-              <Link
-                href={`/search?query=${encodeURIComponent(
-                  isMovie(title) ? title.title : title.name
-                )}`}
-                passHref
-                legacyBehavior
+              <Button
+                className="w-full"
+                buttonType="default"
+                onClick={() => setShowOverrideFlow(true)}
               >
-                <Button as="a" className="w-full" buttonType="default">
-                  <MagnifyingGlassIcon />
-                  <span>{intl.formatMessage(globalMessages.findlisting)}</span>
-                </Button>
-              </Link>
+                <MagnifyingGlassIcon />
+                <span>{intl.formatMessage(globalMessages.findlisting)}</span>
+              </Button>
             )}
           {requestData.status !== MediaRequestStatus.PENDING &&
             hasPermission(Permission.MANAGE_REQUESTS) && (
