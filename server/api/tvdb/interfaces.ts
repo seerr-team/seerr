@@ -30,6 +30,30 @@ interface TvDetailsStatus {
   keepUpdated: boolean;
 }
 
+export interface TvdbRemoteId {
+  id: string;
+  type: number;
+  sourceName: string;
+}
+
+// sourceName 'TheMovieDB.com' is shared with movie (10), person (15) and collection (28)
+export const TVDB_SOURCE_TYPE_TMDB_TV = 12;
+
+export interface TvdbSeriesBaseRecord {
+  id: number;
+  name: string;
+  slug?: string;
+  year?: string;
+}
+
+export interface TvdbSearchByRemoteIdResult {
+  series?: TvdbSeriesBaseRecord;
+  movie?: TvdbSeriesBaseRecord;
+  people?: TvdbSeriesBaseRecord;
+  episode?: TvdbSeriesBaseRecord;
+  company?: TvdbSeriesBaseRecord;
+}
+
 export interface TvdbTvDetails {
   id: number;
   name: string;
@@ -38,6 +62,7 @@ export interface TvdbTvDetails {
   nameTranslations: string[];
   overwiewTranslations: string[];
   aliases: TvDetailsAliases[];
+  remoteIds?: TvdbRemoteId[];
   firstAired: Date;
   lastAired: Date;
   nextAired: Date | string;
