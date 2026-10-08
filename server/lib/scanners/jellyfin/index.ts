@@ -16,6 +16,7 @@ import { MediaServerType } from '@server/constants/server';
 import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
 import type {
+  ProcessableEpisode,
   ProcessableSeason,
   RunnableScanner,
   StatusBase,
@@ -310,6 +311,8 @@ class JellyfinScanner
             let totalStandard = 0;
             let total4k = 0;
 
+            let episodeDetails: ProcessableEpisode[] | undefined;
+
             if (!this.enable4kShow) {
               const episodes = await this.jfClient.getEpisodes(
                 Id,
@@ -329,6 +332,10 @@ class JellyfinScanner
                 }
 
                 totalStandard += episodeCount;
+              }
+
+              if (settings.main.enableEpisodeAvailability) {
+                episodeDetails = this.toProcessableEpisodes(episodes);
               }
             } else {
               // 4K detection enabled - request media info to check resolution
@@ -376,6 +383,19 @@ class JellyfinScanner
                 // See issue https://github.com/seerr-team/seerr/issues/1744 for details.
                 if (hasStandard) totalStandard += episodeCount;
                 if (has4k) total4k += episodeCount;
+
+                if (
+                  settings.main.enableEpisodeAvailability &&
+                  (hasStandard || has4k)
+                ) {
+                  episodeDetails ??= [];
+                  episodeDetails.push(
+                    ...this.toProcessableEpisodes([episode], {
+                      hasFile: !!hasStandard,
+                      hasFile4k: !!has4k,
+                    })
+                  );
+                }
               }
             }
 
@@ -400,6 +420,7 @@ class JellyfinScanner
               totalEpisodes: season.episode_count,
               episodes: totalStandard,
               episodes4k: total4k,
+              episodeDetails: tvdbSeasonFromAnidb ? undefined : episodeDetails,
             });
           } else {
             processableSeasons.push({
@@ -441,6 +462,32 @@ class JellyfinScanner
         { errorMessage: e.message, jellyfinitem }
       );
     }
+  }
+
+  private toProcessableEpisodes(
+    episodes: JellyfinLibraryItem[],
+    availability: { hasFile: boolean; hasFile4k?: boolean } = { hasFile: true }
+  ): ProcessableEpisode[] {
+    return episodes.flatMap((episode) => {
+      if (episode.IndexNumber == null) {
+        return [];
+      }
+
+      const lastEpisodeNumber = episode.IndexNumberEnd ?? episode.IndexNumber;
+      const details: ProcessableEpisode[] = [];
+      for (
+        let episodeNumber = episode.IndexNumber;
+        episodeNumber <= lastEpisodeNumber;
+        episodeNumber++
+      ) {
+        details.push({
+          episodeNumber,
+          hasFile: availability.hasFile,
+          hasFile4k: availability.hasFile4k,
+        });
+      }
+      return details;
+    });
   }
 
   private async processItem(item: JellyfinLibraryItem): Promise<void> {
