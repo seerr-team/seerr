@@ -1664,7 +1664,7 @@ describe('POST /request (tv), TVDB ID backfill', () => {
     assert.strictEqual(updated.tvdbId, 184871);
   });
 
-  it('creates untracked media without the TVDB ID when another row owns it', async () => {
+  it('stores the TVDB ID on new media even when another row owns it', async () => {
     getSettings().radarr = [];
     getSettings().sonarr = [];
 
@@ -1680,13 +1680,14 @@ describe('POST /request (tv), TVDB ID backfill', () => {
 
     assert.strictEqual(res.status, 201);
 
+    // both TMDB entries describe one real series, so both may carry its ID
     const created = await getRepository(Media).findOneOrFail({
       where: { tmdbId: 34549 },
     });
-    assert.strictEqual(created.tvdbId, null);
+    assert.strictEqual(created.tvdbId, 184871);
   });
 
-  it('skips the backfill when another media row already owns the TVDB ID', async () => {
+  it('backfills the TVDB ID even when another media row already owns it', async () => {
     getSettings().radarr = [];
     getSettings().sonarr = [];
 
@@ -1706,6 +1707,6 @@ describe('POST /request (tv), TVDB ID backfill', () => {
     const updated = await getRepository(Media).findOneOrFail({
       where: { id: media.id },
     });
-    assert.strictEqual(updated.tvdbId, null);
+    assert.strictEqual(updated.tvdbId, 184871);
   });
 });
