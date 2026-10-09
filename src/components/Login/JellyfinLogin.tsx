@@ -46,6 +46,7 @@ const JellyfinLogin = ({ revalidate, serverType }: JellyfinLoginProps) => {
   const intl = useIntl();
   const settings = useSettings();
   const [showQuickConnect, setShowQuickConnect] = useState(false);
+  const quickConnectOnly = settings.currentSettings.quickConnectOnly;
 
   const mediaServerFormatValues = {
     mediaServerName:
@@ -126,93 +127,94 @@ const JellyfinLogin = ({ revalidate, serverType }: JellyfinLoginProps) => {
         {({ errors, touched, values, isSubmitting, isValid }) => {
           return (
             <>
-              <Form data-form-type="login">
-                <div>
-                  <h2 className="-mt-1 mb-6 text-center text-lg font-bold text-neutral-200">
-                    {intl.formatMessage(messages.loginwithapp, {
-                      appName: mediaServerFormatValues.mediaServerName,
-                    })}
-                  </h2>
-
-                  <div className="mb-4 mt-1">
-                    <div className="form-input-field">
-                      <Field
-                        id="username"
-                        name="username"
-                        type="text"
-                        placeholder={intl.formatMessage(messages.username)}
-                        className="!bg-gray-700/80 placeholder:text-gray-400"
-                        data-form-type="username"
-                      />
+              <h2 className="-mt-1 mb-6 text-center text-lg font-bold text-neutral-200">
+                {intl.formatMessage(messages.loginwithapp, {
+                  appName: mediaServerFormatValues.mediaServerName,
+                })}
+              </h2>
+              {!quickConnectOnly && (
+                <Form data-form-type="login">
+                  <div>
+                    <div className="mb-4 mt-1">
+                      <div className="form-input-field">
+                        <Field
+                          id="username"
+                          name="username"
+                          type="text"
+                          placeholder={intl.formatMessage(messages.username)}
+                          className="!bg-gray-700/80 placeholder:text-gray-400"
+                          data-form-type="username"
+                        />
+                      </div>
+                      {touched.username && values.username.match(/\s$/) && (
+                        <div className="warning label-tip flex items-center">
+                          <ExclamationTriangleIcon className="mr-1 h-4 w-4" />
+                          {intl.formatMessage(
+                            messages.tipUsernameHasTrailingWhitespace
+                          )}
+                        </div>
+                      )}
+                      {errors.username && touched.username && (
+                        <div className="error">{errors.username}</div>
+                      )}
                     </div>
-                    {touched.username && values.username.match(/\s$/) && (
-                      <div className="warning label-tip flex items-center">
-                        <ExclamationTriangleIcon className="mr-1 h-4 w-4" />
-                        {intl.formatMessage(
-                          messages.tipUsernameHasTrailingWhitespace
+
+                    <div className="mb-2 mt-1">
+                      <div className="form-input-field">
+                        <SensitiveInput
+                          as="field"
+                          id="password"
+                          name="password"
+                          type="password"
+                          autoComplete="current-password"
+                          placeholder={intl.formatMessage(messages.password)}
+                          className="!bg-gray-700/80 placeholder:text-gray-400"
+                          data-form-type="password"
+                          data-1pignore="false"
+                          data-lpignore="false"
+                        />
+                      </div>
+                      <div className="flex">
+                        {errors.password && touched.password && (
+                          <div className="error">{errors.password}</div>
+                        )}
+                        <div className="flex-grow" />
+                        {baseUrl && (
+                          <a
+                            href={
+                              jellyfinForgotPasswordUrl
+                                ? `${jellyfinForgotPasswordUrl}`
+                                : `${baseUrl}/web/index.html#!/${
+                                    settings.currentSettings.mediaServerType ===
+                                    MediaServerType.EMBY
+                                      ? 'startup/'
+                                      : ''
+                                  }forgotpassword.html`
+                            }
+                            className="pt-2 text-sm text-indigo-500 hover:text-indigo-400"
+                          >
+                            {intl.formatMessage(messages.forgotpassword)}
+                          </a>
                         )}
                       </div>
-                    )}
-                    {errors.username && touched.username && (
-                      <div className="error">{errors.username}</div>
-                    )}
-                  </div>
-
-                  <div className="mb-2 mt-1">
-                    <div className="form-input-field">
-                      <SensitiveInput
-                        as="field"
-                        id="password"
-                        name="password"
-                        type="password"
-                        autoComplete="current-password"
-                        placeholder={intl.formatMessage(messages.password)}
-                        className="!bg-gray-700/80 placeholder:text-gray-400"
-                        data-form-type="password"
-                        data-1pignore="false"
-                        data-lpignore="false"
-                      />
-                    </div>
-                    <div className="flex">
-                      {errors.password && touched.password && (
-                        <div className="error">{errors.password}</div>
-                      )}
-                      <div className="flex-grow" />
-                      {baseUrl && (
-                        <a
-                          href={
-                            jellyfinForgotPasswordUrl
-                              ? `${jellyfinForgotPasswordUrl}`
-                              : `${baseUrl}/web/index.html#!/${
-                                  settings.currentSettings.mediaServerType ===
-                                  MediaServerType.EMBY
-                                    ? 'startup/'
-                                    : ''
-                                }forgotpassword.html`
-                          }
-                          className="pt-2 text-sm text-indigo-500 hover:text-indigo-400"
-                        >
-                          {intl.formatMessage(messages.forgotpassword)}
-                        </a>
-                      )}
                     </div>
                   </div>
-                </div>
 
-                <Button
-                  buttonType="primary"
-                  type="submit"
-                  disabled={isSubmitting || !isValid}
-                  className="mt-2 w-full shadow-sm"
-                >
-                  <ArrowLeftOnRectangleIcon />
-                  <span>
-                    {isSubmitting
-                      ? intl.formatMessage(messages.signingin)
-                      : intl.formatMessage(messages.signin)}
-                  </span>
-                </Button>
-              </Form>
+                  <Button
+                    buttonType="primary"
+                    type="submit"
+                    disabled={isSubmitting || !isValid}
+                    className="mt-2 w-full shadow-sm"
+                  >
+                    <ArrowLeftOnRectangleIcon />
+                    <span>
+                      {isSubmitting
+                        ? intl.formatMessage(messages.signingin)
+                        : intl.formatMessage(messages.signin)}
+                    </span>
+                  </Button>
+                </Form>
+              )}
             </>
           );
         }}
