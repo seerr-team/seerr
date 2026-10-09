@@ -35,9 +35,56 @@ You cannot configure both the **Authorization Header** field and a custom `Autho
 
 ### JSON Payload
 
-Customize the JSON payload to suit your needs. Seerr provides several [template variables](#template-variables) for use in the payload, which will be replaced with the relevant data when the notifications are triggered.
+Customize the JSON payload to suit your needs. The payload is a [Liquid](https://liquidjs.com/) template that is rendered when a notification is triggered and then sent as the request body. Seerr exposes a set of [template variables](#template-variables), plus the full `media`, `request`, `issue`, and `comment` objects, for use in [conditionals and filters](#template-syntax). If you are new to Liquid, see the [introduction to Liquid tutorial](https://liquidjs.com/tutorials/intro-to-liquid.html).
+
+The template only needs to _render_ to valid JSON — it does not need to be valid JSON itself (for example, optional sections can be wrapped in `{% if %}` blocks). Use the **Test** button to confirm your template renders correctly; template errors are also written to the server logs.
+
+## Template Syntax
+
+Payloads and webhook URLs are rendered with [LiquidJS](https://liquidjs.com/), so in addition to simple `{{ variable }}` substitution you can use Liquid tags and filters.
+
+### Conditionals
+
+Render a section only when the relevant object is present, falling back to `null` otherwise:
+
+```liquid
+"media": {% if media %}{ "tmdbId": "{{ media_tmdbid }}" }{% else %}null{% endif %}
+```
+
+You can also branch on a value:
+
+```liquid
+{% if media_status == "AVAILABLE" %}...{% else %}...{% endif %}
+```
+
+### Filters
+
+- **`json`** — `{{ subject | json }}`: serializes a value as JSON, quoting and escaping strings so characters like `"` or newlines can't break the payload. Circular-safe.
+- **`default`** — `{{ notifyuser_username | default: "Unknown User" }}`: falls back to a value when the input is nil or empty.
+- **`upcase` / `downcase`** — `{{ media_type | upcase }}`: changes case.
+- **`capitalize`** — `{{ notifyuser_username | capitalize }}`: capitalizes the first character.
+- **`truncate`** — `{{ subject | truncate: 50 }}`: shortens a string.
+- **`url_encode`** — `{{ subject | url_encode }}`: percent-encodes a value for use in a URL.
+
+See the [LiquidJS filter reference](https://liquidjs.com/filters/overview.html) for the full list.
+
+:::info
+Free-text values (titles, overviews, usernames, comments) should be emitted through the `json` filter so quotes and newlines can't produce invalid JSON, e.g. `"subject": {{ subject | json }}`.
+:::
+
+:::warning
+Webhook URL values are rendered raw. When substituting a value into a URL, use the `url_encode` filter (e.g. `...?user={{ notifyuser_username | url_encode }}`) so characters like `&`, `?`, or spaces don't break the URL.
+:::
+
+### Advanced object access
+
+In addition to the flat variables documented below, the full `media`, `request`, `issue`, and `comment` objects are available for conditionals and advanced templates (for example `{% if issue %}` or `{{ request.id }}`). These map to the [`NotificationPayload` interface](https://github.com/seerr-team/seerr/blob/develop/server/lib/notifications/agents/agent.ts).
 
 ## Template Variables
+
+:::warning Deprecated
+The flat template variables listed below (e.g. `{{ media_tmdbid }}`, `{{ notifyuser_username }}`) are deprecated and will be replaced in a future release. They continue to work for now, and a migration will be provided to convert existing templates automatically.
+:::
 
 ### General
 
@@ -77,21 +124,21 @@ On the other hand, the `notifyuser` variables _will_ be replaced with the reques
 If you would like to use the requesting user's information in your webhook, please instead include the relevant variables from the [Request](#request) section below.
 :::
 
-### Special
+### Objects
 
-The following variables must be used as a key in the JSON payload (e.g., `"{{extra}}": []`).
+The following values are the full objects for each notification. They are `null` when not relevant to the notification, and are primarily useful in conditionals (e.g. `{% if media %}`) or for accessing fields not covered by the flat variables below. Serialize an object into the payload with the `json` filter, e.g. `"extra": {{ extra | json }}`.
 
-| Variable      | Value                                                                                                                          |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `{{media}}`   | The relevant media object                                                                                                      |
-| `{{request}}` | The relevant request object                                                                                                    |
-| `{{issue}}`   | The relevant issue object                                                                                                      |
-| `{{comment}}` | The relevant issue comment object                                                                                              |
-| `{{extra}}`   | The "extra" array of additional data for certain notifications (e.g., season/episode numbers for series-related notifications) |
+| Variable    | Value                                                                                                                          |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `media`     | The relevant media object                                                                                                      |
+| `request`   | The relevant request object                                                                                                    |
+| `issue`     | The relevant issue object                                                                                                      |
+| `comment`   | The relevant issue comment object                                                                                              |
+| `extra`     | The "extra" array of additional data for certain notifications (e.g., season/episode numbers for series-related notifications) |
 
 #### Media
 
-The `{{media}}` will be `null` if there is no relevant media object for the notification.
+`media` will be `null` if there is no relevant media object for the notification.
 
 These following special variables are only included in media-related notifications, such as requests.
 
@@ -109,7 +156,7 @@ These following special variables are only included in media-related notificatio
 
 #### Request
 
-The `{{request}}` will be `null` if there is no relevant media object for the notification.
+`request` will be `null` if there is no relevant request object for the notification.
 
 The following special variables are only included in request-related notifications.
 
@@ -125,7 +172,7 @@ The following special variables are only included in request-related notificatio
 
 #### Issue
 
-The `{{issue}}` will be `null` if there is no relevant media object for the notification.
+`issue` will be `null` if there is no relevant issue object for the notification.
 
 The following special variables are only included in issue-related notifications.
 
@@ -140,7 +187,7 @@ The following special variables are only included in issue-related notifications
 
 #### Comment
 
-The `{{comment}}` will be `null` if there is no relevant media object for the notification.
+`comment` will be `null` if there is no relevant comment object for the notification.
 
 The following special variables are only included in issue comment-related notifications.
 
