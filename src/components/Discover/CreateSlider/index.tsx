@@ -44,6 +44,7 @@ const messages = defineMessages('components.Discover.CreateSlider', {
   searchStudios: 'Search studios…',
   starttyping: 'Starting typing to search.',
   nooptions: 'No results.',
+  selectExternalProvider: 'Select external provider',
 });
 
 type CreateSliderProps = {
@@ -60,6 +61,13 @@ type CreateOption = {
   dataPlaceholderText?: string;
 };
 
+type ExternalProviderOption = {
+  id: number;
+  name: string;
+  url: string;
+  enabled: boolean;
+};
+
 const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
   const intl = useIntl();
   const { addToast } = useToasts();
@@ -67,6 +75,9 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
   const [defaultDataValue, setDefaultDataValue] = useState<
     { label: string; value: number }[] | null
   >(null);
+  const [externalProviders, setExternalProviders] = useState<
+    ExternalProviderOption[]
+  >([]);
 
   useEffect(() => {
     if (slider) {
@@ -153,6 +164,24 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
       }
     }
   }, [slider]);
+
+  useEffect(() => {
+    const loadExternalProviders = async () => {
+      try {
+        const response = await axios.get<ExternalProviderOption[]>(
+          '/api/v1/settings/external-providers/providers'
+        );
+
+        setExternalProviders(
+          response.data.filter((provider) => provider.enabled)
+        );
+      } catch {
+        setExternalProviders([]);
+      }
+    };
+
+    loadExternalProviders();
+  }, []);
 
   const CreateSliderSchema = Yup.object().shape({
     title: Yup.string().required(
@@ -295,6 +324,14 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
       params: 'watchRegion=$regionValue&watchProviders=$providersValue',
       titlePlaceholderText: intl.formatMessage(messages.slidernameplaceholder),
     },
+    {
+      type: DiscoverSliderType.EXTERNAL_PROVIDER,
+      title: intl.formatMessage(sliderTitles.externalProvider),
+      dataUrl: '/api/v1/discover/external/$value',
+      params: '',
+      titlePlaceholderText: intl.formatMessage(messages.slidernameplaceholder),
+      dataPlaceholderText: intl.formatMessage(messages.selectExternalProvider),
+    },
   ];
 
   return (
@@ -357,6 +394,9 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
           (option) => option.type === Number(values.sliderType)
         );
 
+        const shouldRequirePreviewResults =
+          activeOption?.type !== DiscoverSliderType.EXTERNAL_PROVIDER;
+
         let dataInput: React.ReactNode;
 
         switch (activeOption?.type) {
@@ -381,6 +421,7 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
                   const keywords = value.map((item) => item.value).join(',');
 
                   setFieldValue('data', keywords);
+                  setResultCount(0);
                 }}
               />
             );
@@ -398,6 +439,7 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
                 placeholder={intl.formatMessage(messages.searchGenres)}
                 onChange={(value) => {
                   setFieldValue('data', value?.value.toString());
+                  setResultCount(0);
                 }}
               />
             );
@@ -415,6 +457,7 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
                 placeholder={intl.formatMessage(messages.searchGenres)}
                 onChange={(value) => {
                   setFieldValue('data', value?.value.toString());
+                  setResultCount(0);
                 }}
               />
             );
@@ -432,6 +475,7 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
                 placeholder={intl.formatMessage(messages.searchStudios)}
                 onChange={(value) => {
                   setFieldValue('data', value?.value.toString());
+                  setResultCount(0);
                 }}
               />
             );
@@ -449,6 +493,7 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
                 }
                 onChange={(region, providers) => {
                   setFieldValue('data', `${region},${providers.join('|')}`);
+                  setResultCount(0);
                 }}
               />
             );
@@ -466,8 +511,41 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
                 }
                 onChange={(region, providers) => {
                   setFieldValue('data', `${region},${providers.join('|')}`);
+                  setResultCount(0);
                 }}
               />
+            );
+            break;
+          case DiscoverSliderType.EXTERNAL_PROVIDER:
+            dataInput = (
+              <Field
+                as="select"
+                id="data"
+                name="data"
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                  const providerId = e.target.value;
+                  const provider = externalProviders.find(
+                    (externalProvider) =>
+                      String(externalProvider.id) === providerId
+                  );
+
+                  setFieldValue('data', providerId);
+                  setResultCount(0);
+
+                  if (provider && !values.title) {
+                    setFieldValue('title', provider.name);
+                  }
+                }}
+              >
+                <option value="">
+                  {intl.formatMessage(messages.selectExternalProvider)}
+                </option>
+                {externalProviders.map((provider) => (
+                  <option key={provider.id} value={provider.id}>
+                    {provider.name}
+                  </option>
+                ))}
+              </Field>
             );
             break;
           default:
@@ -477,6 +555,10 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
                 name="data"
                 id="data"
                 placeholder={activeOption?.dataPlaceholderText}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  setFieldValue('data', e.target.value);
+                  setResultCount(0);
+                }}
               />
             );
         }
@@ -484,7 +566,18 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
         return (
           <Form data-testid="create-discover-option-form">
             <div className="flex flex-col space-y-2 text-gray-100">
-              <Field as="select" id="sliderType" name="sliderType">
+              <Field
+                as="select"
+                id="sliderType"
+                name="sliderType"
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                  setFieldValue('sliderType', Number(e.target.value));
+                  setFieldValue('title', '');
+                  setFieldValue('data', '');
+                  setDefaultDataValue(null);
+                  setResultCount(0);
+                }}
+              >
                 {options.map((option) => (
                   <option value={option.type} key={`type-${option.type}`}>
                     {option.title}
@@ -509,7 +602,7 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
                   <div className="error">{errors.data}</div>
                 )}
               <div className="flex-1" />
-              {resultCount === 0 ? (
+              {shouldRequirePreviewResults && resultCount === 0 ? (
                 <Tooltip content={intl.formatMessage(messages.needresults)}>
                   <div>
                     <Button buttonType="primary" buttonSize="sm" disabled>
