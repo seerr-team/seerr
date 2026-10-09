@@ -82,6 +82,10 @@ Type=exec
 Restart=on-failure
 WorkingDirectory=/opt/seerr
 ExecStart=/usr/bin/node dist/index.js
+#LoadCredential=api-key:/etc/seerr/secrets/api-key
+#LoadCredential=db-user:/etc/seerr/secrets/db-user
+#LoadCredential=db-pass:/etc/seerr/secrets/db-pass
+#LoadCredential=db-name:/etc/seerr/secrets/db-name
 
 [Install]
 WantedBy=multi-user.target
