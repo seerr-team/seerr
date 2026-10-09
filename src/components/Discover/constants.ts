@@ -94,6 +94,7 @@ export const QueryFilterOptions = z.object({
   sortBy: z.string().optional(),
   primaryReleaseDateGte: z.string().optional(),
   primaryReleaseDateLte: z.string().optional(),
+  releaseType: z.enum(['2', '3', '4', '5', '6']).optional(),
   firstAirDateGte: z.string().optional(),
   firstAirDateLte: z.string().optional(),
   studio: z.string().optional(),
@@ -136,6 +137,10 @@ export const prepareFilterValues = (
 
   if (values.primaryReleaseDateLte) {
     filterValues.primaryReleaseDateLte = values.primaryReleaseDateLte;
+  }
+
+  if (values.releaseType) {
+    filterValues.releaseType = values.releaseType;
   }
 
   if (values.firstAirDateGte) {
