@@ -58,6 +58,9 @@ export class UserSettings {
   @Column({ type: 'text', nullable: true, transformer: jsonArrayTransformer })
   public discordIds: string[];
 
+  @Column({ type: 'text', nullable: true, transformer: jsonArrayTransformer })
+  public slackIds: string[];
+
   @Column({ nullable: true })
   public pushbulletAccessToken?: string;
 
