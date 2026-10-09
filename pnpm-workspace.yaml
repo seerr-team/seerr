@@ -1,0 +1,13 @@
+overrides:
+  sqlite3>node-gyp: 8.4.1
+  '@types/express-session': 1.18.2
+  '@types/react': 19.2.14
+  '@types/react-dom': 19.2.3
+engineStrict: true
+allowBuilds:
+  '@swc/core': true
+  bcrypt: true
+  cypress: true
+  sharp: true
+  sqlite3: true
+  unrs-resolver: false
