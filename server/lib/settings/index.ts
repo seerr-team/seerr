@@ -158,6 +158,7 @@ export interface MainSettings {
   locale: string;
   youtubeUrl: string;
   versionCheck: boolean;
+  ignoredPathPatterns: string[];
 }
 
 export interface ProxySettings {
@@ -436,6 +437,7 @@ class Settings {
         locale: 'en',
         youtubeUrl: '',
         versionCheck: true,
+        ignoredPathPatterns: [],
       },
       plex: {
         name: '',
