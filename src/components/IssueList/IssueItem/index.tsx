@@ -193,8 +193,10 @@ const IssueItem = ({ issue }: IssueItemProps) => {
                         </div>
                       }
                       tooltipConfig={{
-                        placement: 'top',
-                        offset: [0, 8],
+                        offset: {
+                          mainAxis: 8,
+                          crossAxis: -12,
+                        },
                       }}
                     >
                       <span className="block cursor-help truncate transition-colors hover:text-gray-200">
