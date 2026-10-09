@@ -151,6 +151,8 @@ const DiscoverSliderEdit = ({
         return intl.formatMessage(sliderTitles.upcomingtv);
       case DiscoverSliderType.NETWORKS:
         return intl.formatMessage(sliderTitles.networks);
+      case DiscoverSliderType.SEASONAL_ANIME:
+        return intl.formatMessage(sliderTitles.seasonalanime);
       case DiscoverSliderType.TMDB_MOVIE_KEYWORD:
         return intl.formatMessage(sliderTitles.tmdbmoviekeyword);
       case DiscoverSliderType.TMDB_TV_KEYWORD:

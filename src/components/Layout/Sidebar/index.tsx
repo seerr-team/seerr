@@ -10,6 +10,7 @@ import {
   ExclamationTriangleIcon,
   EyeSlashIcon,
   FilmIcon,
+  FireIcon,
   SparklesIcon,
   TvIcon,
   UsersIcon,
@@ -25,6 +26,7 @@ export const menuMessages = defineMessages('components.Layout.Sidebar', {
   dashboard: 'Discover',
   browsemovies: 'Movies',
   browsetv: 'Series',
+  browseanime: 'Anime',
   requests: 'Requests',
   blocklist: 'Blocklist',
   issues: 'Issues',
@@ -70,6 +72,12 @@ const SidebarLinks: SidebarLinkProps[] = [
     messagesKey: 'browsetv',
     svgIcon: <TvIcon className="mr-3 h-6 w-6" />,
     activeRegExp: /^\/discover\/tv$/,
+  },
+  {
+    href: '/discover/anime',
+    messagesKey: 'browseanime',
+    svgIcon: <FireIcon className="mr-3 h-6 w-6" />,
+    activeRegExp: /^\/discover\/anime$/,
   },
   {
     href: '/requests',
