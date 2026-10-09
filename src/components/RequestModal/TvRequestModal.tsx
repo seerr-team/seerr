@@ -38,6 +38,8 @@ const messages = defineMessages('components.RequestModal', {
     'Request {seasonCount} {seasonCount, plural, one {Season} other {Seasons}}',
   requestseasons4k:
     'Request {seasonCount} {seasonCount, plural, one {Season} other {Seasons}} in 4K',
+  requesttvNoAirDate: 'No air date is available for this series.',
+  requesttvNotReleased: 'This series has not aired yet.',
   alreadyrequested: 'Already Requested',
   selectseason: 'Select Season(s)',
   season: 'Season',
@@ -376,6 +378,16 @@ const TvRequestModal = ({
 
   const isOwner = editRequest && editRequest.requestedBy.id === user?.id;
 
+  const dateNow = new Date();
+  const selectedSeasonsAirDates = selectedSeasons.map(
+    (season) => data?.seasons?.find((s) => s.seasonNumber === season)?.airDate
+  );
+  const selectedSeasonsPresentAirDates = selectedSeasonsAirDates
+    .filter((i): i is string => i !== undefined)
+    .map((element) => new Date(Date.parse(element)));
+  const selectedSeasonsAirDateInTheFuture =
+    selectedSeasonsPresentAirDates.filter((element) => element > dateNow);
+
   return data && !error && !data.externalIds.tvdbId && searchModal.show ? (
     <SearchByNameModal
       tvdbId={tvdbId}
@@ -490,6 +502,34 @@ const TvRequestModal = ({
             <Alert
               title={intl.formatMessage(messages.requestadmin)}
               type="info"
+            />
+          </div>
+        )}
+      {settings.currentSettings.warnNonReleased &&
+        selectedSeasonsAirDateInTheFuture.length > 0 && (
+          <div className="mt-6">
+            <Alert
+              title={`${intl.formatMessage(
+                messages.requesttvNotReleased
+              )} (${selectedSeasonsAirDateInTheFuture
+                .map((element) =>
+                  intl.formatDate(element, {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })
+                )
+                .join(', ')})`}
+              type="warning"
+            />
+          </div>
+        )}
+      {settings.currentSettings.warnNonReleased &&
+        selectedSeasonsAirDates.some((element) => element === undefined) && (
+          <div className="mt-6">
+            <Alert
+              title={intl.formatMessage(messages.requesttvNoAirDate)}
+              type="warning"
             />
           </div>
         )}
