@@ -43,6 +43,7 @@ interface TitleCardProps {
   inProgress?: boolean;
   isAddedToWatchlist?: number | boolean;
   mutateParent?: () => void;
+  onOpen?: () => void;
 }
 
 const messages = defineMessages('components.TitleCard', {
@@ -67,6 +68,7 @@ const TitleCard = ({
   inProgress = false,
   canExpand = false,
   mutateParent,
+  onOpen,
 }: TitleCardProps) => {
   const isTouch = useIsTouch();
   const intl = useIntl();
@@ -502,6 +504,7 @@ const TitleCard = ({
                       ? `/collection/${id}`
                       : `/tv/${id}`
                 }
+                onClick={onOpen}
                 className="absolute inset-0 h-full w-full cursor-pointer overflow-hidden text-left"
                 style={{
                   background:
