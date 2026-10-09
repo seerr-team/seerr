@@ -2,7 +2,9 @@ import Header from '@app/components/Common/Header';
 import ListView from '@app/components/Common/ListView';
 import PageTitle from '@app/components/Common/PageTitle';
 import useDiscover, { encodeURIExtraParams } from '@app/hooks/useDiscover';
+import useFilterByLanguages from '@app/hooks/useFilterByLanguages';
 import globalMessages from '@app/i18n/globalMessages';
+import { FilterByLanguage } from '@app/types/filters';
 import ErrorPage from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
 import type { TmdbKeyword } from '@server/api/themoviedb/interfaces';
@@ -34,6 +36,13 @@ const DiscoverMovieKeyword = () => {
     }
   );
 
+  const filteredTitles = useFilterByLanguages({
+    titles,
+    movie: true,
+    tv: false,
+    key: FilterByLanguage.DISCOVER_MOVIES,
+  });
+
   if (error) {
     return <ErrorPage statusCode={500} />;
   }
@@ -53,10 +62,11 @@ const DiscoverMovieKeyword = () => {
         <Header>{title}</Header>
       </div>
       <ListView
-        items={titles}
+        items={filteredTitles}
         isEmpty={isEmpty}
         isLoading={
-          isLoadingInitialData || (isLoadingMore && (titles?.length ?? 0) > 0)
+          isLoadingInitialData ||
+          (isLoadingMore && (filteredTitles?.length ?? 0) > 0)
         }
         isReachingEnd={isReachingEnd}
         onScrollBottom={fetchMore}
