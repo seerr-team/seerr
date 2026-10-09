@@ -129,3 +129,60 @@ describe('Tvdb resolveTvdbId', () => {
     assert.strictEqual(await new Tvdb().resolveTvdbId(87012), null);
   });
 });
+
+describe('Tvdb getOfficialSeasons', () => {
+  afterEach(() => mock.restoreAll());
+
+  const endpoint = '/series/184871/extended?meta=episodes&short=true';
+
+  it('derives each official season year from its earliest episode', async () => {
+    stubApi({
+      [endpoint]: {
+        data: {
+          seasons: [
+            { number: 0, type: { type: 'official' } },
+            { number: 1, type: { type: 'official' } },
+            { number: 2, type: { type: 'official' } },
+            { number: 1, type: { type: 'dvd' } },
+          ],
+          episodes: [
+            { seasonNumber: 1, aired: '2020-11-24' },
+            { seasonNumber: 1, aired: '2020-09-22' },
+            { seasonNumber: 2, aired: '2021-09-21' },
+            { seasonNumber: 0, aired: '2019-12-25' },
+          ],
+        },
+      },
+    });
+
+    assert.deepStrictEqual(await new Tvdb().getOfficialSeasons(184871), [
+      { seasonNumber: 1, year: 2020 },
+      { seasonNumber: 2, year: 2021 },
+    ]);
+  });
+
+  it('returns null when the record has no seasons', async () => {
+    stubApi({ [endpoint]: { data: { episodes: [] } } });
+
+    assert.strictEqual(await new Tvdb().getOfficialSeasons(184871), null);
+  });
+
+  it('returns null when the record has no episodes', async () => {
+    stubApi({ [endpoint]: { data: { seasons: [] } } });
+
+    assert.strictEqual(await new Tvdb().getOfficialSeasons(184871), null);
+  });
+
+  it('returns an empty list when the show has no official seasons', async () => {
+    stubApi({
+      [endpoint]: {
+        data: {
+          seasons: [{ number: 1, type: { type: 'dvd' } }],
+          episodes: [{ seasonNumber: 1, aired: '2020-09-22' }],
+        },
+      },
+    });
+
+    assert.deepStrictEqual(await new Tvdb().getOfficialSeasons(184871), []);
+  });
+});
