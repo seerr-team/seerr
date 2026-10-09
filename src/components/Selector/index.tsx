@@ -1,3 +1,4 @@
+import Button from '@app/components/Common/Button';
 import CachedImage from '@app/components/Common/CachedImage';
 import { SmallLoadingSpinner } from '@app/components/Common/LoadingSpinner';
 import Tooltip from '@app/components/Common/Tooltip';
@@ -42,6 +43,8 @@ const messages = defineMessages('components.Selector', {
   ended: 'Ended',
   canceled: 'Canceled',
   pilot: 'Pilot',
+  selectAll: 'Select All',
+  clearAll: 'Clear All',
 });
 
 type SingleVal = {
@@ -425,6 +428,9 @@ export const WatchProviderSelector = ({
 
   const initialProviders = orderedData.slice(0, 24);
   const otherProviders = orderedData.slice(24);
+  const allSelected =
+    orderedData.length > 0 &&
+    orderedData.every((provider) => activeProvider.includes(provider.id));
 
   return (
     <>
@@ -444,6 +450,24 @@ export const WatchProviderSelector = ({
         <SmallLoadingSpinner />
       ) : (
         <div className="grid">
+          <div className="mb-4 flex justify-start gap-2 py-2">
+            <Button
+              type="button"
+              buttonSize="sm"
+              disabled={orderedData.length === 0 || allSelected}
+              onClick={() => setActiveProvider(orderedData.map((p) => p.id))}
+            >
+              {intl.formatMessage(messages.selectAll)}
+            </Button>
+            <Button
+              type="button"
+              buttonSize="sm"
+              disabled={activeProvider.length === 0}
+              onClick={() => setActiveProvider([])}
+            >
+              {intl.formatMessage(messages.clearAll)}
+            </Button>
+          </div>
           <div className="provider-icons grid gap-2">
             {initialProviders.map((provider) => {
               const isActive = activeProvider.includes(provider.id);
