@@ -25,6 +25,7 @@ import notificationManager, { Notification } from '@server/lib/notifications';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { withNestedTransaction } from '@server/utils/nestedTransaction';
+import { externalSeasonNumber } from '@server/utils/seasonHelpers';
 import { isEqual, truncate } from 'lodash';
 import type {
   EntityManager,
@@ -624,7 +625,8 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
         });
         const series = await tmdb.getTvShow({ tvId: media.tmdbId });
 
-        let resolvedTvdbId = series.external_ids.tvdb_id ?? media.tvdbId;
+        let resolvedTvdbId =
+          entity.overrideTvdbId ?? series.external_ids.tvdb_id ?? media.tvdbId;
 
         if (!resolvedTvdbId) {
           resolvedTvdbId = await this.resolveMissingTvdbId(
@@ -704,8 +706,18 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
 
           const unmatchedSeasons = entity.seasons
             .map((season) => season.seasonNumber)
-            .filter(
-              (seasonNumber) =>
+            .filter((seasonNumber) => {
+              const mediaSeason = media.seasons.find(
+                (season) => season.seasonNumber === seasonNumber
+              );
+
+              // a season someone mapped by hand needs no year check
+              // zero is a real season, and externalSeasonNumber accepts it too
+              if (mediaSeason?.dispatchedSeasonNumber != null) {
+                return false;
+              }
+
+              return (
                 seasonNumber > 0 &&
                 !this.seasonsMatch(
                   series.seasons.find(
@@ -715,7 +727,8 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
                     (season) => season.seasonNumber === seasonNumber
                   )
                 )
-            );
+              );
+            });
 
           if (tvdbSeasons.length > 0 && unmatchedSeasons.length > 0) {
             const requestRepository = manager.getRepository(MediaRequest);
@@ -878,7 +891,13 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           rootFolderPath: rootFolder,
           title: series.name,
           tvdbid: tvdbId,
-          seasons: entity.seasons.map((season) => season.seasonNumber),
+          seasons: entity.seasons.map((season) =>
+            externalSeasonNumber(
+              media.seasons.find(
+                (s) => s.seasonNumber === season.seasonNumber
+              ) ?? season
+            )
+          ),
           seasonFolder: sonarrSettings.enableSeasonFolders,
           seriesType,
           tags,
