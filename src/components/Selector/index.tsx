@@ -429,7 +429,8 @@ export const WatchProviderSelector = ({
   const initialProviders = orderedData.slice(0, 24);
   const otherProviders = orderedData.slice(24);
   const allSelected =
-    orderedData.length > 0 && activeProvider.length === orderedData.length;
+    orderedData.length > 0 &&
+    orderedData.every((provider) => activeProvider.includes(provider.id));
 
   return (
     <>
@@ -453,7 +454,7 @@ export const WatchProviderSelector = ({
             <Button
               type="button"
               buttonSize="sm"
-              disabled={allSelected}
+              disabled={orderedData.length === 0 || allSelected}
               onClick={() => setActiveProvider(orderedData.map((p) => p.id))}
             >
               {intl.formatMessage(messages.selectAll)}
