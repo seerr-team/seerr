@@ -1,5 +1,6 @@
 import RadarrAPI from '@server/api/servarr/radarr';
 import SonarrAPI from '@server/api/servarr/sonarr';
+import TheMovieDb from '@server/api/themoviedb';
 import {
   MediaRequestStatus,
   MediaStatus,
@@ -22,6 +23,11 @@ import type {
   RequestResultsResponse,
 } from '@server/interfaces/api/requestInterfaces';
 import { Permission } from '@server/lib/permissions';
+import type { RequestOverrideValues } from '@server/lib/serviceDefaults';
+import {
+  isAnimeMedia,
+  stripDefaultOverrides,
+} from '@server/lib/serviceDefaults';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { isAuthenticated } from '@server/middleware/auth';
@@ -467,6 +473,53 @@ requestRoutes.get('/:requestId', async (req, res, next) => {
   }
 });
 
+// The form only submits an advanced field when it rendered one, so an absent
+// field keeps whatever is stored rather than being read as a reset
+const applyOverride = <
+  K extends 'profileId' | 'rootFolder' | 'languageProfileId' | 'tags',
+>(
+  request: MediaRequest,
+  field: K,
+  value: MediaRequest[K] | null | undefined
+): void => {
+  if (value !== undefined) {
+    request[field] = value as MediaRequest[K];
+  }
+};
+
+// Editing re-states the whole form, so the same normalisation as on create
+// keeps a value that merely matches the service default from becoming one
+const editedOverrides = async (
+  request: MediaRequest,
+  body: MediaRequestBody
+): Promise<RequestOverrideValues> => {
+  let isAnime = false;
+
+  if (request.type === MediaType.TV) {
+    try {
+      isAnime = isAnimeMedia(
+        await new TheMovieDb().getTvShow({ tvId: request.media.tmdbId })
+      );
+    } catch {
+      // A lookup failure only costs us the anime defaults, so the edit goes
+      // through and the subscriber still resolves them at dispatch
+    }
+  }
+
+  return stripDefaultOverrides({
+    mediaType: request.type,
+    is4k: request.is4k,
+    serviceId: body.serverId,
+    isAnime,
+    overrides: {
+      rootFolder: body.rootFolder,
+      profileId: body.profileId,
+      languageProfileId: body.languageProfileId,
+      tags: body.tags,
+    },
+  });
+};
+
 requestRoutes.put<{ requestId: string }>(
   '/:requestId',
   async (req, res, next) => {
@@ -543,20 +596,28 @@ requestRoutes.put<{ requestId: string }>(
               }
             }
 
+            const overrides = await editedOverrides(request, req.body);
+
             request.serverId = req.body.serverId;
-            request.profileId = req.body.profileId;
-            request.rootFolder = req.body.rootFolder;
-            request.tags = req.body.tags;
+            applyOverride(request, 'profileId', overrides.profileId);
+            applyOverride(request, 'rootFolder', overrides.rootFolder);
+            applyOverride(request, 'tags', overrides.tags);
             request.requestedBy = requestUser as User;
 
             await requestRepository.save(request);
           } else if (req.body.mediaType === MediaType.TV) {
             const mediaRepository = getRepository(Media);
+            const overrides = await editedOverrides(request, req.body);
+
             request.serverId = req.body.serverId;
-            request.profileId = req.body.profileId;
-            request.rootFolder = req.body.rootFolder;
-            request.languageProfileId = req.body.languageProfileId;
-            request.tags = req.body.tags;
+            applyOverride(request, 'profileId', overrides.profileId);
+            applyOverride(request, 'rootFolder', overrides.rootFolder);
+            applyOverride(
+              request,
+              'languageProfileId',
+              overrides.languageProfileId
+            );
+            applyOverride(request, 'tags', overrides.tags);
             request.requestedBy = requestUser as User;
 
             const requestedSeasons = req.body.seasons as number[] | undefined;
