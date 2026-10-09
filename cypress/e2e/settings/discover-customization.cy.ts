@@ -160,4 +160,81 @@ describe('Discover Customization', () => {
       .first()
       .should('not.contain', sliderTitle);
   });
+
+  describe('Networks slider editor', () => {
+    const addNetwork = (id: string) => {
+      cy.get('[data-testid=discover-network-editor]')
+        .find('input')
+        .type(`${id}{enter}`);
+    };
+
+    beforeEach(() => {
+      cy.visit('/');
+      cy.get('[data-testid=discover-start-editing]').click();
+      cy.get('[data-testid=discover-network-editor]').should('be.visible');
+    });
+
+    it('shows a success toast when a network is added', () => {
+      cy.intercept('GET', '/api/v1/network/2697', {
+        body: { id: 2697, name: 'AcornTV', logoPath: '/acorntv.png' },
+      }).as('getNetwork');
+
+      addNetwork('2697');
+      cy.wait('@getNetwork');
+
+      cy.contains('AcornTV has been added to the list.').should('be.visible');
+      cy.get('[data-testid=discover-network-editor]')
+        .find('li')
+        .last()
+        .should('contain', 'AcornTV');
+      cy.get('[data-testid=discover-network-editor]')
+        .find('input')
+        .should('have.value', '');
+    });
+
+    it('does not add a network that is already in the list', () => {
+      cy.intercept('GET', '/api/v1/network/2697', {
+        body: { id: 2697, name: 'AcornTV', logoPath: '/acorntv.png' },
+      }).as('getNetwork');
+
+      addNetwork('2697');
+      cy.wait('@getNetwork');
+      cy.contains('AcornTV has been added to the list.').should('be.visible');
+
+      addNetwork('2697');
+
+      cy.contains('AcornTV is already in the list.').should('be.visible');
+      cy.get('[data-testid=discover-network-editor]')
+        .find('li')
+        .filter(':contains("AcornTV")')
+        .should('have.length', 1);
+    });
+
+    it('does not add a network without a logo', () => {
+      cy.intercept('GET', '/api/v1/network/9999', {
+        body: { id: 9999, name: 'No Logo TV' },
+      }).as('getNetwork');
+
+      addNetwork('9999');
+      cy.wait('@getNetwork');
+
+      cy.contains('No Logo TV has no logo, so it cannot be added.').should(
+        'be.visible'
+      );
+      cy.contains('has been added to the list.').should('not.exist');
+    });
+
+    it('shows an error when the network cannot be found', () => {
+      // The API responds with a 500 when TMDB cannot find the network
+      cy.intercept('GET', '/api/v1/network/8888', { statusCode: 500 }).as(
+        'getNetwork'
+      );
+
+      addNetwork('8888');
+      cy.wait('@getNetwork');
+
+      cy.contains('Could not find that network.').should('be.visible');
+      cy.contains('has been added to the list.').should('not.exist');
+    });
+  });
 });

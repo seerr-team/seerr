@@ -2089,6 +2089,10 @@ components:
           type: boolean
         data:
           type: string
+          description: |
+            Extra data for the slider. For custom sliders this is the TMDB ID or search term the slider uses.
+            For the built-in Networks slider it is a JSON encoded array of `{ id, name, logoPath }` objects
+            (at most 50), or `null` to use the default list of networks.
           example: '1234'
           nullable: true
       required:
@@ -3892,6 +3896,18 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/DiscoverSlider'
+        '400':
+          description: The request body or the Networks slider list is invalid
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: |
+                      `TOO_MANY_NETWORKS` or `INVALID_NETWORK_LIST` when the Networks slider list is rejected.
+                    example: TOO_MANY_NETWORKS
   /settings/discover/{sliderId}:
     put:
       summary: Update a single slider
@@ -3920,6 +3936,7 @@ paths:
                   example: 1
                 data:
                   type: string
+                  nullable: true
                   example: '1'
       responses:
         '200':
@@ -3928,6 +3945,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DiscoverSlider'
+        '400':
+          description: The Networks slider list is invalid
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: |
+                      `TOO_MANY_NETWORKS` or `INVALID_NETWORK_LIST`.
+                    example: INVALID_NETWORK_LIST
     delete:
       summary: Delete slider by ID
       description: Deletes the slider with the provided sliderId. Requires the `ADMIN` permission.

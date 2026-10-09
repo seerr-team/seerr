@@ -1,4 +1,5 @@
 import type DiscoverSlider from '@server/entity/DiscoverSlider';
+import { z } from 'zod';
 
 export enum DiscoverSliderType {
   RECENTLY_ADDED = 1,
@@ -23,6 +24,38 @@ export enum DiscoverSliderType {
   TMDB_MOVIE_STREAMING_SERVICES,
   TMDB_TV_STREAMING_SERVICES,
 }
+
+export const MAX_DISCOVER_NETWORKS = 50;
+export const MAX_DISCOVER_NETWORK_NAME_LENGTH = 200;
+
+// A single TMDB image path such as `/wwemzKWzjKYJFfCeiB57q3r4Bcm.png`. It must
+// start with a letter or digit, which rules out `/.` and `/..`.
+export const DISCOVER_NETWORK_LOGO_PATH = /^\/[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/;
+
+// Shared by the server (when saving) and the client (when reading and adding
+// networks) so both sides accept exactly the same list.
+export const discoverNetworkSchema = z.object({
+  id: z.number().int().positive(),
+  name: z.string().trim().min(1).max(MAX_DISCOVER_NETWORK_NAME_LENGTH),
+  logoPath: z.string().regex(DISCOVER_NETWORK_LOGO_PATH),
+});
+
+// Also drops networks with an id that is already in the list
+export const discoverNetworksSchema = z
+  .array(discoverNetworkSchema)
+  .transform((networks) => {
+    const seen = new Set<number>();
+
+    return networks.filter((network) => {
+      if (seen.has(network.id)) {
+        return false;
+      }
+
+      seen.add(network.id);
+
+      return true;
+    });
+  });
 
 export const defaultSliders: Partial<DiscoverSlider>[] = [
   {
