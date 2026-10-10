@@ -11,7 +11,10 @@ import type {
   TmdbGenre,
   TmdbKeywordSearchResponse,
 } from '@server/api/themoviedb/interfaces';
-import { DiscoverSliderType } from '@server/constants/discover';
+import {
+  DiscoverSliderType,
+  TMDB_LIST_ID_REGEX,
+} from '@server/constants/discover';
 import type DiscoverSlider from '@server/entity/DiscoverSlider';
 import type { GenreSliderItem } from '@server/interfaces/api/discoverInterfaces';
 import type { Keyword, ProductionCompany } from '@server/models/common';
@@ -31,12 +34,15 @@ const messages = defineMessages('components.Discover.CreateSlider', {
   providetmdbsearch: 'Provide a search query',
   providetmdbstudio: 'Provide TMDB Studio ID',
   providetmdbnetwork: 'Provide TMDB Network ID',
+  providetmdblistid: 'Provide a TMDB List ID',
   addsuccess: 'Created new slider and saved discover customization settings.',
   addfail: 'Failed to create new slider.',
   editsuccess: 'Edited slider and saved discover customization settings.',
   editfail: 'Failed to edit slider.',
   needresults: 'You need to have at least 1 result.',
   validationDatarequired: 'You must provide a data value.',
+  validationTmdbListId:
+    'The TMDB List ID must be a positive number with at most 12 digits.',
   validationTitlerequired: 'You must provide a title.',
   addcustomslider: 'Create Custom Slider',
   searchKeywords: 'Search keywords…',
@@ -158,9 +164,17 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
     title: Yup.string().required(
       intl.formatMessage(messages.validationTitlerequired)
     ),
-    data: Yup.string().required(
-      intl.formatMessage(messages.validationDatarequired)
-    ),
+    data: Yup.string()
+      .required(intl.formatMessage(messages.validationDatarequired))
+      .when('sliderType', {
+        is: (sliderType: unknown) =>
+          Number(sliderType) === DiscoverSliderType.TMDB_LIST,
+        then: (schema) =>
+          schema.matches(
+            TMDB_LIST_ID_REGEX,
+            intl.formatMessage(messages.validationTmdbListId)
+          ),
+      }),
   });
 
   const updateResultCount = useCallback(
@@ -294,6 +308,13 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
       dataUrl: '/api/v1/discover/tv',
       params: 'watchRegion=$regionValue&watchProviders=$providersValue',
       titlePlaceholderText: intl.formatMessage(messages.slidernameplaceholder),
+    },
+    {
+      type: DiscoverSliderType.TMDB_LIST,
+      title: intl.formatMessage(sliderTitles.tmdblist),
+      dataUrl: '/api/v1/discover/list/$value',
+      titlePlaceholderText: intl.formatMessage(messages.slidernameplaceholder),
+      dataPlaceholderText: intl.formatMessage(messages.providetmdblistid),
     },
   ];
 
@@ -470,6 +491,18 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
               />
             );
             break;
+          case DiscoverSliderType.TMDB_LIST:
+            dataInput = (
+              <Field
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                name="data"
+                id="data"
+                placeholder={activeOption.dataPlaceholderText}
+              />
+            );
+            break;
           default:
             dataInput = (
               <Field
@@ -532,38 +565,42 @@ const CreateSlider = ({ onCreate, slider }: CreateSliderProps) => {
               )}
             </div>
 
-            {activeOption && values.title && values.data && (
-              <div className="relative py-4">
-                <MediaSlider
-                  sliderKey={`preview-${values.title}`}
-                  title={values.title}
-                  url={activeOption?.dataUrl.replace(
-                    '$value',
-                    encodeURIExtraParams(values.data)
-                  )}
-                  extraParams={
-                    activeOption.type ===
-                      DiscoverSliderType.TMDB_MOVIE_STREAMING_SERVICES ||
-                    activeOption.type ===
-                      DiscoverSliderType.TMDB_TV_STREAMING_SERVICES
-                      ? activeOption.params
-                          ?.replace(
-                            '$regionValue',
-                            encodeURIExtraParams(values?.data.split(',')[0])
+            {activeOption &&
+              values.title &&
+              values.data &&
+              (activeOption.type !== DiscoverSliderType.TMDB_LIST ||
+                TMDB_LIST_ID_REGEX.test(values.data)) && (
+                <div className="relative py-4">
+                  <MediaSlider
+                    sliderKey={`preview-${values.title}`}
+                    title={values.title}
+                    url={activeOption?.dataUrl.replace(
+                      '$value',
+                      encodeURIExtraParams(values.data)
+                    )}
+                    extraParams={
+                      activeOption.type ===
+                        DiscoverSliderType.TMDB_MOVIE_STREAMING_SERVICES ||
+                      activeOption.type ===
+                        DiscoverSliderType.TMDB_TV_STREAMING_SERVICES
+                        ? activeOption.params
+                            ?.replace(
+                              '$regionValue',
+                              encodeURIExtraParams(values?.data.split(',')[0])
+                            )
+                            .replace(
+                              '$providersValue',
+                              encodeURIExtraParams(values?.data.split(',')[1])
+                            )
+                        : activeOption.params?.replace(
+                            '$value',
+                            encodeURIExtraParams(values.data)
                           )
-                          .replace(
-                            '$providersValue',
-                            encodeURIExtraParams(values?.data.split(',')[1])
-                          )
-                      : activeOption.params?.replace(
-                          '$value',
-                          encodeURIExtraParams(values.data)
-                        )
-                  }
-                  onNewTitles={updateResultCount}
-                />
-              </div>
-            )}
+                    }
+                    onNewTitles={updateResultCount}
+                  />
+                </div>
+              )}
           </Form>
         );
       }}

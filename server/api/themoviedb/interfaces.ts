@@ -56,6 +56,21 @@ interface TmdbPaginatedResponse {
   total_pages: number;
 }
 
+export type TmdbListItem =
+  | TmdbTvResult
+  | (Omit<TmdbMovieResult, 'media_type'> & { media_type?: 'movie' });
+
+export interface TmdbListResponse extends TmdbPaginatedResponse {
+  id: number;
+  name: string;
+  description?: string;
+  created_by?: string;
+  iso_639_1?: string;
+  poster_path?: string;
+  item_count: number;
+  items: TmdbListItem[];
+}
+
 export interface TmdbSearchMultiResponse extends TmdbPaginatedResponse {
   results: (
     | TmdbMovieResult
