@@ -1017,9 +1017,25 @@ class AvailabilitySync {
           existingEpisode.episodeNumber
         );
         const currentStatus = existingEpisode[is4k ? 'status4k' : 'status'];
+        const oppositeStatus = existingEpisode[is4k ? 'status' : 'status4k'];
+        const oppositeActive =
+          oppositeStatus !== MediaStatus.DELETED &&
+          oppositeStatus !== MediaStatus.UNKNOWN;
 
         if (!episodeHasFileByNumber.has(existingEpisode.episodeNumber)) {
-          toRemove.push(existingEpisode);
+          // only drop the row when neither standard nor 4K is still active
+          if (oppositeActive) {
+            if (
+              currentStatus !== MediaStatus.DELETED &&
+              currentStatus !== MediaStatus.UNKNOWN
+            ) {
+              existingEpisode[is4k ? 'status4k' : 'status'] =
+                MediaStatus.DELETED;
+              toSave.push(existingEpisode);
+            }
+          } else {
+            toRemove.push(existingEpisode);
+          }
         } else if (
           hasFile !== true &&
           currentStatus !== MediaStatus.DELETED &&
