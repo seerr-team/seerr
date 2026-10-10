@@ -15,9 +15,9 @@ These settings are stored in the `settings.json` file located in the Seerr data 
 
 Apart from the settings, all other data—including user accounts, media requests, blocklist etc. are stored in the database (either SQLite or PostgreSQL).
 
-# Backup
+### Backup
 
-### SQLite
+#### SQLite
 
 If your backup system uses filesystem snapshots (such as Kubernetes with Volsync), you can directly back up the Seerr data folder.  
 Otherwise, you need to stop the Seerr application and back up the `config` folder.
@@ -30,7 +30,7 @@ sqlite3 db/db.sqlite3 ".backup '/tmp/seerr_db.sqlite3.bak'"
 
 Then, copy the `/tmp/seerr_dump.sqlite3.bak` file to your desired backup location.
 
-### PostgreSQL
+#### PostgreSQL
 
 You can back up the `config` folder and dump the PostgreSQL database without stopping the Seerr application.
 
@@ -48,9 +48,9 @@ Depending on how your PostgreSQL instance is configured, you may need to add the
 pg_dump -U <database_user> -d <database_name> -f /tmp/seerr_db.sql
 ```
 
-# Restore
+### Restore
 
-### SQLite
+#### SQLite
 
 After restoring your `db/db.sqlite3` file and, optionally, the `settings.json` file, the `config` folder structure should look like this:
 
@@ -65,7 +65,7 @@ After restoring your `db/db.sqlite3` file and, optionally, the `settings.json` f
 
 Once the files are restored, start the Seerr application.
 
-### PostgreSQL
+#### PostgreSQL
 
 Install the [PostgreSQL client](https://www.postgresql.org/download/) and restore the PostgreSQL database using the following command (replace the placeholders accordingly):
 

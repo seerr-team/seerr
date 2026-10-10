@@ -2,6 +2,14 @@
 
 All help is welcome and greatly appreciated! If you would like to contribute to the project, the following instructions should get you started...
 
+## Before Contributing
+
+> [!WARNING]
+>
+> **Large features and major refactors need maintainer approval before you start coding.** If your contribution adds a significant new feature, makes sweeping changes across the codebase, or refactors a substantial part of Seerr, open a proposal in [GitHub Discussions](https://github.com/seerr-team/seerr/discussions) first. Describe what you want to change and why, then wait for the maintainers to agree on the direction before you submit a pull request. Large pull requests opened without prior discussion may be closed without review.
+>
+> **Only pick up issues that maintainers have confirmed.** If you want to work on an existing feature request or bug report, check that it has the `confirmed` label and no longer has the `awaiting triage` label. The `confirmed` label means maintainers have reviewed the issue and welcome anyone to implement it. Issues still awaiting triage may be declined, duplicated, or need a different approach, so pull requests for them may be closed.
+
 ## AI Assistance Notice
 
 > [!IMPORTANT]

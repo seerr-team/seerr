@@ -30,12 +30,16 @@ class SonarrScanner
   extends BaseScanner<SonarrSeries>
   implements RunnableScanner<SyncStatus>
 {
+  protected declineRequestsOnStatusReset = true;
   private servers: SonarrSettings[];
   private currentServer: SonarrSettings;
   private sonarrApi: SonarrAPI;
   private scannedTvdbIds: Set<number> = new Set();
   private scanned4kTvdbIds: Set<number> = new Set();
   private currentServerTmdbIds: Set<number> = new Set();
+  // Keyed on tmdbId: media.tvdbId can be null. Excludes unmonitored titles.
+  private processingTmdbIds: Set<number> = new Set();
+  private processing4kTmdbIds: Set<number> = new Set();
   private didScanStandard = false;
   private didScan4k = false;
   private serverReturnedEmpty = false;
@@ -60,6 +64,8 @@ class SonarrScanner
     const sessionId = this.startRun();
     this.scannedTvdbIds.clear();
     this.scanned4kTvdbIds.clear();
+    this.processingTmdbIds.clear();
+    this.processing4kTmdbIds.clear();
     this.didScanStandard = false;
     this.didScan4k = false;
     this.serverReturnedEmpty = false;
@@ -148,6 +154,15 @@ class SonarrScanner
         this.didScan4k = false;
       }
 
+      await this.resolveStatusResets((media, is4k) => {
+        const scanComplete = is4k ? this.didScan4k : this.didScanStandard;
+        const processingIds = is4k
+          ? this.processing4kTmdbIds
+          : this.processingTmdbIds;
+
+        return scanComplete && !processingIds.has(media.tmdbId);
+      });
+
       await this.cleanupOrphanedShows();
       this.log('Sonarr scan complete', 'info');
     } catch (e) {
@@ -235,6 +250,14 @@ class SonarrScanner
           processing: season.monitored && totalAvailableEpisodes === 0,
           is4kOverride: server4k,
         });
+      }
+
+      if (processableSeasons.some((season) => season.processing)) {
+        if (server4k) {
+          this.processing4kTmdbIds.add(tmdbId);
+        } else {
+          this.processingTmdbIds.add(tmdbId);
+        }
       }
 
       await this.processShow(tmdbId, sonarrSeries.tvdbId, processableSeasons, {
