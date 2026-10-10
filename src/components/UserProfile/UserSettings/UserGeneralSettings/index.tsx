@@ -153,7 +153,7 @@ const UserGeneralSettings = () => {
           displayName: data?.username !== user?.email ? data?.username : '',
           email: data?.email?.includes('@') ? data.email : '',
           locale: data?.locale,
-          mediaLocale: data?.mediaLocale ?? data?.locale ?? '',
+          mediaLocale: data?.mediaLocale ?? '',
           discoverRegion: data?.discoverRegion,
           streamingRegion: data?.streamingRegion,
           originalLanguage: data?.originalLanguage,
@@ -242,8 +242,9 @@ const UserGeneralSettings = () => {
             data?.locale ||
             currentSettings.locale ||
             'en') as AvailableLocale;
-          const defaultMediaLocale = (values.mediaLocale ||
-            effectiveLocale) as AvailableLocale;
+          const defaultLanguageDisplay =
+            availableLanguages[effectiveLocale]?.display ??
+            availableLanguages.en.display;
 
           return (
             <Form className="section">
@@ -352,7 +353,8 @@ const UserGeneralSettings = () => {
                       <option value="" lang={locale}>
                         {intl.formatMessage(messages.languageDefault, {
                           language:
-                            availableLanguages[currentSettings.locale].display,
+                            availableLanguages[currentSettings.locale]
+                              ?.display ?? availableLanguages.en.display,
                         })}
                       </option>
                       {(
@@ -381,8 +383,7 @@ const UserGeneralSettings = () => {
                     <Field as="select" id="mediaLocale" name="mediaLocale">
                       <option value="" lang={locale}>
                         {intl.formatMessage(messages.languageDefault, {
-                          language:
-                            availableLanguages[defaultMediaLocale].display,
+                          language: defaultLanguageDisplay,
                         })}
                       </option>
                       {(

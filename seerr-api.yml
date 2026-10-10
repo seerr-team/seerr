@@ -2575,7 +2575,7 @@ paths:
       summary: Sync Plex libraries
       description: Syncs the current libraries with the current Plex server. Enabled flags are preserved.
       tags:
-        - settings>>>>>>> 95f688fe (revert: undo formatting on seerr-api.yml)
+        - settings
       responses:
         '200':
           description: 'Plex libraries returned'
