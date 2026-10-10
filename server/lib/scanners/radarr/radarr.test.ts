@@ -15,6 +15,7 @@ import { User } from '@server/entity/User';
 import { radarrScanner } from '@server/lib/scanners/radarr';
 import type { RadarrSettings } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
+import { MediaRequestSubscriber } from '@server/subscriber/MediaRequestSubscriber';
 import { setupTestDb } from '@server/test/db';
 import { runWithMockTimers } from '@server/test/runWithMockTimers';
 import assert from 'node:assert/strict';
@@ -1073,6 +1074,106 @@ describe('Radarr Scanner', () => {
       assert.strictEqual(updatedMedia.serviceId, 1);
       assert.strictEqual(updatedMedia.externalServiceId, 200);
       assert.strictEqual(updatedRequest.status, MediaRequestStatus.APPROVED);
+    });
+  });
+
+  describe('service requests and the standard slot', () => {
+    const ENGLISH = 0;
+    const ITALIAN = 1;
+
+    // English has the file, Italian is still downloading it.
+    function scanLanguageServers(tmdbId: number): Promise<void> {
+      configureRadarr([
+        { id: ENGLISH, hostname: 'radarr-eng' },
+        { id: ITALIAN, hostname: 'radarr-ita' },
+      ]);
+      const responses = [
+        [fakeRadarrMovie({ tmdbId, id: 10, hasFile: true })],
+        [fakeRadarrMovie({ tmdbId, id: 20, hasFile: false, monitored: true })],
+      ];
+      let call = 0;
+      getMoviesImpl = async () => responses[call++] ?? [];
+
+      return runWithMockTimers(() => radarrScanner.run());
+    }
+
+    async function seedItalianRequest(
+      tmdbId: number,
+      mediaStatus: MediaStatus,
+      status: MediaRequestStatus
+    ) {
+      const media = await getRepository(Media).save(
+        new Media({ tmdbId, mediaType: MediaType.MOVIE, status: mediaStatus })
+      );
+      const requestedBy = await getRepository(User).findOneOrFail({
+        where: { email: 'admin@seerr.dev' },
+      });
+      // Keep the request from being sent to a leftover server.
+      getSettings().radarr = [];
+
+      return getRepository(MediaRequest).save(
+        new MediaRequest({
+          type: MediaType.MOVIE,
+          media,
+          requestedBy,
+          status,
+          is4k: false,
+          serverId: ITALIAN,
+          isServiceRequest: true,
+        })
+      );
+    }
+
+    const statusOf = async (id: number) =>
+      (await getRepository(MediaRequest).findOneOrFail({ where: { id } }))
+        .status;
+
+    it('keeps an approved Italian request open when only English has the movie', async () => {
+      const request = await seedItalianRequest(
+        570,
+        MediaStatus.UNKNOWN,
+        MediaRequestStatus.APPROVED
+      );
+
+      await scanLanguageServers(570);
+
+      const italianStatus = await getRepository(
+        MediaServiceStatus
+      ).findOneOrFail({
+        where: { mediaId: request.media.id, serviceId: ITALIAN },
+      });
+      assert.strictEqual(italianStatus.status, MediaStatus.PROCESSING);
+      assert.strictEqual(
+        await statusOf(request.id),
+        MediaRequestStatus.APPROVED
+      );
+    });
+
+    it('does not approve a pending Italian request when the standard slot becomes available', async (t) => {
+      const sent: [number, MediaRequestStatus][] = [];
+      t.mock.method(
+        MediaRequestSubscriber.prototype,
+        'sendToRadarr',
+        async (entity: MediaRequest) => {
+          if (entity.status === MediaRequestStatus.APPROVED) {
+            sent.push([entity.serverId, entity.status]);
+          }
+        }
+      );
+      const request = await seedItalianRequest(
+        571,
+        MediaStatus.PENDING,
+        MediaRequestStatus.PENDING
+      );
+
+      await scanLanguageServers(571);
+
+      // sendToRadarr only dispatches APPROVED requests.
+      assert.deepStrictEqual(sent, []);
+      assert.strictEqual(
+        await statusOf(request.id),
+        MediaRequestStatus.PENDING
+      );
     });
   });
 });

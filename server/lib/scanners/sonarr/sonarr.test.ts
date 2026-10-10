@@ -1158,4 +1158,67 @@ describe('Sonarr Scanner', () => {
       assert.strictEqual(updated.status, MediaRequestStatus.APPROVED);
     });
   });
+
+  describe('service requests and the standard slot', () => {
+    it('keeps an approved Italian request open when only English has the season', async () => {
+      const ENGLISH = 0;
+      const ITALIAN = 1;
+      const media = await getRepository(Media).save(
+        new Media({ tmdbId: 1, tvdbId: 100, mediaType: MediaType.TV })
+      );
+      const requestedBy = await getRepository(User).findOneOrFail({
+        where: { email: 'admin@seerr.dev' },
+      });
+      // Keep the request from being sent to a leftover server.
+      getSettings().sonarr = [];
+      const request = await getRepository(MediaRequest).save(
+        new MediaRequest({
+          type: MediaType.TV,
+          media,
+          requestedBy,
+          status: MediaRequestStatus.APPROVED,
+          is4k: false,
+          serverId: ITALIAN,
+          isServiceRequest: true,
+          seasons: [
+            new SeasonRequest({
+              seasonNumber: 1,
+              status: MediaRequestStatus.APPROVED,
+            }),
+          ],
+        })
+      );
+
+      configureSonarr([
+        { id: ENGLISH, hostname: 'sonarr-eng' },
+        { id: ITALIAN, hostname: 'sonarr-ita' },
+      ]);
+      const downloading = fakeSonarrSeries({ id: 20 });
+      downloading.seasons[0].statistics = {
+        ...downloading.seasons[0].statistics!,
+        episodeFileCount: 0,
+        percentOfEpisodes: 0,
+      };
+      const responses = [[fakeSonarrSeries({ id: 10 })], [downloading]];
+      let call = 0;
+      getSeriesImpl = async () => responses[call++] ?? [];
+
+      await runWithMockTimers(() => sonarrScanner.run());
+
+      const italianStatus = await getRepository(
+        MediaServiceStatus
+      ).findOneOrFail({ where: { mediaId: media.id, serviceId: ITALIAN } });
+      assert.notStrictEqual(
+        italianStatus.seasonStatuses?.[1],
+        MediaStatus.AVAILABLE
+      );
+      const updated = await getRepository(MediaRequest).findOneOrFail({
+        where: { id: request.id },
+      });
+      assert.deepStrictEqual(
+        [updated.status, updated.seasons.map((season) => season.status)],
+        [MediaRequestStatus.APPROVED, [MediaRequestStatus.APPROVED]]
+      );
+    });
+  });
 });

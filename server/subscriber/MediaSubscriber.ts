@@ -25,8 +25,9 @@ export class MediaSubscriber implements EntitySubscriberInterface<Media> {
   ) {
     const requestRepository = manager.getRepository(MediaRequest);
 
+    // Service requests follow their own server's status, not this slot's.
     const requests = await requestRepository.find({
-      where: { media: { id: event.id } },
+      where: { media: { id: event.id }, isServiceRequest: false },
     });
 
     for (const request of requests) {
@@ -57,6 +58,8 @@ export class MediaSubscriber implements EntitySubscriberInterface<Media> {
         media: { id: event.id },
         status: In([MediaRequestStatus.APPROVED, MediaRequestStatus.FAILED]),
         is4k,
+        // Completed by the scanner once their own server has the media.
+        isServiceRequest: false,
       },
     });
 
