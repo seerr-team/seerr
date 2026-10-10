@@ -132,7 +132,7 @@ const MediaSlider = ({
         case 'movie':
           return (
             <TitleCard
-              key={title.id}
+              key={`${title.mediaType}:${title.id}`}
               id={title.id}
               isAddedToWatchlist={title.mediaInfo?.watchlists?.length ?? 0}
               image={title.posterPath}
@@ -148,7 +148,7 @@ const MediaSlider = ({
         case 'tv':
           return (
             <TitleCard
-              key={title.id}
+              key={`${title.mediaType}:${title.id}`}
               id={title.id}
               isAddedToWatchlist={title.mediaInfo?.watchlists?.length ?? 0}
               image={title.posterPath}
@@ -164,6 +164,7 @@ const MediaSlider = ({
         case 'person':
           return (
             <PersonCard
+              key={`${title.mediaType}:${title.id}`}
               personId={title.id}
               name={title.name}
               profilePath={title.profilePath}

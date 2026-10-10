@@ -106,12 +106,12 @@ describe('Discover Customization', () => {
     cy.wait('@getDiscoverSliders');
   });
 
-  it('can create a slider for a public TMDB list', () => {
+  it('can create a slider for a public TMDB list with coliding IDs', () => {
     const listId = '8542986';
     const sliderTitle = 'My TMDB List';
     const listResults = [
       movieResult,
-      tvResult,
+      { ...tvResult, id: movieResult.id },
       ...Array.from({ length: 19 }, (_, index) => ({
         ...movieResult,
         id: movieResult.id + index + 1,
