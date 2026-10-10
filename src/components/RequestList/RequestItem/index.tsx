@@ -14,6 +14,7 @@ import {
   getRequestDownloadStatus,
   refreshIntervalHelper,
 } from '@app/utils/refreshIntervalHelper';
+import { getServiceSlotStatus } from '@app/utils/serviceRequestStatus';
 import {
   ArrowPathIcon,
   CheckIcon,
@@ -92,6 +93,9 @@ const RequestItemError = ({
       : []
   );
 
+  const { status: serviceSlotStatus, downloadItem: serviceDownloadStatus } =
+    getServiceSlotStatus(requestData);
+
   return (
     <div className="flex h-64 w-full flex-col justify-center rounded-xl bg-gray-800 py-4 text-gray-400 shadow-md ring-1 ring-red-500 xl:h-28 xl:flex-row">
       <div className="flex w-full flex-col justify-between overflow-hidden sm:flex-row">
@@ -147,20 +151,28 @@ const RequestItemError = ({
                 ) : (
                   <StatusBadge
                     status={
+                      serviceSlotStatus ??
                       requestData.media[
                         requestData.is4k ? 'status4k' : 'status'
                       ]
                     }
-                    downloadItem={requestDownloadStatus}
+                    downloadItem={
+                      serviceDownloadStatus ?? requestDownloadStatus
+                    }
                     title={intl.formatMessage(messages.unknowntitle)}
-                    inProgress={requestDownloadStatus.length > 0}
+                    inProgress={
+                      (serviceDownloadStatus ?? requestDownloadStatus).length >
+                      0
+                    }
                     is4k={requestData.is4k}
                     mediaType={requestData.type}
                     plexUrl={requestData.is4k ? plexUrl4k : plexUrl}
                     serviceUrl={
-                      requestData.is4k
-                        ? requestData.media.serviceUrl4k
-                        : requestData.media.serviceUrl
+                      requestData.isServiceRequest
+                        ? undefined
+                        : requestData.is4k
+                          ? requestData.media.serviceUrl4k
+                          : requestData.media.serviceUrl
                     }
                   />
                 )}
@@ -329,6 +341,9 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
     'approve' | 'decline' | null
   >(null);
 
+  const { status: serviceSlotStatus, downloadItem: serviceDownloadStatus } =
+    getServiceSlotStatus(requestData);
+
   const modifyRequest = async (type: 'approve' | 'decline') => {
     setUpdatingType(type);
     try {
@@ -356,8 +371,12 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
   const deleteMediaFile = async () => {
     if (request.media) {
       try {
+        const params = new URLSearchParams({ is4k: String(request.is4k) });
+        if (request.isServiceRequest && request.serverId != null) {
+          params.set('serviceId', String(request.serverId));
+        }
         await axios.delete(
-          `/api/v1/media/${request.media.id}/file?is4k=${request.is4k}`
+          `/api/v1/media/${request.media.id}/file?${params.toString()}`
         );
       } catch (e) {
         if (!axios.isAxiosError(e) || e.response?.status !== 404) {
@@ -428,6 +447,11 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
         tmdbId={request.media.tmdbId}
         type={request.type}
         is4k={request.is4k}
+        serverId={
+          request.isServiceRequest && request.serverId != null
+            ? request.serverId
+            : undefined
+        }
         editRequest={request}
         onCancel={() => setShowEditModal(false)}
         onComplete={() => {
@@ -545,19 +569,24 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
               ) : (
                 <StatusBadge
                   status={
+                    serviceSlotStatus ??
                     requestData.media[requestData.is4k ? 'status4k' : 'status']
                   }
-                  downloadItem={requestDownloadStatus}
+                  downloadItem={serviceDownloadStatus ?? requestDownloadStatus}
                   title={isMovie(title) ? title.title : title.name}
-                  inProgress={requestDownloadStatus.length > 0}
+                  inProgress={
+                    (serviceDownloadStatus ?? requestDownloadStatus).length > 0
+                  }
                   is4k={requestData.is4k}
                   tmdbId={requestData.media.tmdbId}
                   mediaType={requestData.type}
                   plexUrl={requestData.is4k ? plexUrl4k : plexUrl}
                   serviceUrl={
-                    requestData.is4k
-                      ? requestData.media.serviceUrl4k
-                      : requestData.media.serviceUrl
+                    requestData.isServiceRequest
+                      ? undefined
+                      : requestData.is4k
+                        ? requestData.media.serviceUrl4k
+                        : requestData.media.serviceUrl
                   }
                 />
               )}
@@ -720,7 +749,9 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
                     <TrashIcon />
                     <span>
                       {intl.formatMessage(messages.removearr, {
-                        arr: request.type === 'movie' ? 'Radarr' : 'Sonarr',
+                        arr:
+                          request.serverName ??
+                          (request.type === 'movie' ? 'Radarr' : 'Sonarr'),
                       })}
                     </span>
                   </ConfirmButton>

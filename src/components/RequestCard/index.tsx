@@ -14,6 +14,7 @@ import {
   getRequestDownloadStatus,
   refreshIntervalHelper,
 } from '@app/utils/refreshIntervalHelper';
+import { getServiceSlotStatus } from '@app/utils/serviceRequestStatus';
 import { withProperties } from '@app/utils/typeHelpers';
 import {
   ArrowPathIcon,
@@ -262,6 +263,9 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
     iOSPlexUrl4k: requestData?.media?.iOSPlexUrl4k,
   });
 
+  const { status: serviceSlotStatus, downloadItem: serviceDownloadStatus } =
+    getServiceSlotStatus(requestData);
+
   const modifyRequest = async (type: 'approve' | 'decline') => {
     setUpdatingType(type);
     try {
@@ -339,6 +343,11 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
         tmdbId={request.media.tmdbId}
         type={request.type}
         is4k={request.is4k}
+        serverId={
+          request.isServiceRequest && request.serverId != null
+            ? request.serverId
+            : undefined
+        }
         editRequest={request}
         onCancel={() => setShowEditModal(false)}
         onComplete={() => {
@@ -460,19 +469,24 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
             ) : (
               <StatusBadge
                 status={
+                  serviceSlotStatus ??
                   requestData.media[requestData.is4k ? 'status4k' : 'status']
                 }
-                downloadItem={requestDownloadStatus}
+                downloadItem={serviceDownloadStatus ?? requestDownloadStatus}
                 title={isMovie(title) ? title.title : title.name}
-                inProgress={requestDownloadStatus.length > 0}
+                inProgress={
+                  (serviceDownloadStatus ?? requestDownloadStatus).length > 0
+                }
                 is4k={requestData.is4k}
                 tmdbId={requestData.media.tmdbId}
                 mediaType={requestData.type}
                 plexUrl={requestData.is4k ? plexUrl4k : plexUrl}
                 serviceUrl={
-                  requestData.is4k
-                    ? requestData.media.serviceUrl4k
-                    : requestData.media.serviceUrl
+                  requestData.isServiceRequest
+                    ? undefined
+                    : requestData.is4k
+                      ? requestData.media.serviceUrl4k
+                      : requestData.media.serviceUrl
                 }
               />
             )}

@@ -36,6 +36,7 @@ class SonarrScanner
   private sonarrApi: SonarrAPI;
   private scannedTvdbIds: Set<number> = new Set();
   private scanned4kTvdbIds: Set<number> = new Set();
+  private currentServerTmdbIds: Set<number> = new Set();
   // Keyed on tmdbId: media.tvdbId can be null. Excludes unmonitored titles.
   private processingTmdbIds: Set<number> = new Set();
   private processing4kTmdbIds: Set<number> = new Set();
@@ -56,6 +57,10 @@ class SonarrScanner
       currentServer: this.currentServer,
       servers: this.servers,
     };
+  }
+
+  protected getConfiguredServers(): SonarrSettings[] {
+    return getSettings().sonarr;
   }
 
   public async run(): Promise<void> {
@@ -93,6 +98,7 @@ class SonarrScanner
           });
 
           this.items = await this.sonarrApi.getSeries();
+          this.currentServerTmdbIds = new Set();
 
           const server4k = this.enable4kShow && server.is4k;
           if (server4k) {
@@ -114,6 +120,16 @@ class SonarrScanner
           }
 
           await this.loop(this.processSonarrSeries.bind(this), { sessionId });
+          for (const serviceId of this.getServiceIds(server.id)) {
+            await this.resetStaleServiceStatus({
+              serviceId,
+              serviceType: 'sonarr',
+              mediaType: MediaType.TV,
+              seenTmdbIds: this.currentServerTmdbIds,
+              serverName: server.name,
+              clearSeasonStatuses: true,
+            });
+          }
         } else {
           this.log(`Sync not enabled. Skipping Sonarr server: ${server.name}`);
         }
@@ -179,6 +195,10 @@ class SonarrScanner
         where: { tvdbId: sonarrSeries.tvdbId },
       });
 
+      if (media?.tmdbId) {
+        this.currentServerTmdbIds.add(media.tmdbId);
+      }
+
       if (!media || !media.tmdbId) {
         tvShow = await this.tmdb.getShowByTvdbIdForScan({
           tvdbId: sonarrSeries.tvdbId,
@@ -188,6 +208,8 @@ class SonarrScanner
       }
 
       const tmdbId = tvShow.id;
+      this.currentServerTmdbIds.add(tmdbId);
+
       const metadataProvider = tvShow.keywords.results.some(
         (keyword: TmdbKeyword) => keyword.id === ANIME_KEYWORD_ID
       )

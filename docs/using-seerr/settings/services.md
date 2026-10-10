@@ -73,3 +73,19 @@ Enable this setting if you would like to scan your Radarr/Sonarr server for exis
 #### Enable Automatic Search (optional)
 
 Enable this setting to have Radarr/Sonarr to automatically search for media upon approval of a request.
+
+#### Request Button Label (optional)
+
+Setting a label (e.g., `ITA`, `ENG`, `Anime`) adds a dedicated **Request in {label}** button to every media detail page, allowing users to request a title in this specific server — independently of the default server. Leave this field blank to hide the button.
+
+This is designed for setups with multiple Radarr/Sonarr instances per media type (e.g., one per language or library). Each labelled server is an independent request slot:
+
+- A title can be requested once **per labelled server**, in addition to the regular Standard/4K requests.
+- Availability is tracked **per server** — the media detail page shows a separate status badge for each labelled server (e.g., "Available in ITA", "Processing in ENG"), including per-season status for series.
+- Per-service requests do not affect the regular Standard/4K status, and titles available in one server can still be requested in another.
+
+By default, only users with the **Manage Requests** permission can use these buttons. To grant them to other users, see [Request Services](/using-seerr/users/editing-users#request-services).
+
+#### Anime Only (optional)
+
+When enabled, this server's per-service request button is only shown on media tagged with the anime keyword. Useful for dedicated anime instances so the button doesn't clutter every other title.
