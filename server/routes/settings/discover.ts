@@ -1,9 +1,17 @@
+import {
+  DiscoverSliderType,
+  TMDB_LIST_ID_REGEX,
+} from '@server/constants/discover';
 import { getRepository } from '@server/datasource';
 import DiscoverSlider from '@server/entity/DiscoverSlider';
 import logger from '@server/logger';
 import { Router } from 'express';
 
 const discoverSettingRoutes = Router();
+
+const hasValidData = (slider: Partial<DiscoverSlider>): boolean =>
+  Number(slider.type) !== DiscoverSliderType.TMDB_LIST ||
+  (typeof slider.data === 'string' && TMDB_LIST_ID_REGEX.test(slider.data));
 
 discoverSettingRoutes.post('/', async (req, res) => {
   const sliderRepository = getRepository(DiscoverSlider);
@@ -12,6 +20,10 @@ discoverSettingRoutes.post('/', async (req, res) => {
 
   if (!Array.isArray(sliders)) {
     return res.status(400).json({ message: 'Invalid request body.' });
+  }
+
+  if (sliders.some((slider) => !hasValidData(slider))) {
+    return res.status(400).json({ message: 'Invalid TMDB list ID.' });
   }
 
   for (let x = 0; x < sliders.length; x++) {
@@ -55,6 +67,10 @@ discoverSettingRoutes.post('/add', async (req, res) => {
 
   const slider = req.body as DiscoverSlider;
 
+  if (!hasValidData(slider)) {
+    return res.status(400).json({ message: 'Invalid TMDB list ID.' });
+  }
+
   const newSlider = new DiscoverSlider({
     isBuiltIn: false,
     data: slider.data,
@@ -81,6 +97,10 @@ discoverSettingRoutes.put('/:sliderId', async (req, res, next) => {
   const sliderRepository = getRepository(DiscoverSlider);
 
   const slider = req.body as DiscoverSlider;
+
+  if (!hasValidData(slider)) {
+    return res.status(400).json({ message: 'Invalid TMDB list ID.' });
+  }
 
   try {
     const existingSlider = await sliderRepository.findOneOrFail({
