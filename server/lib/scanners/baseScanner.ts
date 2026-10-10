@@ -10,6 +10,7 @@ import MediaRequest from '@server/entity/MediaRequest';
 import MediaServiceStatus from '@server/entity/MediaServiceStatus';
 import Season from '@server/entity/Season';
 import { upsertMediaServiceStatus } from '@server/lib/mediaServiceStatus';
+import type { DVRSettings } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import AsyncLock from '@server/utils/asyncLock';
@@ -975,9 +976,38 @@ class BaseScanner<T> {
     return { overall, perSeason };
   }
 
+  // Overridden by the *arr scanners, the only ones writing service statuses.
+  protected getConfiguredServers(): DVRSettings[] {
+    return [];
+  }
+
+  /**
+   * Settings can list one *arr instance more than once, but only the first
+   * entry is scanned. Its statuses also apply to the synced duplicates.
+   */
+  protected getServiceIds(serviceId: number): number[] {
+    const servers = this.getConfiguredServers();
+    const scanned = servers.find((server) => server.id === serviceId);
+
+    if (!scanned) {
+      return [serviceId];
+    }
+
+    return servers
+      .filter(
+        (server) =>
+          server.id === serviceId ||
+          (server.syncEnabled &&
+            server.hostname === scanned.hostname &&
+            server.port === scanned.port &&
+            server.baseUrl === scanned.baseUrl)
+      )
+      .map((server) => server.id);
+  }
+
   protected async upsertServiceStatus(
     mediaId: number,
-    serviceId: number,
+    scannedServiceId: number,
     serviceType: 'radarr' | 'sonarr',
     status: MediaStatus,
     externalServiceId: number | undefined,
@@ -985,32 +1015,35 @@ class BaseScanner<T> {
     seasonStatuses: Record<number, MediaStatus> | null = null
   ): Promise<void> {
     const repo = getRepository(MediaServiceStatus);
-    await upsertMediaServiceStatus(
-      repo,
-      {
-        mediaId,
-        serviceId,
-        serviceType,
-        status,
-        externalServiceId: externalServiceId ?? null,
-        externalServiceSlug: externalServiceSlug ?? null,
-        seasonStatuses,
-      },
-      ['status', 'externalServiceId', 'externalServiceSlug', 'seasonStatuses']
-    );
 
-    if (
-      status === MediaStatus.AVAILABLE ||
-      Object.values(seasonStatuses ?? {}).some(
-        (seasonStatus) => seasonStatus === MediaStatus.AVAILABLE
-      )
-    ) {
-      await this.completeAvailableServiceRequests(
-        mediaId,
-        serviceId,
-        status,
-        seasonStatuses
+    for (const serviceId of this.getServiceIds(scannedServiceId)) {
+      await upsertMediaServiceStatus(
+        repo,
+        {
+          mediaId,
+          serviceId,
+          serviceType,
+          status,
+          externalServiceId: externalServiceId ?? null,
+          externalServiceSlug: externalServiceSlug ?? null,
+          seasonStatuses,
+        },
+        ['status', 'externalServiceId', 'externalServiceSlug', 'seasonStatuses']
       );
+
+      if (
+        status === MediaStatus.AVAILABLE ||
+        Object.values(seasonStatuses ?? {}).some(
+          (seasonStatus) => seasonStatus === MediaStatus.AVAILABLE
+        )
+      ) {
+        await this.completeAvailableServiceRequests(
+          mediaId,
+          serviceId,
+          status,
+          seasonStatuses
+        );
+      }
     }
   }
 

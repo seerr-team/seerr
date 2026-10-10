@@ -88,9 +88,7 @@ const CollectionRequestModal = ({
 
   const getPartStatus = (part: MovieResult): MediaStatus | undefined =>
     serverId != null
-      ? (part.mediaInfo?.serviceStatuses?.find(
-          (ss) => ss.serviceId === serverId
-        )?.status ?? MediaStatus.UNKNOWN)
+      ? getMediaServiceStatus(part.mediaInfo, serverId).status
       : part.mediaInfo?.[is4k ? 'status4k' : 'status'];
 
   const getPartRequest = (tmdbId: number): MediaRequest | undefined => {

@@ -59,6 +59,10 @@ class SonarrScanner
     };
   }
 
+  protected getConfiguredServers(): SonarrSettings[] {
+    return getSettings().sonarr;
+  }
+
   public async run(): Promise<void> {
     const settings = getSettings();
     const sessionId = this.startRun();
@@ -116,14 +120,16 @@ class SonarrScanner
           }
 
           await this.loop(this.processSonarrSeries.bind(this), { sessionId });
-          await this.resetStaleServiceStatus({
-            serviceId: server.id,
-            serviceType: 'sonarr',
-            mediaType: MediaType.TV,
-            seenTmdbIds: this.currentServerTmdbIds,
-            serverName: server.name,
-            clearSeasonStatuses: true,
-          });
+          for (const serviceId of this.getServiceIds(server.id)) {
+            await this.resetStaleServiceStatus({
+              serviceId,
+              serviceType: 'sonarr',
+              mediaType: MediaType.TV,
+              seenTmdbIds: this.currentServerTmdbIds,
+              serverName: server.name,
+              clearSeasonStatuses: true,
+            });
+          }
         } else {
           this.log(`Sync not enabled. Skipping Sonarr server: ${server.name}`);
         }

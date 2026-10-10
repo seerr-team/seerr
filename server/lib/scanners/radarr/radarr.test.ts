@@ -1,5 +1,7 @@
 import type { RadarrMovie } from '@server/api/servarr/radarr';
 import RadarrAPI from '@server/api/servarr/radarr';
+import TheMovieDb from '@server/api/themoviedb';
+import type { TmdbMovieDetails } from '@server/api/themoviedb/interfaces';
 import {
   MediaRequestStatus,
   MediaStatus,
@@ -34,6 +36,16 @@ Object.defineProperty(RadarrAPI.prototype, 'getLibraryMoviesByTmdbId', {
   set() {},
   get() {
     return async (tmdbId: number) => getLibraryMoviesByTmdbIdImpl(tmdbId);
+  },
+  configurable: true,
+});
+
+// Completing a service request looks the movie up for its notification.
+Object.defineProperty(TheMovieDb.prototype, 'getMovie', {
+  set() {},
+  get() {
+    return async () =>
+      ({ title: 'Test Movie', overview: '' }) as TmdbMovieDetails;
   },
   configurable: true,
 });
@@ -871,6 +883,52 @@ describe('Radarr Scanner', () => {
         await statusOf(otherServer.id),
         MediaRequestStatus.APPROVED
       );
+    });
+
+    it('applies the scanned status to duplicate entries of the same server', async () => {
+      const media = await getRepository(Media).save(
+        new Media({
+          tmdbId: 565,
+          mediaType: MediaType.MOVIE,
+          status: MediaStatus.PROCESSING,
+        })
+      );
+      const requestedBy = await getRepository(User).findOneOrFail({
+        where: { email: 'admin@seerr.dev' },
+      });
+      const request = await getRepository(MediaRequest).save(
+        new MediaRequest({
+          type: MediaType.MOVIE,
+          media,
+          requestedBy,
+          status: MediaRequestStatus.APPROVED,
+          is4k: false,
+          serverId: 1,
+          isServiceRequest: true,
+        })
+      );
+
+      // Same host, port and base URL: run() only scans the first entry.
+      configureRadarr([{}, {}]);
+      getMoviesImpl = async () => [fakeRadarrMovie({ tmdbId: 565, id: 96 })];
+
+      await runWithMockTimers(() => radarrScanner.run());
+
+      const serviceStatuses = await getRepository(MediaServiceStatus).find({
+        where: { mediaId: media.id },
+        order: { serviceId: 'ASC' },
+      });
+      assert.deepStrictEqual(
+        serviceStatuses.map((ss) => [ss.serviceId, ss.status]),
+        [
+          [0, MediaStatus.AVAILABLE],
+          [1, MediaStatus.AVAILABLE],
+        ]
+      );
+      const updatedRequest = await getRepository(MediaRequest).findOneOrFail({
+        where: { id: request.id },
+      });
+      assert.strictEqual(updatedRequest.status, MediaRequestStatus.COMPLETED);
     });
   });
 

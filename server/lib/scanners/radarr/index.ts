@@ -50,6 +50,10 @@ class RadarrScanner
     };
   }
 
+  protected getConfiguredServers(): RadarrSettings[] {
+    return getSettings().radarr;
+  }
+
   public async run(): Promise<void> {
     const settings = getSettings();
     const sessionId = this.startRun();
@@ -107,13 +111,15 @@ class RadarrScanner
           }
 
           await this.loop(this.processRadarrMovie.bind(this), { sessionId });
-          await this.resetStaleServiceStatus({
-            serviceId: server.id,
-            serviceType: 'radarr',
-            mediaType: MediaType.MOVIE,
-            seenTmdbIds: this.currentServerTmdbIds,
-            serverName: server.name,
-          });
+          for (const serviceId of this.getServiceIds(server.id)) {
+            await this.resetStaleServiceStatus({
+              serviceId,
+              serviceType: 'radarr',
+              mediaType: MediaType.MOVIE,
+              seenTmdbIds: this.currentServerTmdbIds,
+              serverName: server.name,
+            });
+          }
         } else {
           this.log(`Sync not enabled. Skipping Radarr server: ${server.name}`);
         }

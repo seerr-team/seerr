@@ -65,6 +65,19 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
       const serviceStatus = await manager
         .getRepository(MediaServiceStatus)
         .findOne({ where: { mediaId: media.id, serviceId: entity.serverId } });
+
+      // Service requests only carry seasons missing from the service row.
+      if (entity.type === MediaType.TV) {
+        return (
+          (entity.seasons?.length ?? 0) > 0 &&
+          entity.seasons.every(
+            (season) =>
+              serviceStatus?.seasonStatuses?.[season.seasonNumber] ===
+              MediaStatus.AVAILABLE
+          )
+        );
+      }
+
       return serviceStatus?.status === MediaStatus.AVAILABLE;
     }
 

@@ -15,6 +15,7 @@ import { UserType } from '@server/constants/user';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import { MediaRequest } from '@server/entity/MediaRequest';
+import MediaServiceStatus from '@server/entity/MediaServiceStatus';
 import OverrideRule from '@server/entity/OverrideRule';
 import Season from '@server/entity/Season';
 import SeasonRequest from '@server/entity/SeasonRequest';
@@ -1779,6 +1780,46 @@ describe('POST /request, per-service slots', () => {
     });
     assert.strictEqual(media.status, MediaStatus.UNKNOWN);
     assert.strictEqual(media.status4k, MediaStatus.UNKNOWN);
+  });
+
+  it('only treats a TV service request as available when its seasons are', async () => {
+    const media = await getRepository(Media).save(
+      new Media({ tmdbId: 99970, mediaType: MediaType.TV })
+    );
+    // Overall AVAILABLE, but season 2 is not on the service yet.
+    await getRepository(MediaServiceStatus).save(
+      new MediaServiceStatus({
+        mediaId: media.id,
+        serviceId: 0,
+        serviceType: 'sonarr',
+        status: MediaStatus.AVAILABLE,
+        seasonStatuses: { 1: MediaStatus.AVAILABLE },
+      })
+    );
+    const subscriber = new MediaRequestSubscriber() as unknown as {
+      isAlreadyAvailable(
+        manager: unknown,
+        entity: MediaRequest,
+        media: Media
+      ): Promise<boolean>;
+    };
+    const isAlreadyAvailable = (seasonNumbers: number[]) =>
+      subscriber.isAlreadyAvailable(
+        getRepository(Media).manager,
+        new MediaRequest({
+          type: MediaType.TV,
+          isServiceRequest: true,
+          serverId: 0,
+          seasons: seasonNumbers.map(
+            (seasonNumber) => new SeasonRequest({ seasonNumber })
+          ),
+        }),
+        media
+      );
+
+    assert.strictEqual(await isAlreadyAvailable([2]), false);
+    assert.strictEqual(await isAlreadyAvailable([1, 2]), false);
+    assert.strictEqual(await isAlreadyAvailable([1]), true);
   });
 
   async function createRequester(email: string, services: string[]) {
