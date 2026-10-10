@@ -896,6 +896,8 @@ describe('Radarr Scanner', () => {
       const requestedBy = await getRepository(User).findOneOrFail({
         where: { email: 'admin@seerr.dev' },
       });
+      // Keep the approved request from being sent to a leftover server.
+      getSettings().radarr = [];
       const request = await getRepository(MediaRequest).save(
         new MediaRequest({
           type: MediaType.MOVIE,

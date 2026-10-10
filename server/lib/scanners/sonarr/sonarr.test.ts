@@ -15,6 +15,7 @@ import Media from '@server/entity/Media';
 import MediaRequest from '@server/entity/MediaRequest';
 import MediaServiceStatus from '@server/entity/MediaServiceStatus';
 import Season from '@server/entity/Season';
+import SeasonRequest from '@server/entity/SeasonRequest';
 import { User } from '@server/entity/User';
 import { sonarrScanner } from '@server/lib/scanners/sonarr';
 import type { SonarrSettings } from '@server/lib/settings';
@@ -975,6 +976,58 @@ describe('Sonarr Scanner', () => {
       assert.deepStrictEqual(serviceStatus.seasonStatuses, {
         1: MediaStatus.AVAILABLE,
       });
+    });
+
+    it('completes the seasons of a completed service request', async () => {
+      // Already available in the standard slot, so only the service status
+      // change can complete the request.
+      const media = await getRepository(Media).save(
+        new Media({
+          tmdbId: 1,
+          tvdbId: 100,
+          mediaType: MediaType.TV,
+          status: MediaStatus.AVAILABLE,
+          seasons: [
+            new Season({ seasonNumber: 1, status: MediaStatus.AVAILABLE }),
+          ],
+        })
+      );
+      const requestedBy = await getRepository(User).findOneOrFail({
+        where: { email: 'admin@seerr.dev' },
+      });
+      // Keep the approved request from being sent to a leftover server.
+      getSettings().sonarr = [];
+      const request = await getRepository(MediaRequest).save(
+        new MediaRequest({
+          type: MediaType.TV,
+          media,
+          requestedBy,
+          status: MediaRequestStatus.APPROVED,
+          is4k: false,
+          serverId: 0,
+          isServiceRequest: true,
+          seasons: [
+            new SeasonRequest({
+              seasonNumber: 1,
+              status: MediaRequestStatus.APPROVED,
+            }),
+          ],
+        })
+      );
+
+      configureSonarr([{ syncEnabled: true }]);
+      getSeriesImpl = async () => [fakeSonarrSeries()];
+
+      await runWithMockTimers(() => sonarrScanner.run());
+
+      const updated = await getRepository(MediaRequest).findOneOrFail({
+        where: { id: request.id },
+      });
+      assert.strictEqual(updated.status, MediaRequestStatus.COMPLETED);
+      assert.deepStrictEqual(
+        updated.seasons.map((season) => season.status),
+        [MediaRequestStatus.COMPLETED]
+      );
     });
   });
 
