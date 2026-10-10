@@ -83,6 +83,7 @@ class BaseScanner<T> {
       is4k: boolean;
       seasonNumbers: Set<number>;
       scannedSeasons: ProcessableSeason[];
+      orphanedReason?: string;
     }
   >();
   readonly asyncLock = new AsyncLock();
@@ -657,7 +658,7 @@ class BaseScanner<T> {
     });
   }
 
-  private rollUpShowStatus(
+  protected rollUpShowStatus(
     media: Media,
     scannedSeasons: ProcessableSeason[],
     is4k: boolean
@@ -758,11 +759,12 @@ class BaseScanner<T> {
     this.statusResetCandidates.set(`${mediaId}:${is4k}`, { mediaId, is4k });
   }
 
-  private recordSeasonReset(
+  protected recordSeasonReset(
     mediaId: number,
     is4k: boolean,
     seasonNumber: number,
-    scannedSeasons: ProcessableSeason[]
+    scannedSeasons: ProcessableSeason[],
+    orphanedReason?: string
   ): void {
     const key = `${mediaId}:${is4k}`;
     const candidate = this.seasonResetCandidates.get(key) ?? {
@@ -774,6 +776,7 @@ class BaseScanner<T> {
 
     candidate.seasonNumbers.add(seasonNumber);
     candidate.scannedSeasons = scannedSeasons;
+    candidate.orphanedReason = orphanedReason;
     this.seasonResetCandidates.set(key, candidate);
   }
 
@@ -822,6 +825,7 @@ class BaseScanner<T> {
       is4k,
       seasonNumbers,
       scannedSeasons,
+      orphanedReason,
     } of this.seasonResetCandidates.values()) {
       // Loaded without requests so the save cannot cascade back the season requests removed below.
       const media = await mediaRepository.findOne({ where: { id: mediaId } });
@@ -837,7 +841,8 @@ class BaseScanner<T> {
       for (const season of media.seasons) {
         if (
           !seasonNumbers.has(season.seasonNumber) ||
-          !isAbandoned(media, is4k, season.seasonNumber)
+          // Orphans were already confirmed against every server.
+          (!orphanedReason && !isAbandoned(media, is4k, season.seasonNumber))
         ) {
           continue;
         }
@@ -912,7 +917,8 @@ class BaseScanner<T> {
         await this.declineRequest(
           media,
           request,
-          'after Sonarr stopped pursuing its requested seasons'
+          orphanedReason ??
+            'after Sonarr stopped pursuing its requested seasons'
         );
       }
     }
