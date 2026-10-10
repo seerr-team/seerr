@@ -109,13 +109,23 @@ describe('Discover Customization', () => {
   it('can create a slider for a public TMDB list', () => {
     const listId = '8542986';
     const sliderTitle = 'My TMDB List';
+    const listResults = [
+      movieResult,
+      tvResult,
+      ...Array.from({ length: 19 }, (_, index) => ({
+        ...movieResult,
+        id: movieResult.id + index + 1,
+        title: `List Movie ${index + 1}`,
+        originalTitle: `List Movie ${index + 1}`,
+      })),
+    ];
 
     cy.intercept('/api/v1/settings/discover/*').as('discoverSlider');
     cy.intercept('GET', '/api/v1/discover/list/*', {
       page: 1,
       totalPages: 1,
-      totalResults: 2,
-      results: [movieResult, tvResult],
+      totalResults: listResults.length,
+      results: listResults,
     }).as('tmdbList');
 
     cy.visit('/');
@@ -133,11 +143,26 @@ describe('Discover Customization', () => {
     cy.contains('.slider-header', sliderTitle)
       .next('[data-testid=media-slider]')
       .find('[data-testid=title-card]')
-      .should('have.length', 2);
-
+      .should('have.length', 20);
     cy.get('[data-testid=create-discover-option-form]').submit();
     cy.wait('@discoverSlider');
     cy.wait('@getDiscoverSliders');
+
+    cy.get('[data-testid=discover-slider-edit-mode]')
+      .first()
+      .should('contain', sliderTitle)
+      .find('[role="checkbox"]')
+      .click();
+    cy.get('[data-testid=discover-customize-submit').click();
+    cy.wait('@getDiscoverSliders');
+
+    cy.visit('/');
+    cy.contains('.slider-header a', sliderTitle).should(
+      'have.attr',
+      'href',
+      `/discover/list/${listId}`
+    );
+    cy.get('[data-testid=discover-start-editing]').click();
 
     cy.get('[data-testid=discover-slider-edit-mode]')
       .first()
@@ -147,6 +172,13 @@ describe('Discover Customization', () => {
 
     cy.wait('@discoverSlider');
     cy.wait('@getDiscoverSliders');
+
+    cy.visit(`/discover/list/${listId}`);
+    cy.wait('@tmdbList');
+    cy.get('[data-testid=page-header]').should('contain', 'TMDB List');
+    cy.get('.cards-vertical')
+      .find('[data-testid=title-card]')
+      .should('have.length', listResults.length);
   });
 
   it('can create a new discover option and remove it', () => {

@@ -412,6 +412,7 @@ const Discover = () => {
                 sliderKey={`custom-slider-${slider.id}`}
                 title={slider.title ?? ''}
                 url={`/api/v1/discover/list/${slider.data}`}
+                linkUrl={`/discover/list/${slider.data}`}
               />
             );
             break;
