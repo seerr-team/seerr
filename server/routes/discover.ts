@@ -867,7 +867,7 @@ discoverRoutes.get<{ listId: string }>(
       return res.status(200).json({
         page: data.page,
         totalPages: data.total_pages,
-        totalResults: data.total_results,
+        totalResults: data.item_count,
         results: results.map((result) => {
           const mediaType =
             result.media_type === 'tv' ? MediaType.TV : MediaType.MOVIE;
