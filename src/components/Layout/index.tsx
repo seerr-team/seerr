@@ -90,12 +90,8 @@ const Layout = ({ children }: LayoutProps) => {
         <PullToRefresh />
         <div
           className={`searchbar fixed left-0 right-0 top-0 z-10 flex flex-shrink-0 transition duration-300 ${
-            isScrolled ? 'bg-gray-700/80' : 'bg-transparent'
+            isScrolled ? 'bg-gray-700/90' : 'bg-transparent'
           } lg:left-64`}
-          style={{
-            backdropFilter: isScrolled ? 'blur(5px)' : undefined,
-            WebkitBackdropFilter: isScrolled ? 'blur(5px)' : undefined,
-          }}
         >
           <div className="flex flex-1 items-center justify-between px-4 md:pl-4 md:pr-4">
             <button
