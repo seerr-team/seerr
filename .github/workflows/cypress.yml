@@ -13,7 +13,7 @@ on:
       - 'cypress.config.ts'
       - 'package.json'
       - 'pnpm-lock.yaml'
-      - 'next.config.ts'
+      - 'next.config.mjs'
       - 'tsconfig.json'
       - '.github/workflows/cypress.yml'
   push:
@@ -26,7 +26,7 @@ on:
       - 'cypress.config.ts'
       - 'package.json'
       - 'pnpm-lock.yaml'
-      - 'next.config.ts'
+      - 'next.config.mjs'
       - 'tsconfig.json'
       - '.github/workflows/cypress.yml'
 

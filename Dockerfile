@@ -17,18 +17,6 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store CI=true pnpm install --prod --
 # Remove large native modules for linux-x64-gnu platform (we use alpine which is musl-based)
 # not supported in pnpm for now due to this bug: https://github.com/pnpm/pnpm/issues/9654
 RUN du -shL ./node_modules/.pnpm/* | grep '[0-9]M.*' | grep 'linux-x64-gnu@' | awk '{print $2}' | xargs rm -rf
-# Remove large module files not needed for production
-RUN if [ -d node_modules/.pnpm ]; then \
-  find node_modules/.pnpm -type d \( \
-  -path "*ace-builds/src-noconflict" -o \
-  -path "*ace-builds/src" -o \
-  -path "*ace-builds/src-min" -o \
-  -path "*country-flag-icons/react" -o \
-  -path "*country-flag-icons/string" -o \
-  -path "*country-flag-icons/1x1" -o \
-  -path "*@heroicons/react/16" \
-  \) -exec rm -rf {} + || true; \
-  fi
 
 FROM base AS build
 
@@ -48,8 +36,6 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store CYPRESS_INSTALL_BINARY=0 pnpm 
 
 RUN pnpm build
 
-RUN rm -rf .next/cache
-
 FROM node:22.23.4-alpine3.23@sha256:206878a60dc7014193f418ab9259b6110c15fbd514b3044a267be706509944e4
 ARG SOURCE_DATE_EPOCH
 ARG COMMIT_TAG
@@ -62,9 +48,27 @@ USER node:node
 
 WORKDIR /app
 
-COPY --chown=node:node . .
-COPY --chown=node:node --from=prod-deps /app/node_modules ./node_modules
-COPY --chown=node:node --from=build /app/.next ./.next
+COPY --chown=node:node --exclude=src --exclude=server . .
+# @next/swc is only for next build and for next.config.ts
+# ts-node, @swc/core, and typescript are only needed for build-time type checking and compilation
+# ace-builds, country-flag-icons and @heroicons subfolders are large module files not needed for production
+# Source map files are not needed for production
+# Remove large module files not needed for production
+COPY --chown=node:node --from=prod-deps \
+  --exclude=.pnpm/@next+swc-* \
+  --exclude=.pnpm/@swc+core* \
+  --exclude=.pnpm/ts-node@* \
+  --exclude=.pnpm/typescript@* \
+  --exclude=**/ace-builds/src-noconflict \
+  --exclude=**/ace-builds/src \
+  --exclude=**/ace-builds/src-min \
+  --exclude=**/country-flag-icons/react \
+  --exclude=**/country-flag-icons/string \
+  --exclude=**/country-flag-icons/1x1 \
+  --exclude=**/@heroicons/react/16 \
+  --exclude=**/*.map \
+  /app/node_modules ./node_modules
+COPY --chown=node:node --from=build --exclude=cache --exclude=**/*.map /app/.next ./.next
 COPY --chown=node:node --from=build /app/dist ./dist
 
 RUN touch config/DOCKER && \
