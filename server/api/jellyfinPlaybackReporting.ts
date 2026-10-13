@@ -51,7 +51,7 @@ class JellyfinPlaybackReportingAPI extends JellyfinAPI {
         ${whereSql} ORDER BY DateCreated ASC`;
 
       const playbackActivityResult = await this.post<CustomQueryResponse>(
-        'user_usage_stats/submit_custom_query',
+        '/user_usage_stats/submit_custom_query',
         { CustomQueryString }
       );
 
@@ -62,12 +62,24 @@ class JellyfinPlaybackReportingAPI extends JellyfinAPI {
 
       return parsedPlaybackActivityResult;
     } catch (e) {
+      const status = e?.response?.status;
+      const pluginMessage = e?.response?.data?.message;
+
       logger.error(
-        `Something went wrong while getting the Playback Activity from the Jellyfin Playback Reporting Plugin: ${e.message}`,
-        { label: 'Jellyfin Playback Reporting API', error: e.response?.status }
+        `Something went wrong while getting the Playback Activity from the Jellyfin Playback Reporting Plugin: ${e?.message ?? 'Unknown error'}`,
+        {
+          label: 'Jellyfin Playback Reporting API',
+          error: status,
+          pluginMessage,
+        }
       );
 
-      throw new ApiError(e.response?.status, ApiErrorCode.InvalidAuthToken);
+      const errorCode =
+        status === 401 || status === 403
+          ? ApiErrorCode.InvalidAuthToken
+          : ApiErrorCode.Unknown;
+
+      throw new ApiError(status, errorCode);
     }
   }
 

@@ -295,7 +295,7 @@ class Media {
       mediaServerType === MediaServerType.EMBY
     ) {
       const pageName =
-        mediaServerType == MediaServerType.EMBY ? 'item' : 'details';
+        mediaServerType === MediaServerType.EMBY ? 'item' : 'details';
       const { serverId, externalHostname } = settings.jellyfin;
       const jellyfinHost =
         externalHostname && externalHostname.length > 0
