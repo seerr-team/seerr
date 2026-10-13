@@ -79,7 +79,7 @@ class JellyfinPlaybackReportingAPI extends JellyfinAPI {
           ? ApiErrorCode.InvalidAuthToken
           : ApiErrorCode.Unknown;
 
-      throw new ApiError(status, errorCode);
+      throw new ApiError(status ?? 500, errorCode);
     }
   }
 

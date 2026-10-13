@@ -9,6 +9,7 @@ import type {
   TmdbTvDetails,
   TmdbTvScanDetails,
 } from '@server/api/themoviedb/interfaces';
+import { MediaServerType } from '@server/constants/server';
 import type {
   MediaIds,
   ProcessableSeason,
@@ -68,7 +69,7 @@ class PlexScanner
     const settings = getSettings();
     const sessionId = this.startRun();
     try {
-      const admin = await getMediaServerAdmin();
+      const admin = await getMediaServerAdmin(MediaServerType.PLEX);
 
       if (!admin) {
         return this.log('No admin configured. Plex scan skipped.', 'warn');
