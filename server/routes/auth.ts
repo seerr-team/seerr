@@ -662,7 +662,7 @@ authRoutes.post('/jellyfin/quickconnect/initiate', async (req, res, next) => {
 
   try {
     const hostname = getHostname();
-    const jellyfinServer = new JellyfinAPI(
+    const jellyfinServer = new JellyfinMainAPI(
       hostname ?? '',
       undefined,
       undefined
@@ -708,7 +708,7 @@ authRoutes.get('/jellyfin/quickconnect/check', async (req, res, next) => {
 
   try {
     const hostname = getHostname();
-    const jellyfinServer = new JellyfinAPI(
+    const jellyfinServer = new JellyfinMainAPI(
       hostname ?? '',
       undefined,
       undefined
@@ -759,7 +759,7 @@ authRoutes.post(
 
     try {
       const hostname = getHostname();
-      const jellyfinServer = new JellyfinAPI(
+      const jellyfinServer = new JellyfinMainAPI(
         hostname ?? '',
         undefined,
         undefined

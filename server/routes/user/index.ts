@@ -772,6 +772,10 @@ router.post(
         settings.jellyfin.apiKey,
         admin.jellyfinDeviceId ?? ''
       );
+      jellyfinClient.setUserId(admin.jellyfinUserId ?? '');
+
+      //const jellyfinUsersResponse = await jellyfinClient.getUsers();
+      const createdUsers: User[] = [];
 
       jellyfinClient.setUserId(admin.jellyfinUserId ?? '');
       const jellyfinUsers = await jellyfinClient.getUsers();
