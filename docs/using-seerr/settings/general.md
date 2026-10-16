@@ -12,7 +12,16 @@ This is your Seerr API key, which can be used to integrate Seerr with third-part
 
 If you need to generate a new API key for any reason, simply click the button to the right of the text box.
 
-If you want to set the API key, rather than letting it be randomly generated, you can use the API_KEY environment variable. Whatever that variable is set to will be your API key.
+If you want to set the API key, rather than letting it be randomly generated, you can use the `API_KEY` environment variable. Whatever that variable is set to will be your API key.
+
+You can also load it from a file with `API_KEY_FILE`, or from a systemd/Docker credential named `api-key` under `CREDENTIALS_DIRECTORY` (or `/run/secrets` when that directory exists). Resolution order matches [database file-based secrets](/extending-seerr/database-config#file-based-secrets-docker--systemd): env var, then `*_FILE`, then the credential file.
+
+```ini
+[Service]
+LoadCredential=api-key:/path/to/your/api-key-secret
+```
+
+[Learn more about systemd credentials](https://systemd.io/CREDENTIALS/).
 
 ## Application Title
 
