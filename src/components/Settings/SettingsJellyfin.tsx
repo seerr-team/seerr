@@ -10,7 +10,7 @@ import defineMessages from '@app/utils/defineMessages';
 import { isValidURL } from '@app/utils/urlValidationHelper';
 import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
 import { ApiErrorCode } from '@server/constants/error';
-import { MediaServerType } from '@server/constants/server';
+import { MediaServerType, ServerType } from '@server/constants/server';
 import type { JellyfinSettings } from '@server/lib/settings';
 import axios from 'axios';
 import { Field, Formik } from 'formik';
@@ -182,8 +182,8 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
           intl.formatMessage(messages.jellyfinSyncFailedConnectionError, {
             mediaServerName:
               settings.currentSettings.mediaServerType === MediaServerType.EMBY
-                ? 'Emby'
-                : 'Jellyfin',
+                ? ServerType.EMBY
+                : ServerType.JELLYFIN,
           }),
           {
             autoDismiss: true,
@@ -247,9 +247,9 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
   const mediaServerFormatValues = {
     mediaServerName:
       settings.currentSettings.mediaServerType === MediaServerType.JELLYFIN
-        ? 'Jellyfin'
+        ? ServerType.JELLYFIN
         : settings.currentSettings.mediaServerType === MediaServerType.EMBY
-          ? 'Emby'
+          ? ServerType.EMBY
           : undefined,
   };
 

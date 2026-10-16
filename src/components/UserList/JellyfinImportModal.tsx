@@ -5,7 +5,7 @@ import useSettings from '@app/hooks/useSettings';
 import useToasts from '@app/hooks/useToasts';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
-import { MediaServerType } from '@server/constants/server';
+import { MediaServerType, ServerType } from '@server/constants/server';
 import type { UserResultsResponse } from '@server/interfaces/api/userInterfaces';
 import axios from 'axios';
 import { useState } from 'react';
@@ -77,8 +77,8 @@ const JellyfinImportModal: React.FC<JellyfinImportProps> = ({
           strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
           mediaServerName:
             settings.currentSettings.mediaServerType === MediaServerType.EMBY
-              ? 'Emby'
-              : 'Jellyfin',
+              ? ServerType.EMBY
+              : ServerType.JELLYFIN,
         }),
         {
           autoDismiss: true,
@@ -91,8 +91,8 @@ const JellyfinImportModal: React.FC<JellyfinImportProps> = ({
           applicationTitle: settings.currentSettings.applicationTitle,
           mediaServerName:
             settings.currentSettings.mediaServerType === MediaServerType.EMBY
-              ? 'Emby'
-              : 'Jellyfin',
+              ? ServerType.EMBY
+              : ServerType.JELLYFIN,
         }),
         {
           autoDismiss: false,
@@ -108,8 +108,8 @@ const JellyfinImportModal: React.FC<JellyfinImportProps> = ({
         intl.formatMessage(messages.importfromJellyfinerror, {
           mediaServerName:
             settings.currentSettings.mediaServerType === MediaServerType.EMBY
-              ? 'Emby'
-              : 'Jellyfin',
+              ? ServerType.EMBY
+              : ServerType.JELLYFIN,
         }),
         {
           autoDismiss: true,
@@ -148,8 +148,8 @@ const JellyfinImportModal: React.FC<JellyfinImportProps> = ({
       title={intl.formatMessage(messages.importfromJellyfin, {
         mediaServerName:
           settings.currentSettings.mediaServerType === MediaServerType.EMBY
-            ? 'Emby'
-            : 'Jellyfin',
+            ? ServerType.EMBY
+            : ServerType.JELLYFIN,
       })}
       onOk={() => {
         importUsers();
@@ -168,8 +168,8 @@ const JellyfinImportModal: React.FC<JellyfinImportProps> = ({
                 mediaServerName:
                   settings.currentSettings.mediaServerType ===
                   MediaServerType.EMBY
-                    ? 'Emby'
-                    : 'Jellyfin',
+                    ? ServerType.EMBY
+                    : ServerType.JELLYFIN,
                 strong: (msg: React.ReactNode) => (
                   <strong className="font-semibold text-white">{msg}</strong>
                 ),
@@ -295,8 +295,8 @@ const JellyfinImportModal: React.FC<JellyfinImportProps> = ({
           title={intl.formatMessage(messages.noJellyfinuserstoimport, {
             mediaServerName:
               settings.currentSettings.mediaServerType === MediaServerType.EMBY
-                ? 'Emby'
-                : 'Jellyfin',
+                ? ServerType.EMBY
+                : ServerType.JELLYFIN,
           })}
           type="info"
         />

@@ -4,7 +4,7 @@ import useSettings from '@app/hooks/useSettings';
 import type { User } from '@app/hooks/useUser';
 import { Permission } from '@app/hooks/useUser';
 import defineMessages from '@app/utils/defineMessages';
-import { MediaServerType } from '@server/constants/server';
+import { MediaServerType, ServerType } from '@server/constants/server';
 import { useIntl } from 'react-intl';
 
 export const messages = defineMessages('components.PermissionEdit', {
@@ -145,20 +145,20 @@ export const PermissionEdit = ({
           name: intl.formatMessage(messages.viewwatchlists, {
             mediaServerName:
               settings.currentSettings.mediaServerType === MediaServerType.PLEX
-                ? 'Plex'
+                ? ServerType.PLEX
                 : settings.currentSettings.mediaServerType ===
                     MediaServerType.JELLYFIN
-                  ? 'Jellyfin'
-                  : 'Emby',
+                  ? ServerType.JELLYFIN
+                  : ServerType.EMBY,
           }),
           description: intl.formatMessage(messages.viewwatchlistsDescription, {
             mediaServerName:
               settings.currentSettings.mediaServerType === MediaServerType.PLEX
-                ? 'Plex'
+                ? ServerType.PLEX
                 : settings.currentSettings.mediaServerType ===
                     MediaServerType.JELLYFIN
-                  ? 'Jellyfin'
-                  : 'Emby',
+                  ? ServerType.JELLYFIN
+                  : ServerType.EMBY,
           }),
           permission: Permission.WATCHLIST_VIEW,
         },
