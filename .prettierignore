@@ -7,6 +7,7 @@ pnpm-lock.yaml
 cypress/config/settings.cypress.json
 .github
 .vscode
+next-env.d.ts
 
 # assets
 src/assets/

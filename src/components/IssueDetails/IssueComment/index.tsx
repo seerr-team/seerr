@@ -4,7 +4,13 @@ import Modal from '@app/components/Common/Modal';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
-import { Menu, Transition } from '@headlessui/react';
+import {
+  Menu,
+  MenuButton,
+  MenuItem,
+  MenuItems,
+  Transition,
+} from '@headlessui/react';
 import { EllipsisVerticalIcon } from '@heroicons/react/24/solid';
 import type { default as IssueCommentType } from '@server/entity/IssueComment';
 import axios from 'axios';
@@ -106,13 +112,13 @@ const IssueComment = ({
               {({ open }) => (
                 <>
                   <div>
-                    <Menu.Button className="flex items-center rounded-full text-gray-400 hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-100">
+                    <MenuButton className="flex items-center rounded-full text-gray-400 hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-100">
                       <span className="sr-only">Open options</span>
                       <EllipsisVerticalIcon
                         className="h-5 w-5"
                         aria-hidden="true"
                       />
-                    </Menu.Button>
+                    </MenuButton>
                   </div>
 
                   <Transition
@@ -125,13 +131,13 @@ const IssueComment = ({
                     leaveFrom="opacity-100 scale-100"
                     leaveTo="opacity-0 scale-95"
                   >
-                    <Menu.Items
+                    <MenuItems
                       static
                       className="absolute right-0 mt-2 w-56 origin-top-right rounded-md bg-gray-700 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
                     >
                       <div className="py-1">
                         {isActiveUser && (
-                          <Menu.Item>
+                          <MenuItem>
                             {({ active }) => (
                               <button
                                 onClick={() => setIsEditing(true)}
@@ -144,9 +150,9 @@ const IssueComment = ({
                                 {intl.formatMessage(messages.edit)}
                               </button>
                             )}
-                          </Menu.Item>
+                          </MenuItem>
                         )}
-                        <Menu.Item>
+                        <MenuItem>
                           {({ active }) => (
                             <button
                               onClick={() => setShowDeleteModal(true)}
@@ -159,9 +165,9 @@ const IssueComment = ({
                               {intl.formatMessage(messages.delete)}
                             </button>
                           )}
-                        </Menu.Item>
+                        </MenuItem>
                       </div>
-                    </Menu.Items>
+                    </MenuItems>
                   </Transition>
                 </>
               )}

@@ -1,3 +1,4 @@
+import Spinner from '@app/assets/spinner.svg';
 import Badge from '@app/components/Common/Badge';
 import Button from '@app/components/Common/Button';
 import CachedImage from '@app/components/Common/CachedImage';
@@ -5,10 +6,14 @@ import ConfirmButton from '@app/components/Common/ConfirmButton';
 import RequestModal from '@app/components/RequestModal';
 import StatusBadge from '@app/components/StatusBadge';
 import useDeepLinks from '@app/hooks/useDeepLinks';
+import useToasts from '@app/hooks/useToasts';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
-import { refreshIntervalHelper } from '@app/utils/refreshIntervalHelper';
+import {
+  getRequestDownloadStatus,
+  refreshIntervalHelper,
+} from '@app/utils/refreshIntervalHelper';
 import {
   ArrowPathIcon,
   CheckIcon,
@@ -27,12 +32,12 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { FormattedRelativeTime, useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import useSWR, { mutate } from 'swr';
 
 const messages = defineMessages('components.RequestList.RequestItem', {
   seasons: '{seasonCount, plural, one {Season} other {Seasons}}',
   failedretry: 'Something went wrong while retrying the request.',
+  failedmodify: 'Something went wrong while modifying the request.',
   requested: 'Requested',
   requesteddate: 'Requested',
   modified: 'Modified',
@@ -45,6 +50,7 @@ const messages = defineMessages('components.RequestList.RequestItem', {
   tvdbid: 'TheTVDB ID',
   unknowntitle: 'Unknown Title',
   removearr: 'Remove from {arr}',
+  removemediaerror: 'Something went wrong while removing the media.',
   profileName: 'Profile',
 });
 
@@ -76,6 +82,15 @@ const RequestItemError = ({
     iOSPlexUrl: requestData?.media?.iOSPlexUrl,
     iOSPlexUrl4k: requestData?.media?.iOSPlexUrl4k,
   });
+
+  const requestDownloadStatus = getRequestDownloadStatus(
+    requestData?.media?.[
+      requestData?.is4k ? 'downloadStatus4k' : 'downloadStatus'
+    ],
+    requestData?.type === 'tv'
+      ? (requestData?.seasons ?? []).map((season) => season.seasonNumber)
+      : []
+  );
 
   return (
     <div className="flex h-64 w-full flex-col justify-center rounded-xl bg-gray-800 py-4 text-gray-400 shadow-md ring-1 ring-red-500 xl:h-28 xl:flex-row">
@@ -136,21 +151,9 @@ const RequestItemError = ({
                         requestData.is4k ? 'status4k' : 'status'
                       ]
                     }
-                    downloadItem={
-                      requestData.media[
-                        requestData.is4k ? 'downloadStatus4k' : 'downloadStatus'
-                      ]
-                    }
+                    downloadItem={requestDownloadStatus}
                     title={intl.formatMessage(messages.unknowntitle)}
-                    inProgress={
-                      (
-                        requestData.media[
-                          requestData.is4k
-                            ? 'downloadStatus4k'
-                            : 'downloadStatus'
-                        ] ?? []
-                      ).length > 0
-                    }
+                    inProgress={requestDownloadStatus.length > 0}
                     is4k={requestData.is4k}
                     mediaType={requestData.type}
                     plexUrl={requestData.is4k ? plexUrl4k : plexUrl}
@@ -322,13 +325,24 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
   });
 
   const [isRetrying, setRetrying] = useState(false);
+  const [updatingType, setUpdatingType] = useState<
+    'approve' | 'decline' | null
+  >(null);
 
   const modifyRequest = async (type: 'approve' | 'decline') => {
-    const response = await axios.post(`/api/v1/request/${request.id}/${type}`);
-
-    if (response) {
+    setUpdatingType(type);
+    try {
+      await axios.post(`/api/v1/request/${request.id}/${type}`);
       revalidate();
+      revalidateList();
       mutate('/api/v1/request/count');
+    } catch {
+      addToast(intl.formatMessage(messages.failedmodify), {
+        autoDismiss: true,
+        appearance: 'error',
+      });
+    } finally {
+      setUpdatingType(null);
     }
   };
 
@@ -341,10 +355,20 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
 
   const deleteMediaFile = async () => {
     if (request.media) {
-      await axios.delete(
-        `/api/v1/media/${request.media.id}/file?is4k=${request.is4k}`
-      );
-      await axios.delete(`/api/v1/media/${request.media.id}`);
+      try {
+        await axios.delete(
+          `/api/v1/media/${request.media.id}/file?is4k=${request.is4k}`
+        );
+      } catch (e) {
+        if (!axios.isAxiosError(e) || e.response?.status !== 404) {
+          addToast(intl.formatMessage(messages.removemediaerror), {
+            autoDismiss: true,
+            appearance: 'error',
+          });
+          revalidateList();
+          return;
+        }
+      }
       revalidateList();
     }
   };
@@ -389,6 +413,13 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
       />
     );
   }
+
+  const requestDownloadStatus = getRequestDownloadStatus(
+    requestData.media[requestData.is4k ? 'downloadStatus4k' : 'downloadStatus'],
+    requestData.type === 'tv'
+      ? requestData.seasons.map((season) => season.seasonNumber)
+      : []
+  );
 
   return (
     <>
@@ -516,19 +547,9 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
                   status={
                     requestData.media[requestData.is4k ? 'status4k' : 'status']
                   }
-                  downloadItem={
-                    requestData.media[
-                      requestData.is4k ? 'downloadStatus4k' : 'downloadStatus'
-                    ]
-                  }
+                  downloadItem={requestDownloadStatus}
                   title={isMovie(title) ? title.title : title.name}
-                  inProgress={
-                    (
-                      requestData.media[
-                        requestData.is4k ? 'downloadStatus4k' : 'downloadStatus'
-                      ] ?? []
-                    ).length > 0
-                  }
+                  inProgress={requestDownloadStatus.length > 0}
                   is4k={requestData.is4k}
                   tmdbId={requestData.media.tmdbId}
                   mediaType={requestData.type}
@@ -714,8 +735,9 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
                     className="w-full"
                     buttonType="success"
                     onClick={() => modifyRequest('approve')}
+                    disabled={updatingType !== null}
                   >
-                    <CheckIcon />
+                    {updatingType === 'approve' ? <Spinner /> : <CheckIcon />}
                     <span>{intl.formatMessage(globalMessages.approve)}</span>
                   </Button>
                 </span>
@@ -724,8 +746,9 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
                     className="w-full"
                     buttonType="danger"
                     onClick={() => modifyRequest('decline')}
+                    disabled={updatingType !== null}
                   >
-                    <XMarkIcon />
+                    {updatingType === 'decline' ? <Spinner /> : <XMarkIcon />}
                     <span>{intl.formatMessage(globalMessages.decline)}</span>
                   </Button>
                 </span>
@@ -741,6 +764,7 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
                   className="w-full"
                   buttonType="primary"
                   onClick={() => setShowEditModal(true)}
+                  disabled={updatingType !== null}
                 >
                   <PencilIcon />
                   <span>{intl.formatMessage(messages.editrequest)}</span>

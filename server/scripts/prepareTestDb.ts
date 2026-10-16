@@ -12,6 +12,7 @@ const prepareDb = async () => {
   await seedTestDb({
     preserveDb: process.env.PRESERVE_DB === 'true',
     withMigrations: process.env.WITH_MIGRATIONS === 'true',
+    allowOutsideTest: true,
   });
 };
 

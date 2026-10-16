@@ -5,6 +5,11 @@ import PlexAPI from '@server/api/plexapi';
 import RadarrAPI, { type RadarrMovie } from '@server/api/servarr/radarr';
 import type { SonarrSeason, SonarrSeries } from '@server/api/servarr/sonarr';
 import SonarrAPI from '@server/api/servarr/sonarr';
+import TheMovieDb from '@server/api/themoviedb';
+import type {
+  TmdbTvDetails,
+  TmdbTvScanDetails,
+} from '@server/api/themoviedb/interfaces';
 import { MediaRequestStatus, MediaStatus } from '@server/constants/media';
 import { MediaServerType } from '@server/constants/server';
 import { getRepository } from '@server/datasource';
@@ -21,27 +26,37 @@ class AvailabilitySync {
   public running = false;
   private plexClient: PlexAPI;
   private plexSeasonsCache: Record<string, PlexMetadata[]>;
+  private plexEpisodeExistsCache: Record<string, boolean>;
 
   private jellyfinClient: JellyfinAPI;
   private jellyfinSeasonsCache: Record<string, JellyfinLibraryItem[]>;
+  private jellyfinEpisodeExistsCache: Record<string, boolean>;
 
   private sonarrSeasonsCache: Record<string, SonarrSeason[]>;
   private radarrServers: RadarrSettings[];
   private sonarrServers: SonarrSettings[];
+  private enable4kMovie: boolean;
+  private enable4kShow: boolean;
+
+  readonly tmdb = new TheMovieDb();
 
   async run() {
     const settings = getSettings();
     const mediaServerType = getSettings().main.mediaServerType;
     this.running = true;
     this.plexSeasonsCache = {};
+    this.plexEpisodeExistsCache = {};
     this.jellyfinSeasonsCache = {};
+    this.jellyfinEpisodeExistsCache = {};
     this.sonarrSeasonsCache = {};
-    this.radarrServers = settings.radarr.filter((server) => server.syncEnabled);
-    this.sonarrServers = settings.sonarr.filter((server) => server.syncEnabled);
+    this.radarrServers = settings.radarr;
+    this.sonarrServers = settings.sonarr;
+    this.enable4kMovie = this.radarrServers.some((server) => server.is4k);
+    this.enable4kShow = this.sonarrServers.some((server) => server.is4k);
 
     try {
       logger.info(`Starting availability sync...`, {
-        label: 'Availability Sync',
+        label: 'AvailabilitySync',
       });
       const pageSize = 50;
 
@@ -145,7 +160,7 @@ class AvailabilitySync {
 
             if (existsInPlex || existsInRadarr) {
               movieExists = true;
-              logger.info(
+              logger.debug(
                 `The non-4K movie [TMDB ID ${media.tmdbId}] still exists. Preventing removal.`,
                 {
                   label: 'AvailabilitySync',
@@ -155,7 +170,7 @@ class AvailabilitySync {
 
             if (existsInPlex4k || existsInRadarr4k) {
               movieExists4k = true;
-              logger.info(
+              logger.debug(
                 `The 4K movie [TMDB ID ${media.tmdbId}] still exists. Preventing removal.`,
                 {
                   label: 'AvailabilitySync',
@@ -178,7 +193,7 @@ class AvailabilitySync {
 
             if (existsInJellyfin || existsInRadarr) {
               movieExists = true;
-              logger.info(
+              logger.debug(
                 `The non-4K movie [TMDB ID ${media.tmdbId}] still exists. Preventing removal.`,
                 {
                   label: 'AvailabilitySync',
@@ -188,7 +203,7 @@ class AvailabilitySync {
 
             if (existsInJellyfin4k || existsInRadarr4k) {
               movieExists4k = true;
-              logger.info(
+              logger.debug(
                 `The 4K movie [TMDB ID ${media.tmdbId}] still exists. Preventing removal.`,
                 {
                   label: 'AvailabilitySync',
@@ -242,7 +257,7 @@ class AvailabilitySync {
           if (mediaServerType === MediaServerType.PLEX) {
             if (existsInPlex || existsInSonarr) {
               showExists = true;
-              logger.info(
+              logger.debug(
                 `The non-4K show [TMDB ID ${media.tmdbId}] still exists. Preventing removal.`,
                 {
                   label: 'AvailabilitySync',
@@ -254,7 +269,7 @@ class AvailabilitySync {
           if (mediaServerType === MediaServerType.PLEX) {
             if (existsInPlex4k || existsInSonarr4k) {
               showExists4k = true;
-              logger.info(
+              logger.debug(
                 `The 4K show [TMDB ID ${media.tmdbId}] still exists. Preventing removal.`,
                 {
                   label: 'AvailabilitySync',
@@ -270,7 +285,7 @@ class AvailabilitySync {
           ) {
             if (existsInJellyfin || existsInSonarr) {
               showExists = true;
-              logger.info(
+              logger.debug(
                 `The non-4K show [TMDB ID ${media.tmdbId}] still exists. Preventing removal.`,
                 {
                   label: 'AvailabilitySync',
@@ -285,7 +300,7 @@ class AvailabilitySync {
           ) {
             if (existsInJellyfin4k || existsInSonarr4k) {
               showExists4k = true;
-              logger.info(
+              logger.debug(
                 `The 4K show [TMDB ID ${media.tmdbId}] still exists. Preventing removal.`,
                 {
                   label: 'AvailabilitySync',
@@ -349,6 +364,52 @@ class AvailabilitySync {
             ]);
           }
 
+          // We need to fetch from TMDB to get the episode count for each season
+          let tvShow: TmdbTvScanDetails | TmdbTvDetails | undefined;
+          try {
+            if (media.tmdbId) {
+              tvShow = await this.tmdb.getTvShowForScan({
+                tvId: Number(media.tmdbId),
+              });
+            } else if (media.tvdbId) {
+              tvShow = await this.tmdb.getShowByTvdbIdForScan({
+                tvdbId: Number(media.tvdbId),
+              });
+            }
+          } catch (e) {
+            logger.debug(
+              `Failed to fetch TMDB data for show [TMDB ID ${media.tmdbId}]. Skipping season enrichment.`,
+              { label: 'AvailabilitySync', errorMessage: e.message }
+            );
+          }
+
+          if (tvShow) {
+            // fill the finalSeasons and finalSeasons4k maps with false for missing seasons
+            media.seasons.forEach((season) => {
+              // Specials don't count towards availability (baseScanner skips them too)
+              // TODO: doesn't respect enableSpecialEpisodes; needs a shared predicate with baseScanner.ts
+              if (season.seasonNumber === 0) {
+                return;
+              }
+              if (
+                !finalSeasons.has(season.seasonNumber) &&
+                tvShow.seasons.find(
+                  (s) => s.season_number === season.seasonNumber
+                )?.episode_count
+              ) {
+                finalSeasons.set(season.seasonNumber, false);
+              }
+              if (
+                !finalSeasons4k.has(season.seasonNumber) &&
+                tvShow.seasons.find(
+                  (s) => s.season_number === season.seasonNumber
+                )?.episode_count
+              ) {
+                finalSeasons4k.set(season.seasonNumber, false);
+              }
+            });
+          }
+
           if (
             !showExists &&
             (media.status === MediaStatus.AVAILABLE ||
@@ -401,11 +462,11 @@ class AvailabilitySync {
     } catch (ex) {
       logger.error('Failed to complete availability sync.', {
         errorMessage: ex.message,
-        label: 'Availability Sync',
+        label: 'AvailabilitySync',
       });
     } finally {
       logger.info(`Availability sync complete.`, {
-        label: 'Availability Sync',
+        label: 'AvailabilitySync',
       });
       this.running = false;
     }
@@ -449,31 +510,29 @@ class AvailabilitySync {
     const mediaRepository = getRepository(Media);
 
     try {
-      // If media type is tv, check if a season is processing
+      // Check if an approved request for this version is still in flight
       // to see if we need to keep the external metadata
       let isMediaProcessing = false;
 
-      if (media.mediaType === 'tv') {
-        const requestRepository = getRepository(MediaRequest);
+      const requestRepository = getRepository(MediaRequest);
 
-        const request = await requestRepository
-          .createQueryBuilder('request')
-          .leftJoinAndSelect('request.media', 'media')
-          .where('(media.id = :id)', {
-            id: media.id,
-          })
-          .andWhere(
-            '(request.is4k = :is4k AND request.status = :requestStatus)',
-            {
-              requestStatus: MediaRequestStatus.APPROVED,
-              is4k: is4k,
-            }
-          )
-          .getOne();
+      const request = await requestRepository
+        .createQueryBuilder('request')
+        .leftJoinAndSelect('request.media', 'media')
+        .where('(media.id = :id)', {
+          id: media.id,
+        })
+        .andWhere(
+          '(request.is4k = :is4k AND request.status = :requestStatus)',
+          {
+            requestStatus: MediaRequestStatus.APPROVED,
+            is4k: is4k,
+          }
+        )
+        .getOne();
 
-        if (request) {
-          isMediaProcessing = true;
-        }
+      if (request) {
+        isMediaProcessing = true;
       }
 
       // Set the non-4K or 4K media to deleted
@@ -504,7 +563,7 @@ class AvailabilitySync {
             ? media[is4k ? 'jellyfinMediaId4k' : 'jellyfinMediaId']
             : null;
       }
-      logger.info(
+      logger.debug(
         `The ${is4k ? '4K' : 'non-4K'} ${
           media.mediaType === 'movie' ? 'movie' : 'show'
         } [TMDB ID ${media.tmdbId}] was not found in any ${
@@ -527,7 +586,7 @@ class AvailabilitySync {
         } [TMDB ID ${media.tmdbId}].`,
         {
           errorMessage: ex.message,
-          label: 'Availability Sync',
+          label: 'AvailabilitySync',
         }
       );
     }
@@ -550,49 +609,45 @@ class AvailabilitySync {
     );
     // Retrieve the season keys to pass into our log
     const seasonKeys = [...seasonsPendingRemoval.keys()];
-
-    // let isSeasonRemoved = false;
+    // Specials can still be marked DELETED below, but shouldn't demote the show
+    const nonSpecialSeasonKeys = seasonKeys.filter((key) => key !== 0);
 
     try {
       for (const mediaSeason of media.seasons) {
-        if (seasonsPendingRemoval.has(mediaSeason.seasonNumber)) {
+        if (
+          seasonsPendingRemoval.has(mediaSeason.seasonNumber) &&
+          (mediaSeason[is4k ? 'status4k' : 'status'] ===
+            MediaStatus.AVAILABLE ||
+            mediaSeason[is4k ? 'status4k' : 'status'] ===
+              MediaStatus.PARTIALLY_AVAILABLE)
+        ) {
           mediaSeason[is4k ? 'status4k' : 'status'] = MediaStatus.DELETED;
         }
       }
 
-      if (media.status === MediaStatus.AVAILABLE && !is4k) {
-        media.status = MediaStatus.PARTIALLY_AVAILABLE;
-        logger.info(
-          `Marking the non-4K show [TMDB ID ${media.tmdbId}] as PARTIALLY_AVAILABLE because season removal has occurred.`,
-          { label: 'Availability Sync' }
-        );
-      }
-
-      if (media.status4k === MediaStatus.AVAILABLE && is4k) {
-        media.status4k = MediaStatus.PARTIALLY_AVAILABLE;
-        logger.info(
-          `Marking the 4K show [TMDB ID ${media.tmdbId}] as PARTIALLY_AVAILABLE because season removal has occurred.`,
-          { label: 'Availability Sync' }
+      if (
+        nonSpecialSeasonKeys.length > 0 &&
+        media[is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE
+      ) {
+        media[is4k ? 'status4k' : 'status'] = MediaStatus.PARTIALLY_AVAILABLE;
+        logger.debug(
+          `Marking the ${
+            is4k ? '4K' : 'non-4K'
+          } show [TMDB ID ${media.tmdbId}] as PARTIALLY_AVAILABLE because season(s) [${nonSpecialSeasonKeys}] was not found in any ${
+            media.mediaType === 'tv' ? 'Sonarr' : 'Radarr'
+          } and ${
+            mediaServerType === MediaServerType.PLEX
+              ? 'plex'
+              : mediaServerType === MediaServerType.JELLYFIN
+                ? 'jellyfin'
+                : 'emby'
+          } instance.`,
+          { label: 'AvailabilitySync' }
         );
       }
 
       media.lastSeasonChange = new Date();
       await mediaRepository.save(media);
-
-      logger.info(
-        `The ${is4k ? '4K' : 'non-4K'} season(s) [${seasonKeys}] [TMDB ID ${
-          media.tmdbId
-        }] was not found in any ${
-          media.mediaType === 'tv' ? 'Sonarr' : 'Radarr'
-        } and ${
-          mediaServerType === MediaServerType.PLEX
-            ? 'plex'
-            : mediaServerType === MediaServerType.JELLYFIN
-              ? 'jellyfin'
-              : 'emby'
-        } instance. Status will be changed to deleted.`,
-        { label: 'AvailabilitySync' }
-      );
     } catch (ex) {
       logger.debug(
         `Failure updating the ${
@@ -600,7 +655,7 @@ class AvailabilitySync {
         } season(s) [${seasonKeys}], TMDB ID ${media.tmdbId}.`,
         {
           errorMessage: ex.message,
-          label: 'Availability Sync',
+          label: 'AvailabilitySync',
         }
       );
     }
@@ -644,6 +699,10 @@ class AvailabilitySync {
           });
         }
 
+        if (radarr && radarr.tmdbId !== media.tmdbId) {
+          continue;
+        }
+
         if (radarr && radarr.hasFile) {
           const resolution =
             radarr?.movieFile?.mediaInfo?.resolution?.split('x');
@@ -667,7 +726,7 @@ class AvailabilitySync {
             }] from Radarr.`,
             {
               errorMessage: ex.message,
-              label: 'Availability Sync',
+              label: 'AvailabilitySync',
             }
           );
         }
@@ -701,18 +760,26 @@ class AvailabilitySync {
 
         if (media.externalServiceId && !is4k) {
           sonarr = await sonarrAPI.getSeriesById(media.externalServiceId);
-          this.sonarrSeasonsCache[`${server.id}-${media.externalServiceId}`] =
-            sonarr.seasons;
         }
 
         if (media.externalServiceId4k && is4k) {
           sonarr = await sonarrAPI.getSeriesById(media.externalServiceId4k);
-          this.sonarrSeasonsCache[`${server.id}-${media.externalServiceId4k}`] =
-            sonarr.seasons;
         }
 
-        if (sonarr && sonarr.statistics.episodeFileCount > 0) {
-          existsInSonarr = true;
+        if (sonarr && media.tvdbId != null && sonarr.tvdbId !== media.tvdbId) {
+          continue;
+        }
+
+        if (sonarr) {
+          const externalServiceId = is4k
+            ? media.externalServiceId4k
+            : media.externalServiceId;
+          this.sonarrSeasonsCache[`${server.id}-${externalServiceId}`] =
+            sonarr.seasons;
+
+          if (sonarr.statistics.episodeFileCount > 0) {
+            existsInSonarr = true;
+          }
         }
       } catch (ex) {
         if (!ex.message.includes('404')) {
@@ -724,7 +791,7 @@ class AvailabilitySync {
             }] from Sonarr.`,
             {
               errorMessage: ex.message,
-              label: 'Availability Sync',
+              label: 'AvailabilitySync',
             }
           );
         }
@@ -823,6 +890,16 @@ class AvailabilitySync {
           this.plexSeasonsCache[ratingKey] =
             await this.plexClient?.getChildrenMetadata(ratingKey);
         }
+
+        if (
+          plexMedia &&
+          media.mediaType === 'movie' &&
+          this.enable4kMovie &&
+          plexMedia.Media?.length &&
+          !plexMedia.Media.some((mediaItem) => (mediaItem.width ?? 0) < 2000)
+        ) {
+          plexMedia = undefined;
+        }
       }
 
       if (ratingKey4k && is4k) {
@@ -834,16 +911,11 @@ class AvailabilitySync {
         }
 
         if (plexMedia) {
-          if (ratingKey === ratingKey4k) {
-            plexMedia = undefined;
-          }
-
           if (
             plexMedia &&
             media.mediaType === 'movie' &&
-            !plexMedia.Media?.some(
-              (mediaItem) => (mediaItem.width ?? 0) >= 2000
-            )
+            plexMedia.Media?.length &&
+            !plexMedia.Media.some((mediaItem) => (mediaItem.width ?? 0) >= 2000)
           ) {
             plexMedia = undefined;
           }
@@ -852,11 +924,15 @@ class AvailabilitySync {
             const cachedSeasons = this.plexSeasonsCache[ratingKey4k];
             if (cachedSeasons?.length) {
               let has4kInAnySeason = false;
+              let verifiedAnySeason = false;
               for (const season of cachedSeasons) {
                 try {
                   const episodes = await this.plexClient?.getChildrenMetadata(
                     season.ratingKey
                   );
+                  if (episodes?.some((episode) => episode.Media?.length)) {
+                    verifiedAnySeason = true;
+                  }
                   const has4kEpisode = episodes?.some((episode) =>
                     episode.Media?.some(
                       (mediaItem) => (mediaItem.width ?? 0) >= 2000
@@ -870,7 +946,7 @@ class AvailabilitySync {
                   // If we can't fetch episodes for a season, continue checking other seasons
                 }
               }
-              if (!has4kInAnySeason) {
+              if (verifiedAnySeason && !has4kInAnySeason) {
                 plexMedia = undefined;
               }
             }
@@ -891,7 +967,7 @@ class AvailabilitySync {
           } [TMDB ID ${media.tmdbId}] from Plex.`,
           {
             errorMessage: ex.message,
-            label: 'Availability Sync',
+            label: 'AvailabilitySync',
           }
         );
       }
@@ -939,7 +1015,6 @@ class AvailabilitySync {
     const ratingKey4k = media.ratingKey4k;
     let seasonExistsInPlex = false;
 
-    // Check each plex instance to see if the season exists
     let plexSeasons: PlexMetadata[] | undefined;
 
     if (ratingKey && !is4k) {
@@ -950,12 +1025,45 @@ class AvailabilitySync {
       plexSeasons = this.plexSeasonsCache[ratingKey4k];
     }
 
-    const seasonIsAvailable = plexSeasons?.find(
+    const seasonMeta = plexSeasons?.find(
       (plexSeason) => plexSeason.index === season.seasonNumber
     );
 
-    if (seasonIsAvailable) {
-      seasonExistsInPlex = true;
+    if (seasonMeta) {
+      const cacheKey = `${is4k ? '4k' : 'std'}-${seasonMeta.ratingKey}`;
+
+      if (cacheKey in this.plexEpisodeExistsCache) {
+        seasonExistsInPlex = this.plexEpisodeExistsCache[cacheKey];
+      } else {
+        try {
+          // Season metadata exists, but we need to verify it has actual
+          // episode files. Plex can keep empty season entries.
+          const episodes = await this.plexClient?.getChildrenMetadata(
+            seasonMeta.ratingKey
+          );
+
+          const episodeVersions =
+            episodes?.flatMap((episode) => episode.Media ?? []) ?? [];
+
+          if (is4k) {
+            seasonExistsInPlex = episodeVersions.some(
+              (mediaItem) => (mediaItem.width ?? 0) >= 2000
+            );
+          } else if (this.enable4kShow) {
+            seasonExistsInPlex = episodeVersions.some(
+              (mediaItem) => (mediaItem.width ?? 0) < 2000
+            );
+          } else {
+            seasonExistsInPlex = episodeVersions.length > 0;
+          }
+        } catch {
+          // If we can't fetch episodes, assume the season exists
+          // to avoid false removal
+          seasonExistsInPlex = true;
+        }
+
+        this.plexEpisodeExistsCache[cacheKey] = seasonExistsInPlex;
+      }
     }
 
     return seasonExistsInPlex;
@@ -1056,7 +1164,6 @@ class AvailabilitySync {
     const ratingKey4k = media.jellyfinMediaId4k;
     let seasonExistsInJellyfin = false;
 
-    // Check each jellyfin instance to see if the season exists
     let jellyfinSeasons: JellyfinLibraryItem[] | undefined;
 
     if (ratingKey && !is4k) {
@@ -1067,12 +1174,39 @@ class AvailabilitySync {
       jellyfinSeasons = this.jellyfinSeasonsCache[ratingKey4k];
     }
 
-    const seasonIsAvailable = jellyfinSeasons?.find(
+    const seasonMeta = jellyfinSeasons?.find(
       (jellyfinSeason) => jellyfinSeason.IndexNumber === season.seasonNumber
     );
 
-    if (seasonIsAvailable) {
-      seasonExistsInJellyfin = true;
+    if (seasonMeta) {
+      const seriesId = is4k ? ratingKey4k : ratingKey;
+
+      if (seriesId) {
+        const cacheKey = `${seriesId}-${seasonMeta.Id}`;
+
+        if (cacheKey in this.jellyfinEpisodeExistsCache) {
+          seasonExistsInJellyfin = this.jellyfinEpisodeExistsCache[cacheKey];
+        } else {
+          try {
+            // Season metadata exists, but we need to verify it has actual
+            // episode files. Jellyfin keeps season entries even after all
+            // episodes are deleted. getEpisodes already filters out
+            // virtual episodes.
+            const episodes = await this.jellyfinClient.getEpisodes(
+              seriesId,
+              seasonMeta.Id
+            );
+
+            seasonExistsInJellyfin = episodes.length > 0;
+          } catch {
+            // If we can't fetch episodes, assume the season exists
+            // to avoid false removal
+            seasonExistsInJellyfin = true;
+          }
+
+          this.jellyfinEpisodeExistsCache[cacheKey] = seasonExistsInJellyfin;
+        }
+      }
     }
 
     return seasonExistsInJellyfin;

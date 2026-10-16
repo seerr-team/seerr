@@ -7,7 +7,13 @@ import {
 } from '@heroicons/react/24/outline';
 import { XMarkIcon } from '@heroicons/react/24/solid';
 import { Fragment } from 'react';
-import type { ToastProps } from 'react-toast-notifications';
+
+export interface ToastProps {
+  appearance?: 'success' | 'error' | 'info' | 'warning';
+  children: React.ReactNode;
+  onDismiss: () => void;
+  transitionState: 'entering' | 'entered' | 'exiting' | 'exited';
+}
 
 const Toast = ({
   appearance,
@@ -20,6 +26,7 @@ const Toast = ({
       <Transition
         as={Fragment}
         show={transitionState === 'entered'}
+        appear
         enter="transition duration-300 transform-gpu"
         enterFrom="opacity-0 scale-95"
         enterTo="opacity-100 scale-100"

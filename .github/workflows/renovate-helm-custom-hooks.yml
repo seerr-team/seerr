@@ -24,20 +24,21 @@ jobs:
       pull-requests: write
     if: github.actor == 'renovate[bot]'
     steps:
-      - name: Checkout code
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
-        with:
-          fetch-depth: 0
-          persist-credentials: false
+      - parallel:
+          - name: Checkout code
+            uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+            with:
+              fetch-depth: 0
+              persist-credentials: false
 
-      - uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
-        id: app-token
-        with:
-          app-id: 2138788
-          private-key: ${{ secrets.APP_SEERR_HELM_PRIVATE_KEY }}
+          - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+            id: app-token
+            with:
+              client-id: ${{ secrets.APP_SEERR_HELM_CLIENT_ID }}
+              private-key: ${{ secrets.APP_SEERR_HELM_PRIVATE_KEY }}
 
-      - name: Set up chart-testing
-        uses: helm/chart-testing-action@6ec842c01de15ebb84c8627d2744a0c2f2755c9f # v2.8.0
+          - name: Set up chart-testing
+            uses: helm/chart-testing-action@6ec842c01de15ebb84c8627d2744a0c2f2755c9f # v2.8.0
 
       - name: Run chart-testing (list-changed)
         id: list-changed

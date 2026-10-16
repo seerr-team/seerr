@@ -2,6 +2,8 @@ import Button from '@app/components/Common/Button';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import SensitiveInput from '@app/components/Common/SensitiveInput';
 import NotificationTypeSelector from '@app/components/NotificationTypeSelector';
+import { availableLanguages } from '@app/context/LanguageContext';
+import useToasts from '@app/hooks/useToasts';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { isValidURL } from '@app/utils/urlValidationHelper';
@@ -11,7 +13,6 @@ import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
 import * as Yup from 'yup';
 
@@ -22,6 +23,8 @@ const messages = defineMessages(
     embedPoster: 'Embed Poster',
     url: 'Server root URL',
     topic: 'Topic',
+    tags: 'Tags',
+    tagsPlaceholder: 'eyes,warning',
     usernamePasswordAuth: 'Username + Password authentication',
     username: 'Username',
     password: 'Password',
@@ -54,10 +57,11 @@ const NotificationsNtfy = () => {
     url: Yup.string()
       .when('enabled', {
         is: true,
-        then: Yup.string()
-          .nullable()
-          .required(intl.formatMessage(messages.validationNtfyUrl)),
-        otherwise: Yup.string().nullable(),
+        then: (schema) =>
+          schema
+            .nullable()
+            .required(intl.formatMessage(messages.validationNtfyUrl)),
+        otherwise: (schema) => schema.nullable(),
       })
       .test(
         'valid-url',
@@ -67,19 +71,22 @@ const NotificationsNtfy = () => {
     topic: Yup.string()
       .when('enabled', {
         is: true,
-        then: Yup.string()
-          .nullable()
-          .required(intl.formatMessage(messages.validationNtfyUrl)),
-        otherwise: Yup.string().nullable(),
+        then: (schema) =>
+          schema
+            .nullable()
+            .required(intl.formatMessage(messages.validationNtfyTopic)),
+        otherwise: (schema) => schema.nullable(),
       })
       .defined(intl.formatMessage(messages.validationNtfyTopic)),
     priority: Yup.number().when('enabled', {
       is: true,
-      then: Yup.number()
-        .min(1)
-        .max(5)
-        .required(intl.formatMessage(messages.validationPriorityRequired)),
-      otherwise: Yup.number().nullable(),
+      then: (schema) =>
+        schema
+          .nullable()
+          .min(1)
+          .max(5)
+          .required(intl.formatMessage(messages.validationPriorityRequired)),
+      otherwise: (schema) => schema.nullable(),
     }),
   });
 
@@ -95,12 +102,14 @@ const NotificationsNtfy = () => {
         types: data?.types,
         url: data?.options.url,
         topic: data?.options.topic,
+        tags: data?.options.tags ?? '',
         authMethodUsernamePassword: data?.options.authMethodUsernamePassword,
         username: data?.options.username,
         password: data?.options.password,
         authMethodToken: data?.options.authMethodToken,
         token: data?.options.token,
         priority: data?.options.priority,
+        locale: data?.options.locale ?? 'en',
       }}
       validationSchema={NotificationsNtfySchema}
       onSubmit={async (values) => {
@@ -112,12 +121,14 @@ const NotificationsNtfy = () => {
             options: {
               url: values.url,
               topic: values.topic,
+              tags: values.tags,
               authMethodUsernamePassword: values.authMethodUsernamePassword,
               username: values.username,
               password: values.password,
               authMethodToken: values.authMethodToken,
               token: values.token,
-              priority: values.priority,
+              priority: Number(values.priority),
+              locale: values.locale,
             },
           });
 
@@ -164,12 +175,14 @@ const NotificationsNtfy = () => {
               options: {
                 url: values.url,
                 topic: values.topic,
+                tags: values.tags,
                 authMethodUsernamePassword: values.authMethodUsernamePassword,
                 username: values.username,
                 password: values.password,
                 authMethodToken: values.authMethodToken,
                 token: values.token,
-                priority: values.priority,
+                priority: Number(values.priority),
+                locale: values.locale,
               },
             });
 
@@ -242,6 +255,21 @@ const NotificationsNtfy = () => {
                   typeof errors.topic === 'string' && (
                     <div className="error">{errors.topic}</div>
                   )}
+              </div>
+            </div>
+            <div className="form-row">
+              <label htmlFor="tags" className="text-label">
+                {intl.formatMessage(messages.tags)}
+              </label>
+              <div className="form-input-area">
+                <div className="form-input-field">
+                  <Field
+                    id="tags"
+                    name="tags"
+                    type="text"
+                    placeholder={intl.formatMessage(messages.tagsPlaceholder)}
+                  />
+                </div>
               </div>
             </div>
             <div className="form-row">
@@ -338,6 +366,30 @@ const NotificationsNtfy = () => {
                     <option value={3}>Default</option>
                     <option value={4}>High</option>
                     <option value={5}>Urgent</option>
+                  </Field>
+                </div>
+              </div>
+            </div>
+            <div className="form-row">
+              <label htmlFor="locale" className="text-label">
+                {intl.formatMessage(globalMessages.notificationLocale)}
+              </label>
+              <div className="form-input-area">
+                <div className="form-input-field">
+                  <Field as="select" id="locale" name="locale">
+                    {(
+                      Object.keys(
+                        availableLanguages
+                      ) as (keyof typeof availableLanguages)[]
+                    ).map((key) => (
+                      <option
+                        key={key}
+                        value={availableLanguages[key].code}
+                        lang={availableLanguages[key].code}
+                      >
+                        {availableLanguages[key].display}
+                      </option>
+                    ))}
                   </Field>
                 </div>
               </div>

@@ -10,7 +10,7 @@ Seerr provides integration features that connect with your Plex media server to 
 
 ## Available Features
 
-- [Watchlist Auto Request](./plex/watchlist-auto-request) - Automatically request media from your Plex Watchlist
+- [Watchlist Auto Request](./watchlist-auto-request) - Automatically request media from your Plex Watchlist
 - More features coming soon!
 
 ## Prerequisites

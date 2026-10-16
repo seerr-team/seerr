@@ -14,6 +14,7 @@ services:
       DB_NAME: 'seerr' # The name of the database to connect to
       DB_LOG_QUERIES: 'false' # Whether to log the DB queries for debugging
       DB_USE_SSL: 'false' # Whether to enable ssl for database connection
+      DB_POOL_SIZE: '10' # The number of connections to maintain in the connection pool
     volumes:
       - .:/app:rw,cached
       - /app/node_modules

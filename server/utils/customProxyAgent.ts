@@ -1,14 +1,66 @@
 import type { ProxySettings } from '@server/lib/settings';
 import logger from '@server/logger';
-import axios, { type InternalAxiosRequestConfig } from 'axios';
+import type { InternalAxiosRequestConfig } from 'axios';
+import axios from 'axios';
+import http from 'http';
 import { HttpProxyAgent } from 'http-proxy-agent';
+import https from 'https';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import type { Dispatcher } from 'undici';
 import { Agent, ProxyAgent, setGlobalDispatcher } from 'undici';
 
-export let requestInterceptorFunction: (
+interface ProxyState {
+  httpAgent: HttpProxyAgent<string>;
+  httpsAgent: HttpsProxyAgent<string>;
+  skipUrl: (url: string | URL) => boolean;
+}
+
+let proxyState: ProxyState | null = null;
+let ipv4Agents: { httpAgent: http.Agent; httpsAgent: https.Agent } | null =
+  null;
+
+export function setForceIpv4First(enabled: boolean) {
+  ipv4Agents = enabled
+    ? {
+        httpAgent: new http.Agent({ family: 4 }),
+        httpsAgent: new https.Agent({ family: 4 }),
+      }
+    : null;
+}
+
+export function proxyRequestInterceptor(
   config: InternalAxiosRequestConfig
-) => InternalAxiosRequestConfig;
+): InternalAxiosRequestConfig {
+  let url: URL | undefined;
+  try {
+    if (config.baseURL) {
+      url = new URL(config.url ?? '', config.baseURL);
+    } else if (config.url) {
+      url = new URL(config.url);
+    }
+  } catch {
+    url = undefined;
+  }
+
+  if (proxyState) {
+    if (url && proxyState.skipUrl(url)) {
+      config.httpAgent = ipv4Agents?.httpAgent ?? false;
+      config.httpsAgent = ipv4Agents?.httpsAgent ?? false;
+    } else {
+      config.httpAgent = proxyState.httpAgent;
+      config.httpsAgent = proxyState.httpsAgent;
+    }
+    config.proxy = false;
+  } else if (ipv4Agents) {
+    config.httpAgent = ipv4Agents.httpAgent;
+    config.httpsAgent = ipv4Agents.httpsAgent;
+  }
+
+  return config;
+}
+
+// default instance only, axios.create() clients register this themselves
+axios.interceptors.request.use(proxyRequestInterceptor);
 
 export default async function createCustomProxyAgent(
   proxySettings: ProxySettings,
@@ -87,25 +139,18 @@ export default async function createCustomProxyAgent(
       scheduling: 'lifo' as const,
       family: forceIpv4First ? 4 : undefined,
     };
-    axios.defaults.httpAgent = new HttpProxyAgent(proxyUrl, agentOptions);
-    axios.defaults.httpsAgent = new HttpsProxyAgent(proxyUrl, agentOptions);
 
-    requestInterceptorFunction = (config) => {
-      const url = config.baseURL
-        ? new URL(config.baseURL + (config.url || ''))
-        : config.url;
-      if (url && skipUrl(url)) {
-        config.httpAgent = false;
-        config.httpsAgent = false;
-      }
-      return config;
+    proxyState = {
+      httpAgent: new HttpProxyAgent(proxyUrl, agentOptions),
+      httpsAgent: new HttpsProxyAgent(proxyUrl, agentOptions),
+      skipUrl,
     };
-    axios.interceptors.request.use(requestInterceptorFunction);
   } catch (e) {
     logger.error('Failed to connect to the proxy: ' + e.message, {
       label: 'Proxy',
     });
     setGlobalDispatcher(defaultAgent);
+    proxyState = null;
     return;
   }
 
@@ -117,7 +162,6 @@ export default async function createCustomProxyAgent(
       'Failed to connect to the proxy: ' + e.message + ': ' + e.cause,
       { label: 'Proxy' }
     );
-    setGlobalDispatcher(defaultAgent);
   }
 }
 

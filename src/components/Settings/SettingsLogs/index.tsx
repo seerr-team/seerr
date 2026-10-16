@@ -6,6 +6,7 @@ import PageTitle from '@app/components/Common/PageTitle';
 import Table from '@app/components/Common/Table';
 import Tooltip from '@app/components/Common/Tooltip';
 import useDebouncedState from '@app/hooks/useDebouncedState';
+import useToasts from '@app/hooks/useToasts';
 import { useUpdateQueryParams } from '@app/hooks/useUpdateQueryParams';
 import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
@@ -29,7 +30,6 @@ import copy from 'copy-to-clipboard';
 import { useRouter } from 'next/router';
 import { Fragment, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
 
 const messages = defineMessages('components.Settings.SettingsLogs', {

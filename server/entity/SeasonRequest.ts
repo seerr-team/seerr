@@ -1,11 +1,12 @@
 import { MediaRequestStatus } from '@server/constants/media';
-import { DbAwareColumn } from '@server/utils/DbColumnHelper';
+import { DbAwareColumn, resolveDbType } from '@server/utils/DbColumnHelper';
 import {
   Column,
   Entity,
   Index,
   ManyToOne,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { MediaRequest } from './MediaRequest';
 
@@ -29,10 +30,9 @@ class SeasonRequest {
   @DbAwareColumn({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   public createdAt: Date;
 
-  @DbAwareColumn({
-    type: 'datetime',
+  @UpdateDateColumn({
+    type: resolveDbType('datetime'),
     default: () => 'CURRENT_TIMESTAMP',
-    onUpdate: 'CURRENT_TIMESTAMP',
   })
   public updatedAt: Date;
 

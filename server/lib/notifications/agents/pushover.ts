@@ -2,9 +2,12 @@ import { IssueStatus, IssueTypeName } from '@server/constants/issue';
 import { MediaStatus } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
+import { getIntl } from '@server/i18n';
+import globalMessages from '@server/i18n/globalMessages';
 import type { NotificationAgentPushover } from '@server/lib/settings';
 import { NotificationAgentKey, getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
+import type { AvailableLocale } from '@server/types/languages';
 import axios from 'axios';
 import {
   Notification,
@@ -86,8 +89,10 @@ class PushoverAgent
 
   private async getNotificationPayload(
     type: Notification,
-    payload: NotificationPayload
+    payload: NotificationPayload,
+    locale?: AvailableLocale
   ): Promise<Partial<PushoverPayload>> {
+    const intl = getIntl(locale);
     const settings = getSettings();
     const { applicationUrl, applicationTitle } = settings.main;
     const { embedPoster } = settings.notifications.agents.pushover;
@@ -101,48 +106,48 @@ class PushoverAgent
     }
 
     if (payload.request) {
-      message += `<small>\n\n<b>Requested By:</b> ${payload.request.requestedBy.displayName}</small>`;
+      message += `<small>\n\n<b>${intl.formatMessage(globalMessages.requestedBy)}:</b> ${payload.request.requestedBy.displayName}</small>`;
 
       let status = '';
       switch (type) {
         case Notification.MEDIA_AUTO_REQUESTED:
           status =
             payload.media?.status === MediaStatus.PENDING
-              ? 'Pending Approval'
-              : 'Processing';
+              ? intl.formatMessage(globalMessages.pendingApproval)
+              : intl.formatMessage(globalMessages.processing);
           break;
         case Notification.MEDIA_PENDING:
-          status = 'Pending Approval';
+          status = intl.formatMessage(globalMessages.pendingApproval);
           break;
         case Notification.MEDIA_APPROVED:
         case Notification.MEDIA_AUTO_APPROVED:
-          status = 'Processing';
+          status = intl.formatMessage(globalMessages.processing);
           break;
         case Notification.MEDIA_AVAILABLE:
-          status = 'Available';
+          status = intl.formatMessage(globalMessages.available);
           break;
         case Notification.MEDIA_DECLINED:
-          status = 'Declined';
+          status = intl.formatMessage(globalMessages.declined);
           priority = 1;
           break;
         case Notification.MEDIA_FAILED:
-          status = 'Failed';
+          status = intl.formatMessage(globalMessages.failed);
           priority = 1;
           break;
       }
 
       if (status) {
-        message += `<small>\n<b>Request Status:</b> ${status}</small>`;
+        message += `<small>\n<b>${intl.formatMessage(globalMessages.requestStatus)}:</b> ${status}</small>`;
       }
     } else if (payload.comment) {
-      message += `<small>\n\n<b>Comment from ${payload.comment.user.displayName}:</b> ${payload.comment.message}</small>`;
+      message += `<small>\n\n<b>${intl.formatMessage(globalMessages.commentFrom, { userName: payload.comment.user.displayName })}:</b> ${payload.comment.message}</small>`;
     } else if (payload.issue) {
-      message += `<small>\n\n<b>Reported By:</b> ${payload.issue.createdBy.displayName}</small>`;
-      message += `<small>\n<b>Issue Type:</b> ${
-        IssueTypeName[payload.issue.issueType]
-      }</small>`;
-      message += `<small>\n<b>Issue Status:</b> ${
-        payload.issue.status === IssueStatus.OPEN ? 'Open' : 'Resolved'
+      message += `<small>\n\n<b>${intl.formatMessage(globalMessages.reportedBy)}:</b> ${payload.issue.createdBy.displayName}</small>`;
+      message += `<small>\n<b>${intl.formatMessage(globalMessages.issueType)}:</b> ${IssueTypeName[payload.issue.issueType]}</small>`;
+      message += `<small>\n<b>${intl.formatMessage(globalMessages.issueStatus)}:</b> ${
+        payload.issue.status === IssueStatus.OPEN
+          ? intl.formatMessage(globalMessages.open)
+          : intl.formatMessage(globalMessages.resolved)
       }</small>`;
 
       if (type === Notification.ISSUE_CREATED) {
@@ -162,7 +167,10 @@ class PushoverAgent
           : undefined
       : undefined;
     const url_title = url
-      ? `View ${payload.issue ? 'Issue' : 'Media'} in ${applicationTitle}`
+      ? intl.formatMessage(
+          payload.issue ? globalMessages.viewIssue : globalMessages.viewMedia,
+          { applicationTitle }
+        )
       : undefined;
 
     let attachment_base64;
@@ -193,10 +201,6 @@ class PushoverAgent
   ): Promise<boolean> {
     const settings = this.getSettings();
     const endpoint = 'https://api.pushover.net/1/messages.json';
-    const notificationPayload = await this.getNotificationPayload(
-      type,
-      payload
-    );
 
     // Send system notification
     if (
@@ -213,6 +217,11 @@ class PushoverAgent
       });
 
       try {
+        const notificationPayload = await this.getNotificationPayload(
+          type,
+          payload
+        );
+
         await axios.post(endpoint, {
           ...notificationPayload,
           token: settings.options.accessToken,
@@ -253,6 +262,12 @@ class PushoverAgent
         });
 
         try {
+          const notificationPayload = await this.getNotificationPayload(
+            type,
+            payload,
+            payload.notifyUser.settings?.locale as AvailableLocale
+          );
+
           await axios.post(endpoint, {
             ...notificationPayload,
             token: payload.notifyUser.settings.pushoverApplicationToken,
@@ -303,6 +318,12 @@ class PushoverAgent
               });
 
               try {
+                const notificationPayload = await this.getNotificationPayload(
+                  type,
+                  payload,
+                  user.settings?.locale as AvailableLocale
+                );
+
                 await axios.post(endpoint, {
                   ...notificationPayload,
                   token: user.settings.pushoverApplicationToken,

@@ -1,7 +1,8 @@
 import type { User } from '@server/entity/User';
 import type { TautulliSettings } from '@server/lib/settings';
 import logger from '@server/logger';
-import { requestInterceptorFunction } from '@server/utils/customProxyAgent';
+import { proxyRequestInterceptor } from '@server/utils/customProxyAgent';
+import { userAgentRequestInterceptor } from '@server/utils/userAgent';
 import type { AxiosInstance } from 'axios';
 import axios from 'axios';
 import { uniqWith } from 'lodash';
@@ -124,7 +125,8 @@ class TautulliAPI {
       }${settings.urlBase ?? ''}`,
       params: { apikey: settings.apiKey },
     });
-    this.axios.interceptors.request.use(requestInterceptorFunction);
+    this.axios.interceptors.request.use(proxyRequestInterceptor);
+    this.axios.interceptors.request.use(userAgentRequestInterceptor);
   }
 
   public async getInfo(): Promise<TautulliInfo> {

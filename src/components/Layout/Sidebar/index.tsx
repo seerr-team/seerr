@@ -1,10 +1,9 @@
 import Badge from '@app/components/Common/Badge';
-import UserWarnings from '@app/components/Layout/UserWarnings';
 import VersionStatus from '@app/components/Layout/VersionStatus';
 import useClickOutside from '@app/hooks/useClickOutside';
 import { Permission, useUser } from '@app/hooks/useUser';
 import defineMessages from '@app/utils/defineMessages';
-import { Transition } from '@headlessui/react';
+import { Transition, TransitionChild } from '@headlessui/react';
 import {
   ClockIcon,
   CogIcon,
@@ -153,7 +152,7 @@ const Sidebar = ({
       <div className="lg:hidden">
         <Transition as={Fragment} show={open}>
           <div className="fixed inset-0 z-40 flex">
-            <Transition.Child
+            <TransitionChild
               as="div"
               enter="transition-opacity ease-linear duration-300"
               enterFrom="opacity-0"
@@ -165,8 +164,8 @@ const Sidebar = ({
               <div className="fixed inset-0">
                 <div className="absolute inset-0 bg-gray-900 opacity-90" />
               </div>
-            </Transition.Child>
-            <Transition.Child
+            </TransitionChild>
+            <TransitionChild
               as="div"
               enter="transition-transform ease-in-out duration-300"
               enterFrom="-translate-x-full"
@@ -233,10 +232,6 @@ const Sidebar = ({
                         );
                       })}
                     </nav>
-                    <div className="px-2">
-                      <UserWarnings onClick={() => setClosed()} />
-                    </div>
-
                     {hasPermission(Permission.ADMIN) && (
                       <div className="px-2">
                         <VersionStatus onClick={() => setClosed()} />
@@ -248,7 +243,7 @@ const Sidebar = ({
                   {/* <!-- Force sidebar to shrink to fit close icon --> */}
                 </div>
               </>
-            </Transition.Child>
+            </TransitionChild>
           </div>
         </Transition>
       </div>
@@ -260,7 +255,12 @@ const Sidebar = ({
               <div className="flex flex-shrink-0 items-center">
                 <span className="w-full px-4 py-2 text-2xl text-gray-50">
                   <Link href="/" className="relative block h-24">
-                    <Image src="/logo_full.svg" alt="Logo" fill />
+                    <Image
+                      src="/logo_full.svg"
+                      alt="Logo"
+                      fill
+                      loading="eager"
+                    />
                   </Link>
                 </span>
               </div>
@@ -322,9 +322,6 @@ const Sidebar = ({
                   );
                 })}
               </nav>
-              <div className="px-2">
-                <UserWarnings />
-              </div>
               {hasPermission(Permission.ADMIN) && (
                 <div className="px-2">
                   <VersionStatus />

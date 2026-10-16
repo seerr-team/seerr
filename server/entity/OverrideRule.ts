@@ -1,5 +1,10 @@
-import { DbAwareColumn } from '@server/utils/DbColumnHelper';
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { DbAwareColumn, resolveDbType } from '@server/utils/DbColumnHelper';
+import {
+  Column,
+  Entity,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 @Entity()
 class OverrideRule {
@@ -36,10 +41,9 @@ class OverrideRule {
   @DbAwareColumn({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   public createdAt: Date;
 
-  @DbAwareColumn({
-    type: 'datetime',
+  @UpdateDateColumn({
+    type: resolveDbType('datetime'),
     default: () => 'CURRENT_TIMESTAMP',
-    onUpdate: 'CURRENT_TIMESTAMP',
   })
   public updatedAt: Date;
 

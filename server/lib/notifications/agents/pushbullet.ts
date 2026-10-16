@@ -2,9 +2,12 @@ import { IssueStatus, IssueTypeName } from '@server/constants/issue';
 import { MediaStatus } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
+import { getIntl } from '@server/i18n';
+import globalMessages from '@server/i18n/globalMessages';
 import type { NotificationAgentPushbullet } from '@server/lib/settings';
 import { NotificationAgentKey, getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
+import type { AvailableLocale } from '@server/types/languages';
 import axios from 'axios';
 import {
   Notification,
@@ -41,52 +44,56 @@ class PushbulletAgent
 
   private getNotificationPayload(
     type: Notification,
-    payload: NotificationPayload
+    payload: NotificationPayload,
+    locale?: AvailableLocale
   ): PushbulletPayload {
+    const intl = getIntl(locale);
     const title = payload.event
       ? `${payload.event} - ${payload.subject}`
       : payload.subject;
     let body = payload.message ?? '';
 
     if (payload.request) {
-      body += `\n\nRequested By: ${payload.request.requestedBy.displayName}`;
+      body += `\n\n${intl.formatMessage(globalMessages.requestedBy)}: ${payload.request.requestedBy.displayName}`;
 
       let status = '';
       switch (type) {
         case Notification.MEDIA_AUTO_REQUESTED:
           status =
             payload.media?.status === MediaStatus.PENDING
-              ? 'Pending Approval'
-              : 'Processing';
+              ? intl.formatMessage(globalMessages.pendingApproval)
+              : intl.formatMessage(globalMessages.processing);
           break;
         case Notification.MEDIA_PENDING:
-          status = 'Pending Approval';
+          status = intl.formatMessage(globalMessages.pendingApproval);
           break;
         case Notification.MEDIA_APPROVED:
         case Notification.MEDIA_AUTO_APPROVED:
-          status = 'Processing';
+          status = intl.formatMessage(globalMessages.processing);
           break;
         case Notification.MEDIA_AVAILABLE:
-          status = 'Available';
+          status = intl.formatMessage(globalMessages.available);
           break;
         case Notification.MEDIA_DECLINED:
-          status = 'Declined';
+          status = intl.formatMessage(globalMessages.declined);
           break;
         case Notification.MEDIA_FAILED:
-          status = 'Failed';
+          status = intl.formatMessage(globalMessages.failed);
           break;
       }
 
       if (status) {
-        body += `\nRequest Status: ${status}`;
+        body += `\n${intl.formatMessage(globalMessages.requestStatus)}: ${status}`;
       }
     } else if (payload.comment) {
-      body += `\n\nComment from ${payload.comment.user.displayName}:\n${payload.comment.message}`;
+      body += `\n\n${intl.formatMessage(globalMessages.commentFrom, { userName: payload.comment.user.displayName })}:\n${payload.comment.message}`;
     } else if (payload.issue) {
-      body += `\n\nReported By: ${payload.issue.createdBy.displayName}`;
-      body += `\nIssue Type: ${IssueTypeName[payload.issue.issueType]}`;
-      body += `\nIssue Status: ${
-        payload.issue.status === IssueStatus.OPEN ? 'Open' : 'Resolved'
+      body += `\n\n${intl.formatMessage(globalMessages.reportedBy)}: ${payload.issue.createdBy.displayName}`;
+      body += `\n${intl.formatMessage(globalMessages.issueType)}: ${IssueTypeName[payload.issue.issueType]}`;
+      body += `\n${intl.formatMessage(globalMessages.issueStatus)}: ${
+        payload.issue.status === IssueStatus.OPEN
+          ? intl.formatMessage(globalMessages.open)
+          : intl.formatMessage(globalMessages.resolved)
       }`;
     }
 
@@ -107,7 +114,6 @@ class PushbulletAgent
   ): Promise<boolean> {
     const settings = this.getSettings();
     const endpoint = 'https://api.pushbullet.com/v2/pushes';
-    const notificationPayload = this.getNotificationPayload(type, payload);
 
     // Send system notification
     if (
@@ -123,6 +129,8 @@ class PushbulletAgent
       });
 
       try {
+        const notificationPayload = this.getNotificationPayload(type, payload);
+
         await axios.post(
           endpoint,
           { ...notificationPayload, channel_tag: settings.options.channelTag },
@@ -163,6 +171,12 @@ class PushbulletAgent
         });
 
         try {
+          const notificationPayload = this.getNotificationPayload(
+            type,
+            payload,
+            payload.notifyUser.settings?.locale as AvailableLocale
+          );
+
           await axios.post(endpoint, notificationPayload, {
             headers: {
               'Access-Token': payload.notifyUser.settings.pushbulletAccessToken,
@@ -211,6 +225,12 @@ class PushbulletAgent
               });
 
               try {
+                const notificationPayload = this.getNotificationPayload(
+                  type,
+                  payload,
+                  user.settings?.locale as AvailableLocale
+                );
+
                 await axios.post(endpoint, notificationPayload, {
                   headers: {
                     'Access-Token': user.settings.pushbulletAccessToken,

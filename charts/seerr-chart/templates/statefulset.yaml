@@ -28,6 +28,19 @@ spec:
       serviceAccountName: {{ include "seerr.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- with .Values.priorityClassName }}
+      priorityClassName: {{ . }}
+      {{- end }}
+      {{- if kindIs "bool" .Values.hostUsers }}
+      hostUsers: {{ .Values.hostUsers }}
+      {{- end }}
+      {{- with .Values.dnsPolicy }}
+      dnsPolicy: {{ . }}
+      {{- end }}
+      {{- with .Values.dnsConfig }}
+      dnsConfig:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
@@ -44,7 +57,7 @@ spec:
               protocol: TCP
           livenessProbe:
             httpGet:
-              path: /api/v1/status
+              path: /api/v1/settings/public
               port: http
             {{- if .Values.probes.livenessProbe.initialDelaySeconds }}
             initialDelaySeconds: {{ .Values.probes.livenessProbe.initialDelaySeconds }}
@@ -63,7 +76,7 @@ spec:
             {{- end }}
           readinessProbe:
             httpGet:
-              path: /api/v1/status
+              path: /api/v1/settings/public
               port: http
             {{- if .Values.probes.readinessProbe.initialDelaySeconds }}
             initialDelaySeconds: {{ .Values.probes.readinessProbe.initialDelaySeconds }}
@@ -97,6 +110,7 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /app/config
+              subPath: {{ .Values.config.persistence.subPath }}
           {{- with .Values.volumeMounts }}
             {{- toYaml . | nindent 12 }}
           {{- end }}

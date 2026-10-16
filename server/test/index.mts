@@ -59,6 +59,9 @@ if (positionals.length > 0) {
   for await (const entry of glob(join(BASE_DIR, 'server/**/*.test.ts'))) {
     files.push(resolve(entry));
   }
+  for await (const entry of glob(join(BASE_DIR, 'src/**/*.test.ts'))) {
+    files.push(resolve(entry));
+  }
   files.sort();
 }
 

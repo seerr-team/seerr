@@ -1,4 +1,6 @@
 import { IssueStatus, IssueTypeName } from '@server/constants/issue';
+import { getIntl } from '@server/i18n';
+import globalMessages from '@server/i18n/globalMessages';
 import type { NotificationAgentSlack } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
@@ -81,63 +83,67 @@ class SlackAgent
     type: Notification,
     payload: NotificationPayload
   ): SlackBlockEmbed {
-    const settings = getSettings();
-    const { applicationUrl, applicationTitle, mediaServerType } = settings.main;
-    const { embedPoster } = settings.notifications.agents.slack;
+    const settings = this.getSettings();
+    const intl = getIntl(settings.options.locale);
+    const { applicationUrl, applicationTitle, mediaServerType } =
+      getSettings().main;
+    const embedPoster = settings.embedPoster;
 
     const fields: EmbedField[] = [];
 
     if (payload.request) {
       fields.push({
         type: 'mrkdwn',
-        text: `*Requested By*\n${payload.request.requestedBy.displayName}`,
+        text: `*${intl.formatMessage(globalMessages.requestedBy)}*\n${payload.request.requestedBy.displayName}`,
       });
 
       let status = '';
       switch (type) {
         case Notification.MEDIA_PENDING:
-          status = 'Pending Approval';
+          status = intl.formatMessage(globalMessages.pendingApproval);
           break;
         case Notification.MEDIA_APPROVED:
         case Notification.MEDIA_AUTO_APPROVED:
-          status = 'Processing';
+          status = intl.formatMessage(globalMessages.processing);
           break;
         case Notification.MEDIA_AVAILABLE:
-          status = 'Available';
+          status = intl.formatMessage(globalMessages.available);
           break;
         case Notification.MEDIA_DECLINED:
-          status = 'Declined';
+          status = intl.formatMessage(globalMessages.declined);
           break;
         case Notification.MEDIA_FAILED:
-          status = 'Failed';
+          status = intl.formatMessage(globalMessages.failed);
           break;
       }
 
       if (status) {
         fields.push({
           type: 'mrkdwn',
-          text: `*Request Status*\n${status}`,
+          text: `*${intl.formatMessage(globalMessages.requestStatus)}*\n${status}`,
         });
       }
     } else if (payload.comment) {
       fields.push({
         type: 'mrkdwn',
-        text: `*Comment from ${payload.comment.user.displayName}*\n${payload.comment.message}`,
+        text: `*${intl.formatMessage(globalMessages.commentFrom, { userName: payload.comment.user.displayName })}*\n${payload.comment.message}`,
       });
     } else if (payload.issue) {
       fields.push(
         {
           type: 'mrkdwn',
-          text: `*Reported By*\n${payload.issue.createdBy.displayName}`,
+          text: `*${intl.formatMessage(globalMessages.reportedBy)}*\n${payload.issue.createdBy.displayName}`,
         },
         {
           type: 'mrkdwn',
-          text: `*Issue Type*\n${IssueTypeName[payload.issue.issueType]}`,
+          text: `*${intl.formatMessage(globalMessages.issueType)}*\n${IssueTypeName[payload.issue.issueType]}`,
         },
         {
           type: 'mrkdwn',
-          text: `*Issue Status*\n${
-            payload.issue.status === IssueStatus.OPEN ? 'Open' : 'Resolved'
+          text: `*${intl.formatMessage(globalMessages.issueStatus)}*\n${
+            payload.issue.status === IssueStatus.OPEN
+              ? intl.formatMessage(globalMessages.open)
+              : intl.formatMessage(globalMessages.resolved)
           }`,
         }
       );
@@ -214,9 +220,10 @@ class SlackAgent
         url,
         text: {
           type: 'plain_text',
-          text: `View ${
-            payload.issue ? 'Issue' : 'Media'
-          } in ${applicationTitle}`,
+          text: intl.formatMessage(
+            payload.issue ? globalMessages.viewIssue : globalMessages.viewMedia,
+            { applicationTitle }
+          ),
         },
       });
     }
@@ -232,7 +239,9 @@ class SlackAgent
           url: mediaServerUrl,
           text: {
             type: 'plain_text',
-            text: `Play on ${mediaServerName}`,
+            text: intl.formatMessage(globalMessages.playOn, {
+              mediaServerName,
+            }),
           },
         });
       }

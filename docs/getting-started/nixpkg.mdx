@@ -12,15 +12,11 @@ import TabItem from '@theme/TabItem';
 # Nix Package Manager
 :::warning
 This method is not recommended for most users. It is intended for advanced users who are using NixOS distribution.
+The Seerr service and package are available as of the 26.05 release.
 :::
 
-:::danger
-The seerr service and package are available in the unstable channel only and will be officially included in the 26.05 release.
-:::
+Refer to [NixOS documentation](https://search.nixos.org/options?channel=26.05&query=seerr)
 
-Refer to [NixOS documentation](https://search.nixos.org/options?channel=unstable&query=seerr)
-
-<!--
 export const VersionMismatchWarning = () => {
   let seerrVersion = null;
   let nixpkgVersions = null;
@@ -72,7 +68,6 @@ export const VersionMismatchWarning = () => {
 };
 
 <VersionMismatchWarning />
--->
 
 ## Installation
 To get up and running with seerr using Nix, you can add the following to your `configuration.nix`:

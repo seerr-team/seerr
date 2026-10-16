@@ -2,6 +2,7 @@ import Button from '@app/components/Common/Button';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import SensitiveInput from '@app/components/Common/SensitiveInput';
 import SettingsBadge from '@app/components/Settings/SettingsBadge';
+import useToasts from '@app/hooks/useToasts';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowDownOnSquareIcon, BeakerIcon } from '@heroicons/react/24/outline';
@@ -9,7 +10,6 @@ import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import useSWR, { mutate } from 'swr';
 import validator from 'validator';
 import * as Yup from 'yup';
@@ -19,6 +19,9 @@ const messages = defineMessages('components.Settings.Notifications', {
   validationSmtpPortRequired: 'You must provide a valid port number',
   agentenabled: 'Enable Agent',
   embedPoster: 'Embed Poster',
+  usePublicLogo: 'Use public Seerr logo instead of instance logo',
+  usePublicLogoTip:
+    'If your Seerr instance is not publicly accessible, enable this option so email clients outside your network can display the image. The image will be pulled from the public GitHub repository.',
   userEmailRequired: 'Require user email',
   emailsender: 'Sender Address',
   smtpHost: 'SMTP Host',
@@ -73,10 +76,11 @@ const NotificationsEmail = () => {
       emailFrom: Yup.string()
         .when('enabled', {
           is: true,
-          then: Yup.string()
-            .nullable()
-            .required(intl.formatMessage(messages.validationEmail)),
-          otherwise: Yup.string().nullable(),
+          then: (schema) =>
+            schema
+              .nullable()
+              .required(intl.formatMessage(messages.validationEmail)),
+          otherwise: (schema) => schema.nullable(),
         })
         .test(
           'email',
@@ -85,25 +89,28 @@ const NotificationsEmail = () => {
         ),
       smtpHost: Yup.string().when('enabled', {
         is: true,
-        then: Yup.string()
-          .nullable()
-          .required(intl.formatMessage(messages.validationSmtpHostRequired)),
-        otherwise: Yup.string().nullable(),
+        then: (schema) =>
+          schema
+            .nullable()
+            .required(intl.formatMessage(messages.validationSmtpHostRequired)),
+        otherwise: (schema) => schema.nullable(),
       }),
       smtpPort: Yup.number().when('enabled', {
         is: true,
-        then: Yup.number()
-          .nullable()
-          .required(intl.formatMessage(messages.validationSmtpPortRequired)),
-        otherwise: Yup.number().nullable(),
+        then: (schema) =>
+          schema
+            .nullable()
+            .required(intl.formatMessage(messages.validationSmtpPortRequired)),
+        otherwise: (schema) => schema.nullable(),
       }),
       pgpPrivateKey: Yup.string()
         .when('pgpPassword', {
           is: (value: unknown) => !!value,
-          then: Yup.string()
-            .nullable()
-            .required(intl.formatMessage(messages.validationPgpPrivateKey)),
-          otherwise: Yup.string().nullable(),
+          then: (schema) =>
+            schema
+              .nullable()
+              .required(intl.formatMessage(messages.validationPgpPrivateKey)),
+          otherwise: (schema) => schema.nullable(),
         })
         .matches(
           /-----BEGIN PGP PRIVATE KEY BLOCK-----.+-----END PGP PRIVATE KEY BLOCK-----/s,
@@ -111,10 +118,11 @@ const NotificationsEmail = () => {
         ),
       pgpPassword: Yup.string().when('pgpPrivateKey', {
         is: (value: unknown) => !!value,
-        then: Yup.string()
-          .nullable()
-          .required(intl.formatMessage(messages.validationPgpPassword)),
-        otherwise: Yup.string().nullable(),
+        then: (schema) =>
+          schema
+            .nullable()
+            .required(intl.formatMessage(messages.validationPgpPassword)),
+        otherwise: (schema) => schema.nullable(),
       }),
     },
     [['pgpPrivateKey', 'pgpPassword']]
@@ -129,6 +137,7 @@ const NotificationsEmail = () => {
       initialValues={{
         enabled: data.enabled,
         embedPoster: data.embedPoster,
+        usePublicLogo: data.options.usePublicLogo,
         userEmailRequired: data.options.userEmailRequired,
         emailFrom: data.options.emailFrom,
         smtpHost: data.options.smtpHost,
@@ -155,6 +164,7 @@ const NotificationsEmail = () => {
             embedPoster: values.embedPoster,
             options: {
               userEmailRequired: values.userEmailRequired,
+              usePublicLogo: values.usePublicLogo,
               emailFrom: values.emailFrom,
               smtpHost: values.smtpHost,
               smtpPort: Number(values.smtpPort),
@@ -204,6 +214,7 @@ const NotificationsEmail = () => {
               enabled: true,
               embedPoster: values.embedPoster,
               options: {
+                usePublicLogo: values.usePublicLogo,
                 emailFrom: values.emailFrom,
                 smtpHost: values.smtpHost,
                 smtpPort: Number(values.smtpPort),
@@ -256,6 +267,21 @@ const NotificationsEmail = () => {
               </label>
               <div className="form-input-area">
                 <Field type="checkbox" id="embedPoster" name="embedPoster" />
+              </div>
+            </div>
+            <div className="form-row">
+              <label htmlFor="usePublicLogo" className="checkbox-label">
+                {intl.formatMessage(messages.usePublicLogo)}
+                <span className="label-tip">
+                  {intl.formatMessage(messages.usePublicLogoTip)}
+                </span>
+              </label>
+              <div className="form-input-area">
+                <Field
+                  type="checkbox"
+                  id="usePublicLogo"
+                  name="usePublicLogo"
+                />
               </div>
             </div>
             <div className="form-row">

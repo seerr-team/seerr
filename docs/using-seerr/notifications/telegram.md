@@ -34,6 +34,15 @@ At the end of the bot creation process, [@BotFather](https://telegram.me/botfath
 
 To obtain your chat ID, simply create a new group chat, add [@get_id_bot](https://telegram.me/get_id_bot), and issue the `/my_id` command.
 
+### Thread/Topic ID (optional)
+
+If your group chat has topics enabled, you can specify the ID of a thread or topic here, and notifications will be sent to it instead of the main chat. Leave this field blank to send them to the chat itself.
+
 ### Send Silently (optional)
 
 Optionally, notifications can be sent silently. Silent notifications send messages without notification sounds.
+
+### Embed Poster (optional)
+
+When enabled, the poster image of the requested movie or series is included in the notification message.
+

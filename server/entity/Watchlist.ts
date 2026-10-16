@@ -5,7 +5,7 @@ import Media from '@server/entity/Media';
 import { User } from '@server/entity/User';
 import type { WatchlistItem } from '@server/interfaces/api/discoverInterfaces';
 import logger from '@server/logger';
-import { DbAwareColumn } from '@server/utils/DbColumnHelper';
+import { DbAwareColumn, resolveDbType } from '@server/utils/DbColumnHelper';
 import {
   Column,
   Entity,
@@ -13,6 +13,7 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
   Unique,
+  UpdateDateColumn,
 } from 'typeorm';
 import type { ZodNumber, ZodOptional, ZodString } from 'zod';
 
@@ -60,10 +61,9 @@ export class Watchlist implements WatchlistItem {
   @DbAwareColumn({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   public createdAt: Date;
 
-  @DbAwareColumn({
-    type: 'datetime',
+  @UpdateDateColumn({
+    type: resolveDbType('datetime'),
     default: () => 'CURRENT_TIMESTAMP',
-    onUpdate: 'CURRENT_TIMESTAMP',
   })
   public updatedAt: Date;
 

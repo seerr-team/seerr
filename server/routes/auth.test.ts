@@ -1,12 +1,24 @@
 import assert from 'node:assert/strict';
 import { before, beforeEach, describe, it, mock } from 'node:test';
 
+import JellyfinAPI from '@server/api/jellyfin';
+import { ApiErrorCode } from '@server/constants/error';
+import { MediaServerType } from '@server/constants/server';
+import { UserType } from '@server/constants/user';
 import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
 import PreparedEmail from '@server/lib/email';
+import ImageProxy from '@server/lib/imageproxy';
 import { getSettings } from '@server/lib/settings';
 import { checkUser } from '@server/middleware/auth';
 import { setupTestDb } from '@server/test/db';
+import {
+  allowlistedSettings,
+  assertNoCredentials,
+  seedUserSettings,
+} from '@server/test/userSettings';
+import { ApiError } from '@server/types/error';
+import axios from 'axios';
 import type { Express } from 'express';
 import express from 'express';
 import session from 'express-session';
@@ -16,6 +28,81 @@ import authRoutes from './auth';
 const emailMock = mock.method(PreparedEmail.prototype, 'send', async () => {
   return undefined;
 }).mock;
+
+// Jellyfin Quick Connect mocks
+const defaultInitiateResponse = {
+  Secret: 'abc123def456abc123def456',
+  Code: '123456',
+  DateAdded: new Date().toISOString(),
+};
+
+const defaultCheckResponse = {
+  Authenticated: false,
+  Secret: 'abc123def456abc123def456',
+  Code: '123456',
+  DeviceId: 'device-1',
+  DeviceName: 'Test',
+  AppName: 'Seerr',
+  AppVersion: '1.0',
+  DateAdded: new Date().toISOString(),
+};
+
+const defaultAuthenticateResponse = {
+  User: {
+    Id: 'jf-qc-user-001',
+    Name: 'quickconnectuser',
+    ServerId: 'server-1',
+    Policy: { IsAdministrator: false },
+  },
+  AccessToken: 'fake-qc-access-token',
+};
+
+const initiateQCMock = mock.method(
+  JellyfinAPI.prototype,
+  'initiateQuickConnect',
+  async () => ({ ...defaultInitiateResponse })
+);
+
+const checkQCMock = mock.method(
+  JellyfinAPI.prototype,
+  'checkQuickConnect',
+  async () => ({ ...defaultCheckResponse })
+);
+
+const authenticateQCMock = mock.method(
+  JellyfinAPI.prototype,
+  'authenticateQuickConnect',
+  async () => ({ ...defaultAuthenticateResponse })
+);
+const fakeAvatarBuffer = Buffer.from('fake-quickconnect-avatar-bytes');
+
+const axiosHeadMock = mock.method(axios, 'head', async () => ({
+  status: 200,
+  headers: { 'last-modified': 'Wed, 01 Jan 2025 00:00:00 GMT' },
+}));
+
+const clearCachedImageMock = mock.method(
+  ImageProxy.prototype,
+  'clearCachedImage',
+  async () => undefined
+);
+
+const getImageMock = mock.method(
+  ImageProxy.prototype,
+  'getImage',
+  async () => ({
+    imageBuffer: fakeAvatarBuffer,
+    meta: {
+      revalidateAfter: 3600,
+      curRevalidate: 3600,
+      isStale: false,
+      etag: 'mock-meta-etag',
+      extension: 'jpg',
+      cacheKey: 'mock-cache-key',
+      cacheMiss: true,
+    },
+  })
+);
 
 let app: Express;
 
@@ -67,6 +154,427 @@ async function authenticatedAgent(email: string, password: string) {
   return agent;
 }
 
+/** Configure Jellyfin settings for testing QC */
+function configureJellyfin() {
+  const settings = getSettings();
+  settings.main.mediaServerType = MediaServerType.JELLYFIN;
+  settings.main.newPlexLogin = true;
+  settings.jellyfin.ip = 'localhost';
+  settings.jellyfin.port = 8096;
+  settings.jellyfin.useSsl = false;
+  settings.jellyfin.urlBase = '';
+}
+
+describe('POST /auth/jellyfin/quickconnect/initiate', () => {
+  beforeEach(() => {
+    initiateQCMock.mock.resetCalls();
+    initiateQCMock.mock.mockImplementation(async () => ({
+      ...defaultInitiateResponse,
+    }));
+    configureJellyfin();
+  });
+
+  it('returns code and secret on success', async () => {
+    const res = await request(app).post('/auth/jellyfin/quickconnect/initiate');
+
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.body.code, '123456');
+    assert.strictEqual(res.body.secret, 'abc123def456abc123def456');
+    assert.strictEqual(initiateQCMock.mock.callCount(), 1);
+  });
+
+  it('returns 403 when the media server is Emby', async () => {
+    getSettings().main.mediaServerType = MediaServerType.EMBY;
+
+    const res = await request(app).post('/auth/jellyfin/quickconnect/initiate');
+
+    assert.strictEqual(res.status, 403);
+    assert.strictEqual(initiateQCMock.mock.callCount(), 0);
+  });
+
+  it('returns 500 when Jellyfin API fails', async () => {
+    initiateQCMock.mock.mockImplementation(async () => {
+      throw new Error('Connection refused');
+    });
+
+    const res = await request(app).post('/auth/jellyfin/quickconnect/initiate');
+
+    assert.strictEqual(res.status, 500);
+    assert.match(res.body.message, /initiate quick connect/i);
+  });
+
+  it('returns 500 when initiateQuickConnect throws ApiError', async () => {
+    initiateQCMock.mock.mockImplementation(async () => {
+      throw new ApiError(500, ApiErrorCode.Unknown);
+    });
+
+    const res = await request(app).post('/auth/jellyfin/quickconnect/initiate');
+    assert.strictEqual(res.status, 500);
+  });
+});
+
+describe('GET /auth/jellyfin/quickconnect/check', () => {
+  beforeEach(() => {
+    checkQCMock.mock.resetCalls();
+    checkQCMock.mock.mockImplementation(async () => ({
+      ...defaultCheckResponse,
+    }));
+    configureJellyfin();
+  });
+
+  it('returns authenticated: false when not yet authorized', async () => {
+    const res = await request(app)
+      .get('/auth/jellyfin/quickconnect/check')
+      .query({ secret: 'abc123def456abc123def456' });
+
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.body.authenticated, false);
+    assert.strictEqual(checkQCMock.mock.callCount(), 1);
+  });
+
+  it('returns authenticated: true when authorized', async () => {
+    checkQCMock.mock.mockImplementation(async () => ({
+      ...defaultCheckResponse,
+      Authenticated: true,
+    }));
+
+    const res = await request(app)
+      .get('/auth/jellyfin/quickconnect/check')
+      .query({ secret: 'abc123def456abc123def456' });
+
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.body.authenticated, true);
+  });
+
+  it('returns 400 when secret is missing', async () => {
+    const res = await request(app).get('/auth/jellyfin/quickconnect/check');
+
+    assert.strictEqual(res.status, 400);
+    assert.match(res.body.message, /invalid secret/i);
+    assert.strictEqual(checkQCMock.mock.callCount(), 0);
+  });
+
+  it('returns 400 when secret is too short', async () => {
+    const res = await request(app)
+      .get('/auth/jellyfin/quickconnect/check')
+      .query({ secret: 'ab12' });
+
+    assert.strictEqual(res.status, 400);
+    assert.match(res.body.message, /invalid secret/i);
+    assert.strictEqual(checkQCMock.mock.callCount(), 0);
+  });
+
+  it('returns 400 when secret is too long', async () => {
+    const res = await request(app)
+      .get('/auth/jellyfin/quickconnect/check')
+      .query({ secret: 'a'.repeat(129) });
+
+    assert.strictEqual(res.status, 400);
+    assert.match(res.body.message, /invalid secret/i);
+    assert.strictEqual(checkQCMock.mock.callCount(), 0);
+  });
+
+  it('returns 400 when secret contains non-hex characters', async () => {
+    const res = await request(app)
+      .get('/auth/jellyfin/quickconnect/check')
+      .query({ secret: 'zzzzzzzzzzzz' });
+
+    assert.strictEqual(res.status, 400);
+    assert.match(res.body.message, /invalid secret/i);
+    assert.strictEqual(checkQCMock.mock.callCount(), 0);
+  });
+
+  it('returns 403 when the media server is Emby', async () => {
+    getSettings().main.mediaServerType = MediaServerType.EMBY;
+
+    const res = await request(app)
+      .get('/auth/jellyfin/quickconnect/check')
+      .query({ secret: 'abc123def456abc123def456' });
+
+    assert.strictEqual(res.status, 403);
+    assert.strictEqual(checkQCMock.mock.callCount(), 0);
+  });
+
+  it('returns error when Jellyfin API fails', async () => {
+    checkQCMock.mock.mockImplementation(async () => {
+      throw new ApiError(500, ApiErrorCode.Unknown);
+    });
+
+    const res = await request(app)
+      .get('/auth/jellyfin/quickconnect/check')
+      .query({ secret: 'abc123def456abc123def456' });
+
+    assert.strictEqual(res.status, 500);
+  });
+});
+
+describe('POST /auth/jellyfin/quickconnect/authenticate', () => {
+  beforeEach(() => {
+    authenticateQCMock.mock.resetCalls();
+    authenticateQCMock.mock.mockImplementation(async () => ({
+      ...defaultAuthenticateResponse,
+    }));
+    axiosHeadMock.mock.resetCalls();
+    clearCachedImageMock.mock.resetCalls();
+    getImageMock.mock.resetCalls();
+    configureJellyfin();
+  });
+
+  it('returns 400 when secret is missing', async () => {
+    const res = await request(app)
+      .post('/auth/jellyfin/quickconnect/authenticate')
+      .send({});
+
+    assert.strictEqual(res.status, 400);
+    assert.strictEqual(authenticateQCMock.mock.callCount(), 0);
+  });
+
+  it('returns 400 when secret is not a string', async () => {
+    const res = await request(app)
+      .post('/auth/jellyfin/quickconnect/authenticate')
+      .send({ secret: 12345678 });
+
+    assert.strictEqual(res.status, 400);
+    assert.strictEqual(authenticateQCMock.mock.callCount(), 0);
+  });
+
+  it('returns 400 when secret is too short', async () => {
+    const res = await request(app)
+      .post('/auth/jellyfin/quickconnect/authenticate')
+      .send({ secret: 'ab12' });
+
+    assert.strictEqual(res.status, 400);
+  });
+
+  it('returns 400 when secret contains non-hex characters', async () => {
+    const res = await request(app)
+      .post('/auth/jellyfin/quickconnect/authenticate')
+      .send({ secret: 'zzzzzzzzzzzz' });
+
+    assert.strictEqual(res.status, 400);
+    assert.strictEqual(authenticateQCMock.mock.callCount(), 0);
+  });
+
+  it('returns 403 when media server is not configured', async () => {
+    const settings = getSettings();
+    settings.main.mediaServerType = MediaServerType.NOT_CONFIGURED;
+
+    const res = await request(app)
+      .post('/auth/jellyfin/quickconnect/authenticate')
+      .send({ secret: 'abc123def456abc123def456' });
+
+    assert.strictEqual(res.status, 403);
+    assert.match(res.body.message, /initial setup/i);
+    assert.strictEqual(authenticateQCMock.mock.callCount(), 0);
+  });
+
+  it('returns 403 when no users exist in the database', async () => {
+    // Clear all users to simulate initial setup
+    const userRepo = getRepository(User);
+    await userRepo.clear();
+
+    const res = await request(app)
+      .post('/auth/jellyfin/quickconnect/authenticate')
+      .send({ secret: 'abc123def456abc123def456' });
+
+    assert.strictEqual(res.status, 403);
+    assert.match(res.body.message, /initial setup/i);
+  });
+
+  it('signs in an existing Jellyfin user and sets session', async () => {
+    const userRepo = getRepository(User);
+    const existingUser = new User({
+      email: 'existing-qc@seerr.dev',
+      jellyfinUsername: 'quickconnectuser',
+      jellyfinUserId: 'jf-qc-user-001',
+      jellyfinDeviceId: 'old-device-id',
+      permissions: 0,
+      avatar: '/avatarproxy/jf-qc-user-001?v=0',
+      userType: UserType.JELLYFIN,
+    });
+    await userRepo.save(existingUser);
+
+    const agent = request.agent(app);
+
+    const res = await agent
+      .post('/auth/jellyfin/quickconnect/authenticate')
+      .send({ secret: 'abc123def456abc123def456' });
+
+    assert.strictEqual(res.status, 200);
+    assert.ok('id' in res.body);
+    assert.ok(!('password' in res.body));
+
+    const meRes = await agent.get('/auth/me');
+    assert.strictEqual(meRes.status, 200);
+    assert.strictEqual(meRes.body.jellyfinUsername, 'quickconnectuser');
+
+    const updatedUser = await userRepo.findOneOrFail({
+      where: { jellyfinUserId: 'jf-qc-user-001' },
+      select: {
+        id: true,
+        jellyfinAuthToken: true,
+        jellyfinDeviceId: true,
+      },
+    });
+    assert.strictEqual(updatedUser.jellyfinAuthToken, 'fake-qc-access-token');
+    assert.notStrictEqual(updatedUser.jellyfinDeviceId, 'old-device-id');
+  });
+
+  it('refreshes avatarVersion/avatarETag when the remote avatar has changed', async () => {
+    const userRepo = getRepository(User);
+    const existingUser = new User({
+      email: 'qc-avatar-change@seerr.dev',
+      jellyfinUsername: 'quickconnectuser',
+      jellyfinUserId: 'jf-qc-user-001',
+      jellyfinDeviceId: 'old-device-id',
+      permissions: 0,
+      avatar: '/avatarproxy/jf-qc-user-001?v=old',
+      avatarVersion: 'old-version',
+      avatarETag: 'old-etag',
+      userType: UserType.JELLYFIN,
+    });
+    await userRepo.save(existingUser);
+
+    const agent = request.agent(app);
+    const res = await agent
+      .post('/auth/jellyfin/quickconnect/authenticate')
+      .send({ secret: 'abc123def456abc123def456' });
+
+    assert.strictEqual(res.status, 200);
+
+    const updatedUser = await userRepo.findOneOrFail({
+      where: { jellyfinUserId: 'jf-qc-user-001' },
+    });
+    assert.notStrictEqual(updatedUser.avatarVersion, 'old-version');
+    assert.notStrictEqual(updatedUser.avatarETag, 'old-etag');
+    assert.notStrictEqual(
+      updatedUser.avatar,
+      '/avatarproxy/jf-qc-user-001?v=old'
+    );
+  });
+
+  it('creates a new user when newPlexLogin is enabled and user does not exist', async () => {
+    const settings = getSettings();
+    settings.main.newPlexLogin = true;
+
+    authenticateQCMock.mock.mockImplementation(async () => ({
+      User: {
+        Id: 'jf-brand-new-user',
+        Name: 'brandnewuser',
+        ServerId: 'server-1',
+        Policy: { IsAdministrator: false },
+      },
+      AccessToken: 'new-user-token',
+    }));
+
+    const agent = request.agent(app);
+
+    const res = await agent
+      .post('/auth/jellyfin/quickconnect/authenticate')
+      .send({ secret: 'abc123def456abc123def456' });
+
+    assert.strictEqual(res.status, 200);
+    assert.ok('id' in res.body);
+
+    const userRepo = getRepository(User);
+    const newUser = await userRepo.findOne({
+      where: { jellyfinUserId: 'jf-brand-new-user' },
+    });
+    assert.ok(newUser);
+    assert.strictEqual(newUser.jellyfinUsername, 'brandnewuser');
+    assert.strictEqual(newUser.userType, UserType.JELLYFIN);
+
+    const meRes = await agent.get('/auth/me');
+    assert.strictEqual(meRes.status, 200);
+  });
+
+  it('returns 403 when the media server is Emby', async () => {
+    getSettings().main.mediaServerType = MediaServerType.EMBY;
+
+    const res = await request(app)
+      .post('/auth/jellyfin/quickconnect/authenticate')
+      .send({ secret: 'abc123def456abc123def456' });
+
+    assert.strictEqual(res.status, 403);
+    assert.strictEqual(authenticateQCMock.mock.callCount(), 0);
+  });
+
+  it('applies default permissions to newly created users', async () => {
+    const settings = getSettings();
+    settings.main.newPlexLogin = true;
+    settings.main.defaultPermissions = 32;
+
+    authenticateQCMock.mock.mockImplementation(async () => ({
+      User: {
+        Id: 'jf-perms-test-user',
+        Name: 'permsuser',
+        ServerId: 'server-1',
+        Policy: { IsAdministrator: false },
+      },
+      AccessToken: 'perms-token',
+    }));
+
+    const res = await request(app)
+      .post('/auth/jellyfin/quickconnect/authenticate')
+      .send({ secret: 'abc123def456abc123def456' });
+
+    assert.strictEqual(res.status, 200);
+
+    const userRepo = getRepository(User);
+    const user = await userRepo.findOneOrFail({
+      where: { jellyfinUserId: 'jf-perms-test-user' },
+    });
+    assert.strictEqual(user.permissions, 32);
+  });
+
+  it('returns 403 when newPlexLogin is disabled and user does not exist', async () => {
+    const settings = getSettings();
+    settings.main.newPlexLogin = false;
+
+    authenticateQCMock.mock.mockImplementation(async () => ({
+      User: {
+        Id: 'jf-unknown-user',
+        Name: 'unknownuser',
+        ServerId: 'server-1',
+        Policy: { IsAdministrator: false },
+      },
+      AccessToken: 'unknown-token',
+    }));
+
+    const res = await request(app)
+      .post('/auth/jellyfin/quickconnect/authenticate')
+      .send({ secret: 'abc123def456abc123def456' });
+
+    assert.strictEqual(res.status, 403);
+    assert.strictEqual(res.body.message, 'Access denied.');
+  });
+
+  it('returns error when Jellyfin authenticateQuickConnect fails', async () => {
+    authenticateQCMock.mock.mockImplementation(async () => {
+      throw new ApiError(401, ApiErrorCode.InvalidCredentials);
+    });
+
+    const res = await request(app)
+      .post('/auth/jellyfin/quickconnect/authenticate')
+      .send({ secret: 'abc123def456abc123def456' });
+
+    assert.strictEqual(res.status, 401);
+    assert.strictEqual(res.body.message, ApiErrorCode.InvalidCredentials);
+  });
+
+  it('returns 500 when Jellyfin throws a generic error', async () => {
+    authenticateQCMock.mock.mockImplementation(async () => {
+      throw new Error('Network timeout');
+    });
+
+    const res = await request(app)
+      .post('/auth/jellyfin/quickconnect/authenticate')
+      .send({ secret: 'abc123def456abc123def456' });
+
+    assert.strictEqual(res.status, 500);
+  });
+});
+
 describe('GET /auth/me', () => {
   it('returns 403 when not authenticated', async () => {
     const res = await request(app).get('/auth/me');
@@ -109,6 +617,30 @@ describe('GET /auth/me', () => {
     assert.ok(res.body.warnings.includes('userEmailRequired'));
 
     settings.notifications.agents.email.options.userEmailRequired = false;
+  });
+
+  it('returns only the allowlisted settings fields', async () => {
+    await seedUserSettings('admin@seerr.dev');
+    const agent = await authenticatedAgent('admin@seerr.dev', 'test1234');
+
+    const res = await agent.get('/auth/me');
+
+    assert.strictEqual(res.status, 200);
+    assert.deepStrictEqual(Object.keys(res.body.settings).sort(), [
+      'discoverRegion',
+      'locale',
+      'notificationTypes',
+      'originalLanguage',
+      'streamingRegion',
+      'watchlistSyncMovies',
+      'watchlistSyncTv',
+    ]);
+    assert.strictEqual(res.body.settings.locale, allowlistedSettings.locale);
+    assert.strictEqual(
+      res.body.settings.discoverRegion,
+      allowlistedSettings.discoverRegion
+    );
+    assertNoCredentials(res.body);
   });
 });
 
@@ -189,7 +721,7 @@ describe('POST /auth/local', () => {
   it('allows the non-admin user to log in', async () => {
     const res = await request(app)
       .post('/auth/local')
-      .send({ email: 'friend@seerr.dev', password: 'test1234' });
+      .send({ email: 'demo@seerr.dev', password: 'test1234' });
 
     assert.strictEqual(res.status, 200);
     assert.ok('id' in res.body);

@@ -6,13 +6,14 @@ import NotificationTypeSelector, {
 } from '@app/components/NotificationTypeSelector';
 import DeviceItem from '@app/components/UserProfile/UserSettings/UserNotificationSettings/UserNotificationsWebPush/DeviceItem';
 import useSettings from '@app/hooks/useSettings';
+import useToasts from '@app/hooks/useToasts';
 import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import {
   getPushSubscription,
-  subscribeToPushNotifications,
   unsubscribeToPushNotifications,
+  verifyAndResubscribePushSubscription,
   verifyPushSubscription,
 } from '@app/utils/pushSubscriptionHelpers';
 import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
@@ -26,7 +27,6 @@ import { Form, Formik } from 'formik';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import useSWR, { mutate } from 'swr';
 
 const messages = defineMessages(
@@ -74,13 +74,15 @@ const UserWebPushSettings = () => {
       userAgent: string;
       createdAt: Date;
     }[]
-  >(`/api/v1/user/${user?.id}/pushSubscriptions`, { revalidateOnMount: true });
+  >(user ? `/api/v1/user/${user.id}/pushSubscriptions` : null, {
+    revalidateOnMount: true,
+  });
 
   // Subscribes to the push manager
   // Will only add to the database if subscribing for the first time
   const enablePushNotifications = async () => {
     try {
-      const isSubscribed = await subscribeToPushNotifications(
+      const isSubscribed = await verifyAndResubscribePushSubscription(
         user?.id,
         currentSettings
       );
@@ -109,17 +111,28 @@ const UserWebPushSettings = () => {
   // Deletes/disables corresponding push subscription from database
   const disablePushNotifications = async (endpoint?: string) => {
     try {
-      const unsubscribedEndpoint = await unsubscribeToPushNotifications(
+      // Only touch the browser subscription if it actually belongs to
+      // this user. Otherwise we'd silently kill a sibling user's working
+      // subscription if they happened to be using the same browser.
+      const ownsBrowserSubscription = await verifyPushSubscription(
         user?.id,
-        endpoint
+        currentSettings
       );
+
+      let unsubscribedEndpoint: string | null = null;
+      if (ownsBrowserSubscription) {
+        unsubscribedEndpoint = await unsubscribeToPushNotifications(
+          user?.id,
+          endpoint
+        );
+      }
 
       localStorage.setItem('pushNotificationsEnabled', 'false');
       setWebPushEnabled(false);
 
       // Only delete the current browser's subscription, not all devices
       const endpointToDelete = unsubscribedEndpoint || subEndpoint || endpoint;
-      if (endpointToDelete) {
+      if (endpointToDelete && ownsBrowserSubscription) {
         try {
           await axios.delete(
             `/api/v1/user/${user?.id}/pushSubscription/${encodeURIComponent(
@@ -169,26 +182,7 @@ const UserWebPushSettings = () => {
 
   useEffect(() => {
     const verifyWebPush = async () => {
-      const enabled = await verifyPushSubscription(user?.id, currentSettings);
-      let isEnabled = enabled;
-
-      if (!enabled && 'serviceWorker' in navigator) {
-        const { subscription } = await getPushSubscription();
-        if (subscription) {
-          isEnabled = true;
-        }
-      }
-
-      if (!isEnabled && dataDevices && dataDevices.length > 0) {
-        const currentUserAgent = navigator.userAgent;
-        const hasMatchingDevice = dataDevices.some(
-          (device) => device.userAgent === currentUserAgent
-        );
-
-        if (hasMatchingDevice) {
-          isEnabled = true;
-        }
-      }
+      const isEnabled = await verifyPushSubscription(user?.id, currentSettings);
 
       setWebPushEnabled(isEnabled);
       if (localStorage.getItem('pushNotificationsEnabled') === null) {
@@ -202,7 +196,7 @@ const UserWebPushSettings = () => {
     if (user?.id) {
       verifyWebPush();
     }
-  }, [user?.id, currentSettings, dataDevices]);
+  }, [user?.id, currentSettings]);
 
   useEffect(() => {
     const getSubscriptionEndpoint = async () => {
@@ -256,7 +250,7 @@ const UserWebPushSettings = () => {
               `/api/v1/user/${user?.id}/settings/notifications`,
               {
                 pgpKey: data?.pgpKey,
-                discordId: data?.discordId,
+                discordIds: data?.discordIds,
                 pushbulletAccessToken: data?.pushbulletAccessToken,
                 pushoverApplicationToken: data?.pushoverApplicationToken,
                 pushoverUserKey: data?.pushoverUserKey,

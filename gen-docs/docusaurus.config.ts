@@ -1,5 +1,6 @@
 import type * as Preset from '@docusaurus/preset-classic';
 import type { Config } from '@docusaurus/types';
+import type * as OpenApiPlugin from 'docusaurus-plugin-openapi-docs';
 import { themes as prismThemes } from 'prism-react-renderer';
 
 const config: Config = {
@@ -9,7 +10,13 @@ const config: Config = {
 
   url: 'https://docs.seerr.dev',
   baseUrl: '/',
-  trailingSlash: false,
+  trailingSlash: true,
+
+  future: {
+    faster: {
+      swcJsMinimizer: true,
+    },
+  },
 
   organizationName: 'seerr-team',
   projectName: 'seerr',
@@ -37,12 +44,48 @@ const config: Config = {
           routeBasePath: '/',
           path: '../docs',
           editUrl: 'https://github.com/seerr-team/seerr/edit/develop/docs/',
+          docItemComponent: '@theme/ApiItem',
+          async sidebarItemsGenerator({
+            defaultSidebarItemsGenerator,
+            ...args
+          }) {
+            const items = await defaultSidebarItemsGenerator(args);
+            return items.filter(
+              (item) =>
+                !(
+                  item.type === 'category' &&
+                  item.label?.toLowerCase() === 'api'
+                )
+            );
+          },
         },
         pages: false,
         theme: {
           customCss: './src/css/custom.css',
         },
       } satisfies Preset.Options,
+    ],
+  ],
+
+  plugins: [
+    [
+      'docusaurus-plugin-openapi-docs',
+      {
+        id: 'api',
+        docsPluginId: 'classic',
+        config: {
+          seerr: {
+            specPath: '../seerr-api.yml',
+            outputDir: '../docs/api',
+            sidebarOptions: {
+              groupPathsBy: 'tag',
+            },
+            downloadUrl:
+              'https://raw.githubusercontent.com/seerr-team/seerr/refs/heads/develop/seerr-api.yml',
+            hideSendButton: true,
+          } satisfies OpenApiPlugin.Options,
+        },
+      },
     ],
   ],
 
@@ -58,6 +101,7 @@ const config: Config = {
         explicitSearchResultPath: true,
       },
     ],
+    'docusaurus-theme-openapi-docs',
   ],
 
   themeConfig: {
@@ -72,6 +116,11 @@ const config: Config = {
         src: 'img/logo_full.svg',
       },
       items: [
+        {
+          to: '/api/seerr-api',
+          label: 'REST API',
+          position: 'right',
+        },
         {
           to: 'blog',
           label: 'Blog',
@@ -98,6 +147,10 @@ const config: Config = {
             {
               label: 'Documentation',
               to: '/',
+            },
+            {
+              label: 'REST API',
+              to: '/api/seerr-api',
             },
           ],
         },

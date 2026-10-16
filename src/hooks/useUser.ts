@@ -29,7 +29,6 @@ export interface User {
 type NotificationAgentTypes = Record<NotificationAgentKey, number>;
 
 export interface UserSettings {
-  discordId?: string;
   discoverRegion?: string;
   streamingRegion?: string;
   originalLanguage?: string;

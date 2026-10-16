@@ -2,6 +2,7 @@ import Alert from '@app/components/Common/Alert';
 import CachedImage from '@app/components/Common/CachedImage';
 import Modal from '@app/components/Common/Modal';
 import useSettings from '@app/hooks/useSettings';
+import useToasts from '@app/hooks/useToasts';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { MediaServerType } from '@server/constants/server';
@@ -9,7 +10,6 @@ import type { UserResultsResponse } from '@server/interfaces/api/userInterfaces'
 import axios from 'axios';
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
 
 interface JellyfinImportProps {
@@ -24,6 +24,8 @@ const messages = defineMessages('components.UserList', {
     'Something went wrong while importing {mediaServerName} users.',
   importedfromJellyfin:
     '<strong>{userCount}</strong> {mediaServerName} {userCount, plural, one {user} other {users}} imported successfully!',
+  importedUsersNoPassword:
+    'Imported users do not have a {applicationTitle} password set. If you disable {mediaServerName} sign-in, they will need to set a password from their profile or via a password reset link.',
   user: 'User',
   noJellyfinuserstoimport: 'There are no {mediaServerName} users to import.',
   newJellyfinsigninenabled:
@@ -81,6 +83,20 @@ const JellyfinImportModal: React.FC<JellyfinImportProps> = ({
         {
           autoDismiss: true,
           appearance: 'success',
+        }
+      );
+
+      addToast(
+        intl.formatMessage(messages.importedUsersNoPassword, {
+          applicationTitle: settings.currentSettings.applicationTitle,
+          mediaServerName:
+            settings.currentSettings.mediaServerType === MediaServerType.EMBY
+              ? 'Emby'
+              : 'Jellyfin',
+        }),
+        {
+          autoDismiss: false,
+          appearance: 'warning',
         }
       );
 

@@ -4,13 +4,34 @@ import { getRepository } from '@server/datasource';
 import MediaRequest from '@server/entity/MediaRequest';
 import { User } from '@server/entity/User';
 import { UserPushSubscription } from '@server/entity/UserPushSubscription';
+import { defineMessages, getIntl } from '@server/i18n';
+import globalMessages from '@server/i18n/globalMessages';
 import type { NotificationAgentConfig } from '@server/lib/settings';
 import { NotificationAgentKey, getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
+import type { AvailableLocale } from '@server/types/languages';
 import webpush from 'web-push';
 import { Notification, shouldSendAdminNotification } from '..';
 import type { NotificationAgent, NotificationPayload } from './agent';
 import { BaseAgent } from './agent';
+
+const messages = defineMessages('notifications.agents.webpush', {
+  autoRequested: 'Automatically submitted a new {quality}{mediaType} request.',
+  approved: 'Your {quality}{mediaType} request has been approved.',
+  autoApproved:
+    'Automatically approved a new {quality}{mediaType} request from {userName}.',
+  available: 'Your {quality}{mediaType} request is now available!',
+  declined: 'Your {quality}{mediaType} request was declined.',
+  failed: 'Failed to process {quality}{mediaType} request.',
+  pending:
+    'Approval required for a new {quality}{mediaType} request from {userName}.',
+  issueCreated: 'A new {issueType} was reported by {userName}.',
+  issueComment: '{userName} commented on the {issueType}.',
+  issueResolved: 'The {issueType} was marked as resolved by {userName}!',
+  issueReopened: 'The {issueType} was reopened by {userName}.',
+  viewIssue: 'View Issue',
+  viewMedia: 'View Media',
+});
 
 interface PushNotificationPayload {
   notificationType: string;
@@ -49,21 +70,26 @@ class WebPushAgent
 
   private getNotificationPayload(
     type: Notification,
-    payload: NotificationPayload
+    payload: NotificationPayload,
+    locale?: AvailableLocale
   ): PushNotificationPayload {
+    const intl = getIntl(locale);
     const { embedPoster } = getSettings().notifications.agents.webpush;
 
     const mediaType = payload.media
       ? payload.media.mediaType === MediaType.MOVIE
-        ? 'movie'
-        : 'series'
+        ? intl.formatMessage(globalMessages.movie)
+        : intl.formatMessage(globalMessages.series)
       : undefined;
     const is4k = payload.request?.is4k;
+    const quality = is4k ? '4K ' : '';
 
     const issueType = payload.issue
       ? payload.issue.issueType !== IssueType.OTHER
-        ? `${IssueTypeName[payload.issue.issueType].toLowerCase()} issue`
-        : 'issue'
+        ? intl.formatMessage(globalMessages.issueTypeName, {
+            type: IssueTypeName[payload.issue.issueType].toLowerCase(),
+          })
+        : intl.formatMessage(globalMessages.issue)
       : undefined;
 
     let message: string | undefined;
@@ -72,51 +98,72 @@ class WebPushAgent
         message = payload.message;
         break;
       case Notification.MEDIA_AUTO_REQUESTED:
-        message = `Automatically submitted a new ${
-          is4k ? '4K ' : ''
-        }${mediaType} request.`;
+        message = intl.formatMessage(messages.autoRequested, {
+          quality,
+          mediaType,
+        });
         break;
       case Notification.MEDIA_APPROVED:
-        message = `Your ${
-          is4k ? '4K ' : ''
-        }${mediaType} request has been approved.`;
+        message = intl.formatMessage(messages.approved, {
+          quality,
+          mediaType,
+        });
         break;
       case Notification.MEDIA_AUTO_APPROVED:
-        message = `Automatically approved a new ${
-          is4k ? '4K ' : ''
-        }${mediaType} request from ${
-          payload.request?.requestedBy.displayName
-        }.`;
+        message = intl.formatMessage(messages.autoApproved, {
+          quality,
+          mediaType,
+          userName: payload.request?.requestedBy.displayName,
+        });
         break;
       case Notification.MEDIA_AVAILABLE:
-        message = `Your ${
-          is4k ? '4K ' : ''
-        }${mediaType} request is now available!`;
+        message = intl.formatMessage(messages.available, {
+          quality,
+          mediaType,
+        });
         break;
       case Notification.MEDIA_DECLINED:
-        message = `Your ${is4k ? '4K ' : ''}${mediaType} request was declined.`;
+        message = intl.formatMessage(messages.declined, {
+          quality,
+          mediaType,
+        });
         break;
       case Notification.MEDIA_FAILED:
-        message = `Failed to process ${is4k ? '4K ' : ''}${mediaType} request.`;
+        message = intl.formatMessage(messages.failed, {
+          quality,
+          mediaType,
+        });
         break;
       case Notification.MEDIA_PENDING:
-        message = `Approval required for a new ${
-          is4k ? '4K ' : ''
-        }${mediaType} request from ${
-          payload.request?.requestedBy.displayName
-        }.`;
+        message = intl.formatMessage(messages.pending, {
+          quality,
+          mediaType,
+          userName: payload.request?.requestedBy.displayName,
+        });
         break;
       case Notification.ISSUE_CREATED:
-        message = `A new ${issueType} was reported by ${payload.issue?.createdBy.displayName}.`;
+        message = intl.formatMessage(messages.issueCreated, {
+          issueType,
+          userName: payload.issue?.createdBy.displayName,
+        });
         break;
       case Notification.ISSUE_COMMENT:
-        message = `${payload.comment?.user.displayName} commented on the ${issueType}.`;
+        message = intl.formatMessage(messages.issueComment, {
+          userName: payload.comment?.user.displayName,
+          issueType,
+        });
         break;
       case Notification.ISSUE_RESOLVED:
-        message = `The ${issueType} was marked as resolved by ${payload.issue?.modifiedBy?.displayName}!`;
+        message = intl.formatMessage(messages.issueResolved, {
+          issueType,
+          userName: payload.issue?.modifiedBy?.displayName,
+        });
         break;
       case Notification.ISSUE_REOPENED:
-        message = `The ${issueType} was reopened by ${payload.issue?.modifiedBy?.displayName}.`;
+        message = intl.formatMessage(messages.issueReopened, {
+          issueType,
+          userName: payload.issue?.modifiedBy?.displayName,
+        });
         break;
       default:
         return {
@@ -132,7 +179,9 @@ class WebPushAgent
         : undefined;
 
     const actionUrlTitle = actionUrl
-      ? `View ${payload.issue ? 'Issue' : 'Media'}`
+      ? intl.formatMessage(
+          payload.issue ? messages.viewIssue : messages.viewMedia
+        )
       : undefined;
 
     return {
@@ -164,7 +213,8 @@ class WebPushAgent
     const userPushSubRepository = getRepository(UserPushSubscription);
     const settings = getSettings();
 
-    const pushSubs: UserPushSubscription[] = [];
+    const pushSubs: { sub: UserPushSubscription; locale?: AvailableLocale }[] =
+      [];
 
     const mainUser = await userRepository.findOne({ where: { id: 1 } });
 
@@ -238,7 +288,12 @@ class WebPushAgent
         where: { user: { id: payload.notifyUser.id } },
       });
 
-      pushSubs.push(...notifySubs);
+      pushSubs.push(
+        ...notifySubs.map((sub) => ({
+          sub,
+          locale: payload.notifyUser?.settings?.locale as AvailableLocale,
+        }))
+      );
     }
 
     if (
@@ -265,6 +320,7 @@ class WebPushAgent
           ? await userPushSubRepository
               .createQueryBuilder('pushSub')
               .leftJoinAndSelect('pushSub.user', 'user')
+              .leftJoinAndSelect('user.settings', 'settings')
               .where('pushSub.userId IN (:...users)', {
                 users: manageUsers.map((user) => user.id),
               })
@@ -284,28 +340,37 @@ class WebPushAgent
             settings.vapidPrivate
           );
 
-          // Custom payload only for updating the app badge
-          const notificationBadgePayload = Buffer.from(
-            JSON.stringify(
-              this.getNotificationPayload(type, {
-                subject: payload.subject,
-                notifySystem: false,
-                notifyAdmin: true,
-                isAdmin: true,
-                pendingRequestsCount: pendingRequests.length,
-              })
-            ),
-            'utf-8'
-          );
-
           await Promise.all(
             allSubs.map(async (sub) => {
-              webPushNotification(sub, notificationBadgePayload);
+              const locale = sub.user?.settings?.locale as AvailableLocale;
+              // Custom payload only for updating the app badge
+              const notificationBadgePayload = Buffer.from(
+                JSON.stringify(
+                  this.getNotificationPayload(
+                    type,
+                    {
+                      subject: payload.subject,
+                      notifySystem: false,
+                      notifyAdmin: true,
+                      isAdmin: true,
+                      pendingRequestsCount: pendingRequests.length,
+                    },
+                    locale
+                  )
+                ),
+                'utf-8'
+              );
+              await webPushNotification(sub, notificationBadgePayload);
             })
           );
         }
       } else {
-        pushSubs.push(...allSubs);
+        pushSubs.push(
+          ...allSubs.map((sub) => ({
+            sub,
+            locale: sub.user?.settings?.locale as AvailableLocale,
+          }))
+        );
       }
     }
 
@@ -320,14 +385,13 @@ class WebPushAgent
         payload = { ...payload, pendingRequestsCount: pendingRequests.length };
       }
 
-      const notificationPayload = Buffer.from(
-        JSON.stringify(this.getNotificationPayload(type, payload)),
-        'utf-8'
-      );
-
       await Promise.all(
-        pushSubs.map(async (sub) => {
-          webPushNotification(sub, notificationPayload);
+        pushSubs.map(async ({ sub, locale }) => {
+          const notificationPayload = Buffer.from(
+            JSON.stringify(this.getNotificationPayload(type, payload, locale)),
+            'utf-8'
+          );
+          await webPushNotification(sub, notificationPayload);
         })
       );
     }

@@ -3,7 +3,6 @@ import type { NotificationAgentKey } from '@server/lib/settings';
 export interface UserSettingsGeneralResponse {
   username?: string;
   email?: string;
-  discordId?: string;
   locale?: string;
   discoverRegion?: string;
   streamingRegion?: string;
@@ -26,7 +25,7 @@ export interface UserSettingsNotificationsResponse {
   pgpKey?: string;
   discordEnabled?: boolean;
   discordEnabledTypes?: number;
-  discordId?: string;
+  discordIds?: string[];
   pushbulletAccessToken?: string;
   pushoverApplicationToken?: string;
   pushoverUserKey?: string;

@@ -22,6 +22,10 @@ You can find the webhook URL in the Discord application, at **Server Settings &r
 
 If a role ID is specified, it will be included in the webhook message. See [Discord role ID](https://support.discord.com/hc/en-us/articles/206346498-Where-can-I-find-my-User-Server-Message-ID).
 
+### Thread ID (optional)
+
+If a thread ID is specified, the notification will be sent to a specific thread, instead of the webhook channel. Leave it blank to send it directly to the channel.
+
 ### Bot Username (optional)
 
 If you would like to override the name you configured for your bot in Discord, you may set this value to whatever you like!
@@ -29,3 +33,13 @@ If you would like to override the name you configured for your bot in Discord, y
 ### Bot Avatar URL (optional)
 
 Similar to the bot username, you can override the avatar for your bot.
+
+### Use Notification Recipient Locale
+
+When enabled, notifications will be sent in the language of the user who triggered the notification (e.g., the user who made the request or reported the issue) based on their display language setting. When disabled, the **Notification Language** setting below is used instead.
+
+### Notification Language
+
+Sets the language for all notifications sent to this Discord channel. This option is only available when **Use Notification Recipient Locale** is disabled.
+
+The thread must belong to the webhook's channel. A thread from a different channel will cause the request to fail and the notification will not be delivered.

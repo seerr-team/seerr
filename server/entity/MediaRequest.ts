@@ -1,19 +1,22 @@
 import TheMovieDb from '@server/api/themoviedb';
-import { ANIME_KEYWORD_ID } from '@server/api/themoviedb/constants';
-import type { TmdbKeyword } from '@server/api/themoviedb/interfaces';
 import {
   MediaRequestStatus,
   MediaStatus,
   MediaType,
 } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
-import OverrideRule from '@server/entity/OverrideRule';
 import type { MediaRequestBody } from '@server/interfaces/api/requestInterfaces';
 import notificationManager, { Notification } from '@server/lib/notifications';
+import overrideRules from '@server/lib/overrideRules';
 import { Permission } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
-import { DbAwareColumn } from '@server/utils/DbColumnHelper';
+import { DbAwareColumn, resolveDbType } from '@server/utils/DbColumnHelper';
+import requestLock, {
+  mediaKey,
+  mediaLock,
+  userKey,
+} from '@server/utils/requestLock';
 import { truncate } from 'lodash';
 import {
   AfterInsert,
@@ -26,6 +29,7 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
   RelationCount,
+  UpdateDateColumn,
 } from 'typeorm';
 import Media from './Media';
 import SeasonRequest from './SeasonRequest';
@@ -47,6 +51,30 @@ export class MediaRequest {
     requestBody: MediaRequestBody,
     user: User,
     options: MediaRequestOptions = {}
+  ): Promise<MediaRequest> {
+    // is4k is optional, and an undefined one binds as null in the duplicate query
+    const body = { ...requestBody, is4k: !!requestBody.is4k };
+
+    // Only a caller allowed to set the request user may queue on their lock
+    const lockUserId =
+      body.userId &&
+      user.hasPermission([Permission.MANAGE_USERS, Permission.MANAGE_REQUESTS])
+        ? body.userId
+        : user.id;
+
+    // No is4k in the key: one media row holds both statuses, so a 4k and a
+    // non-4k request for the same title race to create it
+    return requestLock.dispatch(userKey(lockUserId), () =>
+      mediaLock.dispatch(mediaKey(body.mediaType, body.mediaId), () =>
+        MediaRequest.createRequest(body, user, options)
+      )
+    );
+  }
+
+  private static async createRequest(
+    requestBody: MediaRequestBody,
+    user: User,
+    options: MediaRequestOptions
   ): Promise<MediaRequest> {
     const tmdb = new TheMovieDb();
     const mediaRepository = getRepository(Media);
@@ -112,10 +140,30 @@ export class MediaRequest {
 
     const quotas = await requestUser.getQuota();
 
-    if (requestBody.mediaType === MediaType.MOVIE && quotas.movie.restricted) {
-      throw new QuotaRestrictedError('Movie Quota exceeded.');
-    } else if (requestBody.mediaType === MediaType.TV && quotas.tv.restricted) {
-      throw new QuotaRestrictedError('Series Quota exceeded.');
+    const canBypassQuota = user.hasPermission(Permission.MANAGE_REQUESTS);
+    const ignoreQuota =
+      requestBody.ignoreQuota === true &&
+      canBypassQuota &&
+      ((requestBody.mediaType === MediaType.MOVIE
+        ? quotas.movie.limit
+        : quotas.tv.limit) ?? 0) > 0;
+
+    if (!ignoreQuota) {
+      if (requestBody.ignoreQuota && !canBypassQuota) {
+        throw new RequestPermissionError(
+          'You do not have permission to bypass user quota limits.'
+        );
+      } else if (
+        requestBody.mediaType === MediaType.MOVIE &&
+        quotas.movie.restricted
+      ) {
+        throw new QuotaRestrictedError('Movie Quota exceeded.');
+      } else if (
+        requestBody.mediaType === MediaType.TV &&
+        quotas.tv.restricted
+      ) {
+        throw new QuotaRestrictedError('Series Quota exceeded.');
+      }
     }
 
     const tmdbMedia =
@@ -150,18 +198,26 @@ export class MediaRequest {
         throw new BlocklistedMediaError('This media is blocklisted.');
       }
 
-      if (media.status === MediaStatus.UNKNOWN && !requestBody.is4k) {
+      if (
+        (media.status === MediaStatus.UNKNOWN ||
+          media.status === MediaStatus.DELETED) &&
+        !requestBody.is4k
+      ) {
         media.status = MediaStatus.PENDING;
       }
 
-      if (media.status4k === MediaStatus.UNKNOWN && requestBody.is4k) {
+      if (
+        (media.status4k === MediaStatus.UNKNOWN ||
+          media.status4k === MediaStatus.DELETED) &&
+        requestBody.is4k
+      ) {
         media.status4k = MediaStatus.PENDING;
       }
     }
 
     const existing = await requestRepository
       .createQueryBuilder('request')
-      .leftJoin('request.media', 'media')
+      .leftJoinAndSelect('request.media', 'media')
       .leftJoinAndSelect('request.requestedBy', 'user')
       .where('request.is4k = :is4k', { is4k: requestBody.is4k })
       .andWhere('media.tmdbId = :tmdbId', { tmdbId: tmdbMedia.id })
@@ -191,9 +247,13 @@ export class MediaRequest {
 
       // If an existing auto-request for this media exists from the same user,
       // don't allow a new one.
+      const statusKey = requestBody.is4k ? 'status4k' : 'status';
       if (
         existing.find(
-          (r) => r.requestedBy.id === requestUser.id && r.isAutoRequest
+          (r) =>
+            r.requestedBy.id === requestUser.id &&
+            r.isAutoRequest &&
+            r.media?.[statusKey] !== MediaStatus.DELETED
         )
       ) {
         throw new DuplicateMediaRequestError(
@@ -202,132 +262,47 @@ export class MediaRequest {
       }
     }
 
-    // Apply overrides if the user is not an admin or has the "advanced request" permission
-    const useOverrides = !user.hasPermission([Permission.MANAGE_REQUESTS], {
-      type: 'or',
-    });
-
     let rootFolder = requestBody.rootFolder;
     let profileId = requestBody.profileId;
     let tags = requestBody.tags;
 
-    if (useOverrides) {
-      const defaultRadarrId = requestBody.is4k
-        ? settings.radarr.findIndex((r) => r.is4k && r.isDefault)
-        : settings.radarr.findIndex((r) => !r.is4k && r.isDefault);
-      const defaultSonarrId = requestBody.is4k
-        ? settings.sonarr.findIndex((s) => s.is4k && s.isDefault)
-        : settings.sonarr.findIndex((s) => !s.is4k && s.isDefault);
-
-      const overrideRuleRepository = getRepository(OverrideRule);
-      const overrideRules = await overrideRuleRepository.find({
-        where:
-          requestBody.mediaType === MediaType.MOVIE
-            ? { radarrServiceId: defaultRadarrId }
-            : { sonarrServiceId: defaultSonarrId },
+    const ruleResult = await overrideRules({
+      mediaType: requestBody.mediaType,
+      is4k: requestBody.is4k || false,
+      tmdbMedia,
+      requestUser,
+      tags,
+    });
+    const isAdvanced = user.hasPermission(
+      [Permission.MANAGE_REQUESTS, Permission.REQUEST_ADVANCED],
+      { type: 'or' }
+    );
+    // Advanced users pick these in the modal, so we don't want to override them if they are set
+    const overrideRulesResult = isAdvanced
+      ? {
+          rootFolder: rootFolder ? null : ruleResult.rootFolder,
+          profileId: profileId ? null : ruleResult.profileId,
+          tags: tags ? null : ruleResult.tags,
+        }
+      : ruleResult;
+    if (overrideRulesResult.rootFolder) {
+      rootFolder = overrideRulesResult.rootFolder;
+    }
+    if (overrideRulesResult.profileId) {
+      profileId = overrideRulesResult.profileId;
+    }
+    if (overrideRulesResult.tags) {
+      tags = overrideRulesResult.tags;
+    }
+    if (
+      overrideRulesResult.rootFolder ||
+      overrideRulesResult.profileId ||
+      overrideRulesResult.tags
+    ) {
+      logger.debug('Override rule applied.', {
+        label: 'Override Rules',
+        overrides: overrideRulesResult,
       });
-
-      const appliedOverrideRules = overrideRules.filter((rule) => {
-        const hasAnimeKeyword =
-          'results' in tmdbMedia.keywords &&
-          tmdbMedia.keywords.results.some(
-            (keyword: TmdbKeyword) => keyword.id === ANIME_KEYWORD_ID
-          );
-
-        // Skip override rules if the media is an anime TV show as anime TV
-        // is handled by default and override rules do not explicitly include
-        // the anime keyword
-        if (
-          requestBody.mediaType === MediaType.TV &&
-          hasAnimeKeyword &&
-          (!rule.keywords ||
-            !rule.keywords.split(',').map(Number).includes(ANIME_KEYWORD_ID))
-        ) {
-          return false;
-        }
-
-        if (
-          rule.users &&
-          !rule.users
-            .split(',')
-            .some((userId) => Number(userId) === requestUser.id)
-        ) {
-          return false;
-        }
-        if (
-          rule.genre &&
-          !rule.genre
-            .split(',')
-            .some((genreId) =>
-              tmdbMedia.genres
-                .map((genre) => genre.id)
-                .includes(Number(genreId))
-            )
-        ) {
-          return false;
-        }
-        if (
-          rule.language &&
-          !rule.language
-            .split('|')
-            .some((languageId) => languageId === tmdbMedia.original_language)
-        ) {
-          return false;
-        }
-        if (
-          rule.keywords &&
-          !rule.keywords.split(',').some((keywordId) => {
-            let keywordList: TmdbKeyword[] = [];
-
-            if ('keywords' in tmdbMedia.keywords) {
-              keywordList = tmdbMedia.keywords.keywords;
-            } else if ('results' in tmdbMedia.keywords) {
-              keywordList = tmdbMedia.keywords.results;
-            }
-
-            return keywordList
-              .map((keyword: TmdbKeyword) => keyword.id)
-              .includes(Number(keywordId));
-          })
-        ) {
-          return false;
-        }
-        return true;
-      });
-
-      // hacky way to prioritize rules
-      // TODO: make this better
-      const prioritizedRule = appliedOverrideRules.sort((a, b) => {
-        const keys: (keyof OverrideRule)[] = ['genre', 'language', 'keywords'];
-
-        const aSpecificity = keys.filter((key) => a[key] !== null).length;
-        const bSpecificity = keys.filter((key) => b[key] !== null).length;
-
-        // Take the rule with the most specific condition first
-        return bSpecificity - aSpecificity;
-      })[0];
-
-      if (prioritizedRule) {
-        if (prioritizedRule.rootFolder) {
-          rootFolder = prioritizedRule.rootFolder;
-        }
-        if (prioritizedRule.profileId) {
-          profileId = prioritizedRule.profileId;
-        }
-        if (prioritizedRule.tags) {
-          tags = [
-            ...new Set([
-              ...(tags || []),
-              ...prioritizedRule.tags.split(',').map((tag) => Number(tag)),
-            ]),
-          ];
-        }
-
-        logger.debug('Override rule applied.', {
-          label: 'Media Request',
-          overrides: prioritizedRule,
-        });
-      }
     }
 
     if (requestBody.mediaType === MediaType.MOVIE) {
@@ -372,6 +347,7 @@ export class MediaRequest {
         rootFolder: rootFolder,
         tags: tags,
         isAutoRequest: options.isAutoRequest ?? false,
+        ignoreQuota,
       });
 
       await requestRepository.save(request);
@@ -383,7 +359,10 @@ export class MediaRequest {
       let requestedSeasons =
         requestBody.seasons === 'all'
           ? tmdbMediaShow.seasons
-              .filter((season) => season.season_number !== 0)
+              .filter(
+                (season) =>
+                  season.season_number !== 0 && season.episode_count > 0
+              )
               .map((season) => season.season_number)
           : (requestBody.seasons as number[]);
       if (!settings.main.enableSpecialEpisodes) {
@@ -435,6 +414,7 @@ export class MediaRequest {
       if (finalSeasons.length === 0) {
         throw new NoSeasonsAvailableError('No seasons available to request');
       } else if (
+        !ignoreQuota &&
         quotas.tv.limit &&
         finalSeasons.length > (quotas.tv.remaining ?? 0)
       ) {
@@ -503,6 +483,7 @@ export class MediaRequest {
             })
         ),
         isAutoRequest: options.isAutoRequest ?? false,
+        ignoreQuota,
       });
 
       await requestRepository.save(request);
@@ -533,7 +514,6 @@ export class MediaRequest {
 
   @ManyToOne(() => User, {
     nullable: true,
-    cascade: true,
     eager: true,
     onDelete: 'SET NULL',
   })
@@ -543,10 +523,9 @@ export class MediaRequest {
   @DbAwareColumn({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   public createdAt: Date;
 
-  @DbAwareColumn({
-    type: 'datetime',
+  @UpdateDateColumn({
+    type: resolveDbType('datetime'),
     default: () => 'CURRENT_TIMESTAMP',
-    onUpdate: 'CURRENT_TIMESTAMP',
   })
   public updatedAt: Date;
 
@@ -611,6 +590,9 @@ export class MediaRequest {
   @Column({ default: false })
   public isAutoRequest: boolean;
 
+  @Column({ default: false })
+  public ignoreQuota: boolean;
+
   constructor(init?: Partial<MediaRequest>) {
     Object.assign(this, init);
   }
@@ -668,10 +650,18 @@ export class MediaRequest {
         return;
       }
 
-      if (media[this.is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE) {
-        logger.warn(
-          'Media became available before request was approved. Skipping approval notification',
+      if (
+        this.status === MediaRequestStatus.APPROVED &&
+        media[this.is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE
+      ) {
+        logger.info(
+          'Media is already available. Sending availability notification instead of approval.',
           { label: 'Media Request', requestId: this.id, mediaId: this.media.id }
+        );
+        MediaRequest.sendNotification(
+          this,
+          media,
+          Notification.MEDIA_AVAILABLE
         );
         return;
       }
@@ -728,6 +718,10 @@ export class MediaRequest {
       let notifySystem = true;
 
       switch (type) {
+        case Notification.MEDIA_AVAILABLE:
+          event = `${entity.is4k ? '4K ' : ''}${mediaType} Now Available`;
+          notifyAdmin = false;
+          break;
         case Notification.MEDIA_APPROVED:
           event = `${entity.is4k ? '4K ' : ''}${mediaType} Request Approved`;
           notifyAdmin = false;

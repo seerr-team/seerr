@@ -34,7 +34,11 @@ movieRoutes.get('/:id', async (req, res, next) => {
       },
     });
 
-    const data = mapMovieDetails(tmdbMovie, media, onUserWatchlist);
+    const data = mapMovieDetails(
+      tmdbMovie,
+      media?.filter(req.user),
+      onUserWatchlist
+    );
 
     // TMDB issue where it doesnt fallback to English when no overview is available in requested locale.
     if (!data.overview) {
@@ -71,7 +75,8 @@ movieRoutes.get('/:id/recommendations', async (req, res, next) => {
       results.results.map((result) => ({
         tmdbId: result.id,
         mediaType: MediaType.MOVIE,
-      }))
+      })),
+      { includeActiveRequest: true }
     );
 
     return res.status(200).json({
@@ -116,7 +121,8 @@ movieRoutes.get('/:id/similar', async (req, res, next) => {
       results.results.map((result) => ({
         tmdbId: result.id,
         mediaType: MediaType.MOVIE,
-      }))
+      })),
+      { includeActiveRequest: true }
     );
 
     return res.status(200).json({

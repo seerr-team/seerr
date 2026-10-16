@@ -6,6 +6,7 @@ import AdvancedRequester from '@app/components/RequestModal/AdvancedRequester';
 import QuotaDisplay from '@app/components/RequestModal/QuotaDisplay';
 import SearchByNameModal from '@app/components/RequestModal/SearchByNameModal';
 import useSettings from '@app/hooks/useSettings';
+import useToasts from '@app/hooks/useToasts';
 import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
@@ -20,7 +21,6 @@ import type { TvDetails } from '@server/models/Tv';
 import axios from 'axios';
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import useSWR, { mutate } from 'swr';
 
 const messages = defineMessages('components.RequestModal', {
@@ -199,11 +199,11 @@ const TvRequestModal = ({
         tvdbId: tvdbId ?? data?.externalIds.tvdbId,
         mediaType: 'tv',
         is4k,
+        ignoreQuota: requestOverrides?.ignoreQuota,
         seasons: settings.currentSettings.partialRequestsEnabled
           ? selectedSeasons.sort((a, b) => a - b)
           : getAllSeasons().filter(
-              (season) =>
-                !getAllRequestedSeasons().includes(season) && season !== 0
+              (season) => !getAllRequestedSeasons().includes(season)
             ),
         ...overrideParams,
       });
@@ -303,10 +303,8 @@ const TvRequestModal = ({
     }
   };
 
-  const unrequestedSeasons = getAllSeasons().filter((season) =>
-    !settings.currentSettings.partialRequestsEnabled
-      ? !getAllRequestedSeasons().includes(season) && season !== 0
-      : !getAllRequestedSeasons().includes(season)
+  const unrequestedSeasons = getAllSeasons().filter(
+    (season) => !getAllRequestedSeasons().includes(season)
   );
 
   const toggleAllSeasons = (): void => {
@@ -318,16 +316,12 @@ const TvRequestModal = ({
       return;
     }
 
-    const standardUnrequestedSeasons = unrequestedSeasons.filter(
-      (seasonNumber) => seasonNumber !== 0
-    );
-
     if (
       data &&
       selectedSeasons.length >= 0 &&
-      selectedSeasons.length < standardUnrequestedSeasons.length
+      selectedSeasons.length < unrequestedSeasons.length
     ) {
-      setSelectedSeasons(standardUnrequestedSeasons);
+      setSelectedSeasons(unrequestedSeasons);
     } else {
       setSelectedSeasons([]);
     }
@@ -424,7 +418,7 @@ const TvRequestModal = ({
             : hasPermission(Permission.MANAGE_REQUESTS)
               ? intl.formatMessage(messages.approve)
               : intl.formatMessage(messages.edit)
-          : getAllRequestedSeasons().length >= getAllSeasons().length
+          : unrequestedSeasons.length === 0
             ? intl.formatMessage(messages.alreadyrequested)
             : !settings.currentSettings.partialRequestsEnabled
               ? intl.formatMessage(
@@ -444,9 +438,10 @@ const TvRequestModal = ({
           ? false
           : !settings.currentSettings.partialRequestsEnabled &&
               quota?.tv.limit &&
-              unrequestedSeasons.length > quota.tv.limit
+              unrequestedSeasons.length > quota.tv.limit &&
+              !requestOverrides?.ignoreQuota
             ? true
-            : getAllRequestedSeasons().length >= getAllSeasons().length ||
+            : unrequestedSeasons.length === 0 ||
               (settings.currentSettings.partialRequestsEnabled &&
                 selectedSeasons.length === 0)
       }
@@ -491,12 +486,12 @@ const TvRequestModal = ({
         ) &&
         getAllRequestedSeasons().length < getAllSeasons().length &&
         !editRequest && (
-          <p className="mt-6">
+          <div className="mt-6">
             <Alert
               title={intl.formatMessage(messages.requestadmin)}
               type="info"
             />
-          </p>
+          </div>
         )}
       {(quota?.tv.limit ?? 0) > 0 && (
         <QuotaDisplay
@@ -581,13 +576,9 @@ const TvRequestModal = ({
                   {data?.seasons
                     .filter(
                       (season) =>
-                        (!settings.currentSettings.enableSpecialEpisodes
-                          ? season.seasonNumber !== 0
-                          : true) &&
-                        (!settings.currentSettings.partialRequestsEnabled
-                          ? season.episodeCount !== 0 &&
-                            season.seasonNumber !== 0
-                          : season.episodeCount !== 0)
+                        season.episodeCount !== 0 &&
+                        (settings.currentSettings.enableSpecialEpisodes ||
+                          season.seasonNumber !== 0)
                     )
                     .map((season) => {
                       const seasonRequest = getSeasonRequest(
@@ -723,16 +714,21 @@ const TvRequestModal = ({
           </div>
         </div>
       </div>
-      {(hasPermission(Permission.REQUEST_ADVANCED) ||
-        hasPermission(Permission.MANAGE_REQUESTS)) && (
+      {hasPermission(
+        [Permission.REQUEST_ADVANCED, Permission.MANAGE_REQUESTS],
+        { type: 'or' }
+      ) && (
         <AdvancedRequester
           type="tv"
+          tmdbId={tmdbId}
           is4k={is4k}
           isAnime={data?.keywords.some(
             (keyword) => keyword.id === ANIME_KEYWORD_ID
           )}
+          quota={quota}
           onChange={(overrides) => setRequestOverrides(overrides)}
           requestUser={editRequest?.requestedBy}
+          requestId={editRequest?.id}
           defaultOverrides={
             editRequest
               ? {

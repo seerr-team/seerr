@@ -14,6 +14,19 @@ export const ALL_NOTIFICATIONS = Object.values(Notification)
   .filter((v) => !isNaN(Number(v)))
   .reduce((a, v) => a + Number(v), 0);
 
+// convert between DB representation (JSON string) into typescript array
+const jsonArrayTransformer = {
+  from: (v: string | null): string[] => {
+    try {
+      return v ? JSON.parse(v) : [];
+    } catch {
+      return [];
+    }
+  },
+  to: (v: string[] | null): string | null =>
+    v?.length ? JSON.stringify(v) : null,
+};
+
 @Entity()
 export class UserSettings {
   constructor(init?: Partial<UserSettings>) {
@@ -42,8 +55,8 @@ export class UserSettings {
   @Column({ nullable: true })
   public pgpKey?: string;
 
-  @Column({ nullable: true })
-  public discordId?: string;
+  @Column({ type: 'text', nullable: true, transformer: jsonArrayTransformer })
+  public discordIds: string[];
 
   @Column({ nullable: true })
   public pushbulletAccessToken?: string;

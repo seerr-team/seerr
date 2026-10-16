@@ -1,10 +1,10 @@
 import TitleCard from '@app/components/TitleCard';
 import globalMessages from '@app/i18n/globalMessages';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { useSpring } from '@react-spring/web';
 import { debounce } from 'lodash';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
 import { useIntl } from 'react-intl';
-import { useSpring } from 'react-spring';
 
 interface SliderProps {
   sliderKey: string;
@@ -33,6 +33,7 @@ const Slider = ({
   const [scrollPos, setScrollPos] = useState({ isStart: true, isEnd: false });
 
   const handleScroll = useCallback(() => {
+    const margin = 5;
     const scrollWidth = containerRef.current?.scrollWidth ?? 0;
     const clientWidth =
       containerRef.current?.getBoundingClientRect().width ?? 0;
@@ -44,10 +45,10 @@ const Slider = ({
       setScrollPos({ isStart: true, isEnd: true });
     } else if (
       scrollPosition >=
-      (containerRef.current?.scrollWidth ?? 0) - clientWidth
+      (containerRef.current?.scrollWidth ?? 0) - clientWidth - margin
     ) {
       setScrollPos({ isStart: false, isEnd: true });
-    } else if (scrollPosition > 0) {
+    } else if (scrollPosition > margin) {
       setScrollPos({ isStart: false, isEnd: false });
     } else {
       setScrollPos({ isStart: true, isEnd: false });
@@ -83,14 +84,9 @@ const Slider = ({
   const [, setX] = useSpring(() => ({
     from: { x: 0 },
     to: { x: 0 },
-    onChange: (results) => {
-      if (containerRef.current) {
-        containerRef.current.scrollLeft = results.value.x;
-      }
-    },
   }));
 
-  const slide = (direction: Direction) => {
+  const slide = async (direction: Direction) => {
     const clientWidth =
       containerRef.current?.getBoundingClientRect().width ?? 0;
     const cardWidth =
@@ -105,7 +101,7 @@ const Slider = ({
         scrollPosition - scrollOffset - visibleItems * cardWidth,
         0
       );
-      setX.start({
+      await setX.start({
         from: { x: scrollPosition },
         to: { x: newX },
         onChange: (results) => {
@@ -115,7 +111,7 @@ const Slider = ({
         },
         reset: true,
         config: { friction: 60, tension: 500, velocity: 20 },
-      });
+      })[0];
 
       if (newX === 0) {
         setScrollPos({ isStart: true, isEnd: false });
@@ -127,7 +123,7 @@ const Slider = ({
         scrollPosition - scrollOffset + visibleItems * cardWidth,
         containerRef.current?.scrollWidth ?? 0 - clientWidth
       );
-      setX.start({
+      await setX.start({
         from: { x: scrollPosition },
         to: { x: newX },
         onChange: (results) => {
@@ -137,7 +133,7 @@ const Slider = ({
         },
         reset: true,
         config: { friction: 60, tension: 500, velocity: 20 },
-      });
+      })[0];
 
       if (newX >= (containerRef.current?.scrollWidth ?? 0) - clientWidth) {
         setScrollPos({ isStart: false, isEnd: true });

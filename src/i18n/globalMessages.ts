@@ -36,6 +36,8 @@ const globalMessages = defineMessages('i18n', {
   saving: 'Saving…',
   import: 'Import',
   importing: 'Importing…',
+  sync: 'Sync',
+  syncing: 'Syncing…',
   close: 'Close',
   edit: 'Edit',
   areyousure: 'Are you sure?',
@@ -70,6 +72,7 @@ const globalMessages = defineMessages('i18n', {
   addToBlocklist: 'Add to Blocklist',
   removefromBlocklist: 'Remove from Blocklist',
   specials: 'Specials',
+  notificationLocale: 'Notification Language',
 });
 
 export default globalMessages;

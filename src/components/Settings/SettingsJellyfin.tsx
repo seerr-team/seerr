@@ -4,6 +4,7 @@ import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import SensitiveInput from '@app/components/Common/SensitiveInput';
 import LibraryItem from '@app/components/Settings/LibraryItem';
 import useSettings from '@app/hooks/useSettings';
+import useToasts from '@app/hooks/useToasts';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { isValidURL } from '@app/utils/urlValidationHelper';
@@ -15,7 +16,6 @@ import axios from 'axios';
 import { Field, Formik } from 'formik';
 import { useState } from 'react';
 import { FormattedMessage, useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
 import * as Yup from 'yup';
 
@@ -47,6 +47,9 @@ const messages = defineMessages('components.Settings', {
     'Custom authentication with Automatic Library Grouping not supported',
   jellyfinSyncFailedGenericError:
     'Something went wrong while syncing libraries',
+  jellyfinSyncFailedConnectionError:
+    'Unable to reach the {mediaServerName} server. Check that it is running and reachable from Seerr.',
+  toggleLibraryFailure: 'Failed to update library.',
   invalidurlerror: 'Unable to connect to {mediaServerName} server.',
   syncing: 'Syncing',
   syncJellyfin: 'Sync Libraries',
@@ -85,16 +88,12 @@ interface SyncStatus {
 
 interface SettingsJellyfinProps {
   isSetupSettings?: boolean;
-  onComplete?: () => void;
 }
 
 const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
-  onComplete,
   isSetupSettings,
 }) => {
   const [isSyncing, setIsSyncing] = useState(false);
-  const toasts = useToasts();
-
   const {
     data,
     error,
@@ -103,7 +102,7 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
   const { data: dataSync, mutate: revalidateSync } = useSWR<SyncStatus>(
     '/api/v1/settings/jellyfin/sync',
     {
-      refreshInterval: 1000,
+      refreshInterval: (latestData) => (latestData?.running ? 1000 : 10000),
     }
   );
   const intl = useIntl();
@@ -116,13 +115,15 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
       .required(intl.formatMessage(messages.validationHostnameRequired)),
     port: Yup.number().when(['hostname'], {
       is: (value: unknown) => !!value,
-      then: Yup.number()
-        .typeError(intl.formatMessage(messages.validationPortRequired))
-        .nullable()
-        .required(intl.formatMessage(messages.validationPortRequired)),
-      otherwise: Yup.number()
-        .typeError(intl.formatMessage(messages.validationPortRequired))
-        .nullable(),
+      then: (schema) =>
+        schema
+          .typeError(intl.formatMessage(messages.validationPortRequired))
+          .nullable()
+          .required(intl.formatMessage(messages.validationPortRequired)),
+      otherwise: (schema) =>
+        schema
+          .typeError(intl.formatMessage(messages.validationPortRequired))
+          .nullable(),
     }),
     urlBase: Yup.string()
       .test(
@@ -161,23 +162,13 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
   const syncLibraries = async () => {
     setIsSyncing(true);
 
-    const params: { sync: boolean; enable?: string } = {
-      sync: true,
-    };
-
-    if (activeLibraries.length > 0) {
-      params.enable = activeLibraries.join(',');
-    }
-
     try {
-      await axios.get('/api/v1/settings/jellyfin/library', {
-        params,
-      });
+      await axios.post('/api/v1/settings/jellyfin/library/sync');
       setIsSyncing(false);
       revalidate();
     } catch (e) {
       if (e?.response?.data?.message === 'SYNC_ERROR_GROUPED_FOLDERS') {
-        toasts.addToast(
+        addToast(
           intl.formatMessage(
             messages.jellyfinSyncFailedAutomaticGroupedFolders
           ),
@@ -186,8 +177,21 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
             appearance: 'warning',
           }
         );
+      } else if (e?.response?.data?.message === 'CONNECTION_ERROR') {
+        addToast(
+          intl.formatMessage(messages.jellyfinSyncFailedConnectionError, {
+            mediaServerName:
+              settings.currentSettings.mediaServerType === MediaServerType.EMBY
+                ? 'Emby'
+                : 'Jellyfin',
+          }),
+          {
+            autoDismiss: true,
+            appearance: 'error',
+          }
+        );
       } else if (e?.response?.data?.message === 'SYNC_ERROR_NO_LIBRARIES') {
-        toasts.addToast(
+        addToast(
           intl.formatMessage(messages.jellyfinSyncFailedNoLibrariesFound),
           {
             autoDismiss: true,
@@ -195,13 +199,10 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
           }
         );
       } else {
-        toasts.addToast(
-          intl.formatMessage(messages.jellyfinSyncFailedGenericError),
-          {
-            autoDismiss: true,
-            appearance: 'error',
-          }
-        );
+        addToast(intl.formatMessage(messages.jellyfinSyncFailedGenericError), {
+          autoDismiss: true,
+          appearance: 'error',
+        });
       }
       setIsSyncing(false);
       revalidate();
@@ -224,30 +225,19 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
 
   const toggleLibrary = async (libraryId: string) => {
     setIsSyncing(true);
-    if (activeLibraries.includes(libraryId)) {
-      const params: { enable?: string } = {};
-
-      if (activeLibraries.length > 1) {
-        params.enable = activeLibraries
-          .filter((id) => id !== libraryId)
-          .join(',');
-      }
-
-      await axios.get('/api/v1/settings/jellyfin/library', {
-        params,
+    try {
+      await axios.put(`/api/v1/settings/jellyfin/library/${libraryId}`, {
+        enabled: !activeLibraries.includes(libraryId),
       });
-    } else {
-      await axios.get('/api/v1/settings/jellyfin/library', {
-        params: {
-          enable: [...activeLibraries, libraryId].join(','),
-        },
+    } catch {
+      addToast(intl.formatMessage(messages.toggleLibraryFailure), {
+        autoDismiss: true,
+        appearance: 'error',
       });
+    } finally {
+      setIsSyncing(false);
+      revalidate();
     }
-    if (onComplete) {
-      onComplete();
-    }
-    setIsSyncing(false);
-    revalidate();
   };
 
   if (!data && !error) {

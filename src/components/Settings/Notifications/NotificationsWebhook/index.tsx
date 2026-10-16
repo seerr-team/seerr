@@ -2,6 +2,7 @@ import Button from '@app/components/Common/Button';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import NotificationTypeSelector from '@app/components/NotificationTypeSelector';
 import SettingsBadge from '@app/components/Settings/SettingsBadge';
+import useToasts from '@app/hooks/useToasts';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { isValidURL } from '@app/utils/urlValidationHelper';
@@ -21,7 +22,6 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useState } from 'react';
 import { useIntl } from 'react-intl';
-import { useToasts } from 'react-toast-notifications';
 import useSWR from 'swr';
 import * as Yup from 'yup';
 
@@ -37,6 +37,7 @@ const defaultPayload = {
   image: '{{image}}',
   '{{media}}': {
     media_type: '{{media_type}}',
+    imdbId: '{{media_imdbid}}',
     tmdbId: '{{media_tmdbid}}',
     tvdbId: '{{media_tvdbid}}',
     jellyfinMediaId: '{{media_jellyfinMediaId}}',
@@ -49,7 +50,7 @@ const defaultPayload = {
     requestedBy_username: '{{requestedBy_username}}',
     requestedBy_avatar: '{{requestedBy_avatar}}',
     requestedBy_jellyfinUserId: '{{requestedBy_jellyfinUserId}}',
-    requestedBy_settings_discordId: '{{requestedBy_settings_discordId}}',
+    requestedBy_settings_discordIds: '{{requestedBy_settings_discordIds}}',
     requestedBy_settings_telegramChatId:
       '{{requestedBy_settings_telegramChatId}}',
   },
@@ -60,7 +61,7 @@ const defaultPayload = {
     reportedBy_email: '{{reportedBy_email}}',
     reportedBy_username: '{{reportedBy_username}}',
     reportedBy_avatar: '{{reportedBy_avatar}}',
-    reportedBy_settings_discordId: '{{reportedBy_settings_discordId}}',
+    reportedBy_settings_discordIds: '{{reportedBy_settings_discordIds}}',
     reportedBy_settings_telegramChatId:
       '{{reportedBy_settings_telegramChatId}}',
   },
@@ -69,7 +70,7 @@ const defaultPayload = {
     commentedBy_email: '{{commentedBy_email}}',
     commentedBy_username: '{{commentedBy_username}}',
     commentedBy_avatar: '{{commentedBy_avatar}}',
-    commentedBy_settings_discordId: '{{commentedBy_settings_discordId}}',
+    commentedBy_settings_discordIds: '{{commentedBy_settings_discordIds}}',
     commentedBy_settings_telegramChatId:
       '{{commentedBy_settings_telegramChatId}}',
   },
@@ -126,10 +127,11 @@ const NotificationsWebhook = () => {
     webhookUrl: Yup.string()
       .when('enabled', {
         is: true,
-        then: Yup.string()
-          .nullable()
-          .required(intl.formatMessage(messages.validationWebhookUrl)),
-        otherwise: Yup.string().nullable(),
+        then: (schema) =>
+          schema
+            .nullable()
+            .required(intl.formatMessage(messages.validationWebhookUrl)),
+        otherwise: (schema) => schema.nullable(),
       })
       .test(
         'valid-url',
@@ -182,10 +184,13 @@ const NotificationsWebhook = () => {
     jsonPayload: Yup.string()
       .when('enabled', {
         is: true,
-        then: Yup.string()
-          .nullable()
-          .required(intl.formatMessage(messages.validationJsonPayloadRequired)),
-        otherwise: Yup.string().nullable(),
+        then: (schema) =>
+          schema
+            .nullable()
+            .required(
+              intl.formatMessage(messages.validationJsonPayloadRequired)
+            ),
+        otherwise: (schema) => schema.nullable(),
       })
       .test(
         'validate-json',
@@ -224,7 +229,7 @@ const NotificationsWebhook = () => {
             types: values.types,
             options: {
               webhookUrl: values.webhookUrl,
-              jsonPayload: JSON.stringify(values.jsonPayload),
+              jsonPayload: values.jsonPayload,
               authHeader: values.authHeader,
               customHeaders: (values.customHeaders ?? [])
                 .map((h: { key: string; value: string }) => ({
@@ -291,7 +296,7 @@ const NotificationsWebhook = () => {
               types: values.types,
               options: {
                 webhookUrl: values.webhookUrl,
-                jsonPayload: JSON.stringify(values.jsonPayload),
+                jsonPayload: values.jsonPayload,
                 authHeader: values.authHeader,
                 customHeaders: (values.customHeaders ?? [])
                   .map((h: { key: string; value: string }) => ({
