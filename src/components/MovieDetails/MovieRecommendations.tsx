@@ -2,6 +2,8 @@ import Header from '@app/components/Common/Header';
 import ListView from '@app/components/Common/ListView';
 import PageTitle from '@app/components/Common/PageTitle';
 import useDiscover from '@app/hooks/useDiscover';
+import useFilterByLanguages from '@app/hooks/useFilterByLanguages';
+import { FilterByLanguage } from '@app/types/filters';
 import ErrorPage from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
 import type { MovieDetails } from '@server/models/Movie';
@@ -33,6 +35,13 @@ const MovieRecommendations = () => {
     `/api/v1/movie/${router.query.movieId}/recommendations`
   );
 
+  const filteredTitles = useFilterByLanguages({
+    titles,
+    movie: true,
+    tv: false,
+    key: FilterByLanguage.MOVIE_RECOMMENDATIONS,
+  });
+
   if (error) {
     return <ErrorPage statusCode={500} />;
   }
@@ -54,11 +63,12 @@ const MovieRecommendations = () => {
         </Header>
       </div>
       <ListView
-        items={titles}
+        items={filteredTitles}
         isEmpty={isEmpty}
         isReachingEnd={isReachingEnd}
         isLoading={
-          isLoadingInitialData || (isLoadingMore && (titles?.length ?? 0) > 0)
+          isLoadingInitialData ||
+          (isLoadingMore && (filteredTitles?.length ?? 0) > 0)
         }
         onScrollBottom={fetchMore}
       />
