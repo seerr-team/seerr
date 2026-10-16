@@ -1,4 +1,5 @@
 import Spinner from '@app/assets/spinner.svg';
+import useSettings from '@app/hooks/useSettings';
 import { CheckCircleIcon } from '@heroicons/react/20/solid';
 import {
   BellIcon,
@@ -15,6 +16,8 @@ interface StatusBadgeMiniProps {
   inProgress?: boolean;
   // Should the badge shrink on mobile to a smaller size? (TitleCard)
   shrink?: boolean;
+  // false = available on the shared server, but not requested by the viewer
+  requestedByUser?: boolean;
 }
 
 const StatusBadgeMini = ({
@@ -22,7 +25,25 @@ const StatusBadgeMini = ({
   is4k = false,
   inProgress = false,
   shrink = false,
+  requestedByUser,
 }: StatusBadgeMiniProps) => {
+  const settings = useSettings();
+  const isOtherUserAvailability =
+    requestedByUser === false &&
+    (status === MediaStatus.AVAILABLE ||
+      status === MediaStatus.PARTIALLY_AVAILABLE ||
+      status === MediaStatus.PROCESSING);
+  const availableByOtherUser =
+    isOtherUserAvailability &&
+    settings.currentSettings.otherUserAvailability === 'distinguish';
+  const hiddenForOtherUser =
+    isOtherUserAvailability &&
+    settings.currentSettings.otherUserAvailability === 'hide';
+
+  if (hiddenForOtherUser) {
+    return null;
+  }
+
   const badgeStyle = [
     `rounded-full shadow-md ${
       shrink ? 'w-4 sm:w-5 border p-0' : 'w-5 ring-1 p-0.5'
@@ -34,13 +55,17 @@ const StatusBadgeMini = ({
   switch (status) {
     case MediaStatus.PROCESSING:
       badgeStyle.push(
-        'bg-indigo-500/80 border-indigo-400 ring-indigo-400 text-indigo-100'
+        availableByOtherUser
+          ? 'bg-purple-500/80 border-purple-400 ring-purple-400 text-purple-100'
+          : 'bg-indigo-500/80 border-indigo-400 ring-indigo-400 text-indigo-100'
       );
       indicatorIcon = <ClockIcon />;
       break;
     case MediaStatus.AVAILABLE:
       badgeStyle.push(
-        'bg-green-500/80 border-green-400 ring-green-400 text-green-100'
+        availableByOtherUser
+          ? 'bg-purple-500/80 border-purple-400 ring-purple-400 text-purple-100'
+          : 'bg-green-500/80 border-green-400 ring-green-400 text-green-100'
       );
       indicatorIcon = <CheckCircleIcon />;
       break;
@@ -56,7 +81,9 @@ const StatusBadgeMini = ({
       break;
     case MediaStatus.PARTIALLY_AVAILABLE:
       badgeStyle.push(
-        'bg-green-500/80 border-green-400 ring-green-400 text-green-100'
+        availableByOtherUser
+          ? 'bg-purple-500/80 border-purple-400 ring-purple-400 text-purple-100'
+          : 'bg-green-500/80 border-green-400 ring-green-400 text-green-100'
       );
       indicatorIcon = <MinusSmallIcon />;
       break;
