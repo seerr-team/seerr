@@ -1,4 +1,4 @@
-import type { AllSettings, NetworkSettings } from '@server/lib/settings';
+import type { AllSettings, NetworkSettings } from '@server/interfaces/settings';
 import { getSettings } from '@server/lib/settings';
 
 class RestartFlag {
