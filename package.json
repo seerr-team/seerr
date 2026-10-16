@@ -64,7 +64,7 @@
     "formik": "^2.4.9",
     "gravatar-url": "4.0.1",
     "http-proxy-agent": "^7.0.2",
-    "https-proxy-agent": "^7.0.6",
+    "https-proxy-agent": "^9.0.0",
     "humanize-duration": "^3.33.2",
     "js-yaml": "^4.1.1",
     "lodash": "4.18.1",
