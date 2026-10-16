@@ -139,58 +139,6 @@ export class MediaSubscriber implements EntitySubscriberInterface<Media> {
       return;
     }
 
-    try {
-      if (
-        event.entity.status === MediaStatus.AVAILABLE &&
-        event.databaseEntity?.status === MediaStatus.PENDING
-      ) {
-        await withNestedTransaction(event.manager, async (manager) => {
-          await this.updateChildRequestStatus(
-            manager,
-            event.entity as Media,
-            false
-          );
-        });
-      }
-    } catch (e) {
-      logger.error(
-        'Error while updating child request status in beforeUpdate subscriber',
-        {
-          label: 'Media',
-          mediaId: event.entity.id,
-          is4k: false,
-          errorMessage: e instanceof Error ? e.message : String(e),
-        }
-      );
-    }
-
-    try {
-      if (
-        event.entity.status4k === MediaStatus.AVAILABLE &&
-        event.databaseEntity?.status4k === MediaStatus.PENDING
-      ) {
-        await withNestedTransaction(event.manager, async (manager) => {
-          await this.updateChildRequestStatus(
-            manager,
-            event.entity as Media,
-            true
-          );
-        });
-      }
-    } catch (e) {
-      logger.error(
-        'Error while updating child request status in beforeUpdate subscriber',
-        {
-          label: 'Media',
-          mediaId: event.entity.id,
-          is4k: true,
-          errorMessage: e instanceof Error ? e.message : String(e),
-        }
-      );
-    }
-
-    // Manually load related seasons into databaseEntity
-    // for seasonStatusCheck in afterUpdate
     const seasons = await event.manager
       .getRepository(Season)
       .createQueryBuilder('season')
@@ -222,6 +170,56 @@ export class MediaSubscriber implements EntitySubscriberInterface<Media> {
         );
       });
     };
+
+    try {
+      if (
+        event.entity.status === MediaStatus.AVAILABLE &&
+        event.databaseEntity?.status === MediaStatus.PENDING
+      ) {
+        await withNestedTransaction(event.manager, async (manager) => {
+          await this.updateChildRequestStatus(
+            manager,
+            event.entity as Media,
+            false
+          );
+        });
+      }
+    } catch (e) {
+      logger.error(
+        'Error while updating child request status in afterUpdate subscriber',
+        {
+          label: 'Media',
+          mediaId: event.entity.id,
+          is4k: false,
+          errorMessage: e instanceof Error ? e.message : String(e),
+        }
+      );
+    }
+
+    try {
+      if (
+        event.entity.status4k === MediaStatus.AVAILABLE &&
+        event.databaseEntity?.status4k === MediaStatus.PENDING
+      ) {
+        await withNestedTransaction(event.manager, async (manager) => {
+          await this.updateChildRequestStatus(
+            manager,
+            event.entity as Media,
+            true
+          );
+        });
+      }
+    } catch (e) {
+      logger.error(
+        'Error while updating child request status in afterUpdate subscriber',
+        {
+          label: 'Media',
+          mediaId: event.entity.id,
+          is4k: true,
+          errorMessage: e instanceof Error ? e.message : String(e),
+        }
+      );
+    }
 
     try {
       if (
