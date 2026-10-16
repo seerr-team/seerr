@@ -211,6 +211,7 @@ router.post(
         permissions: settings.main.defaultPermissions,
         plexToken: '',
         userType: UserType.LOCAL,
+        phoneNumber: body.phoneNumber,
       });
 
       if (passedExplicitPassword) {
