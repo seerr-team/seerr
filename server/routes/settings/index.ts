@@ -31,6 +31,7 @@ import { appDataPath } from '@server/utils/appDataVolume';
 import { getAppVersion } from '@server/utils/appVersion';
 import { dnsCache } from '@server/utils/dnsCache';
 import { getHostname } from '@server/utils/getHostname';
+import { sanitizeIgnoredPathPatterns } from '@server/utils/ignoredPathPatterns';
 import type { DnsEntries, DnsStats } from 'dns-caching';
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
@@ -63,7 +64,7 @@ const filteredMainSettings = (
   main: MainSettings
 ): Partial<MainSettings> => {
   if (!user?.hasPermission(Permission.ADMIN)) {
-    return omit(main, 'apiKey');
+    return omit(main, 'apiKey', 'ignoredPathPatterns');
   }
 
   return main;
@@ -82,7 +83,25 @@ settingsRoutes.get('/main', (req, res, next) => {
 settingsRoutes.post('/main', async (req, res) => {
   const settings = getSettings();
 
-  settings.main = merge(settings.main, req.body);
+  const { ignoredPathPatterns, ...rest } = req.body;
+  settings.main = merge(settings.main, rest);
+
+  // merge() does not replace arrays (merges by index), so explicitly replace when present
+  if (Array.isArray(ignoredPathPatterns)) {
+    const { cleaned, rejected } = sanitizeIgnoredPathPatterns(
+      ignoredPathPatterns as unknown[]
+    );
+
+    if (rejected.length > 0) {
+      logger.warn(
+        `Ignored invalid or unsafe regex pattern(s) in ignoredPathPatterns: ${rejected.join(', ')}`,
+        { label: 'Settings' }
+      );
+    }
+
+    settings.main.ignoredPathPatterns = cleaned;
+  }
+
   await settings.save();
 
   return res.status(200).json(settings.main);
