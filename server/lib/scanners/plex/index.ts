@@ -230,32 +230,38 @@ class PlexScanner
   private async processPlexMovie(plexitem: PlexLibraryItem) {
     const mediaIds = await this.getMediaIds(plexitem);
 
-    const has4k = plexitem.Media.some(
-      (media) => media.videoResolution === '4k'
-    );
-
-    await this.processMovie(mediaIds.tmdbId, {
-      is4k: has4k && this.enable4kMovie,
-      mediaAddedAt: new Date(plexitem.addedAt * 1000),
-      ratingKey: plexitem.ratingKey,
-      title: plexitem.title,
-    });
+    await this.processPlexMovieByTmdbId(plexitem, mediaIds.tmdbId);
   }
 
   private async processPlexMovieByTmdbId(
-    plexitem: PlexMetadata,
+    plexitem: PlexLibraryItem | PlexMetadata,
     tmdbId: number
   ) {
-    const has4k = plexitem.Media.some(
-      (media) => media.videoResolution === '4k'
+    const has4k =
+      this.enable4kMovie &&
+      plexitem.Media.some((media) => media.videoResolution === '4k');
+    const hasStandard = plexitem.Media.some(
+      (media) => media.videoResolution !== '4k'
     );
-
-    await this.processMovie(tmdbId, {
-      is4k: has4k && this.enable4kMovie,
+    const details = {
       mediaAddedAt: new Date(plexitem.addedAt * 1000),
       ratingKey: plexitem.ratingKey,
       title: plexitem.title,
-    });
+    };
+
+    if (hasStandard || !has4k) {
+      await this.processMovie(tmdbId, {
+        is4k: false,
+        ...details,
+      });
+    }
+
+    if (has4k) {
+      await this.processMovie(tmdbId, {
+        is4k: true,
+        ...details,
+      });
+    }
   }
 
   private async getTvShow({
