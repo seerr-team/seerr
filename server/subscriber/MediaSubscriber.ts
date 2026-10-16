@@ -225,7 +225,7 @@ export class MediaSubscriber implements EntitySubscriberInterface<Media> {
 
     try {
       if (
-        (event.entity.status !== event.databaseEntity?.status ||
+        (event.entity.status !== event.databaseEntity.status ||
           (event.entity.mediaType === MediaType.TV &&
             seasonStatusCheck(false))) &&
         validStatuses.includes(event.entity.status)
@@ -253,7 +253,7 @@ export class MediaSubscriber implements EntitySubscriberInterface<Media> {
 
     try {
       if (
-        (event.entity.status4k !== event.databaseEntity?.status4k ||
+        (event.entity.status4k !== event.databaseEntity.status4k ||
           (event.entity.mediaType === MediaType.TV &&
             seasonStatusCheck(true))) &&
         validStatuses.includes(event.entity.status4k)
