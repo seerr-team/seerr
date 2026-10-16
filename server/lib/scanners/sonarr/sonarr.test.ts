@@ -857,6 +857,34 @@ describe('Sonarr Scanner', () => {
       assert.strictEqual(updatedRequest.status, MediaRequestStatus.APPROVED);
     });
 
+    it('does not treat a show as orphaned when Sonarr carries it under a different tvdb id', async () => {
+      const request = await seedShowRequest(
+        2003,
+        610,
+        MediaStatus.PROCESSING,
+        [MediaStatus.PROCESSING],
+        [1]
+      );
+
+      configureSonarr([{ syncEnabled: true }]);
+      getSeriesImpl = async () => [
+        fakeSonarrSeries({ tvdbId: 611, seasons: [sonarrSeason(1, true, 0)] }),
+      ];
+      getShowByTvdbIdImpl = async () => fakeTmdbShow(2003);
+
+      await runWithMockTimers(() => sonarrScanner.run());
+
+      const media = await getRepository(Media).findOneOrFail({
+        where: { tmdbId: 2003 },
+      });
+      const updatedRequest = await getRepository(MediaRequest).findOneOrFail({
+        where: { id: request.id },
+      });
+
+      assert.strictEqual(media.status, MediaStatus.PROCESSING);
+      assert.strictEqual(updatedRequest.status, MediaRequestStatus.APPROVED);
+    });
+
     it('skips cleanup and leaves the request approved when Sonarr returns an empty list', async () => {
       const mediaRepository = getRepository(Media);
       const requestRepository = getRepository(MediaRequest);
