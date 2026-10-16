@@ -6765,6 +6765,32 @@ paths:
           schema:
             type: string
             example: '1'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tvdbId:
+                  type: number
+                  example: 184871
+                seasonOverrides:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - seasonNumber
+                      - dispatchedSeasonNumber
+                    properties:
+                      seasonNumber:
+                        type: integer
+                        minimum: 0
+                        example: 8
+                      dispatchedSeasonNumber:
+                        type: integer
+                        minimum: 0
+                        example: 15
       responses:
         '200':
           description: Retry triggered
@@ -7581,6 +7607,36 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/SonarrSeries'
+  /service/tvdb/{tvdbId}/seasons:
+    get:
+      summary: Get official seasons from TheTVDB
+      description: Returns the official season numbers and years for a TheTVDB series.
+      tags:
+        - service
+      parameters:
+        - in: path
+          name: tvdbId
+          required: true
+          schema:
+            type: number
+            example: 0
+      responses:
+        '200':
+          description: Request successful
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    seasonNumber:
+                      type: number
+                      example: 1
+                    year:
+                      type: number
+                      nullable: true
+                      example: 2010
   /regions:
     get:
       summary: Regions supported by TMDB
