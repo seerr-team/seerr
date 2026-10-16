@@ -25,7 +25,7 @@ const DownloadBlock = ({
 
   return (
     <div className="p-4">
-      <div className="mb-2 w-56 truncate text-sm sm:w-80 md:w-full">
+      <div className="mb-2 w-full truncate text-sm">
         {hasPermission(Permission.ADMIN)
           ? downloadItem.title
           : downloadItem.episode
