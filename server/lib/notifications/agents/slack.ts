@@ -1,13 +1,23 @@
 import { IssueStatus, IssueTypeName } from '@server/constants/issue';
+import { SLACK_USER_ID_REGEX } from '@server/constants/slack';
+import { getRepository } from '@server/datasource';
+import { User } from '@server/entity/User';
 import { getIntl } from '@server/i18n';
 import globalMessages from '@server/i18n/globalMessages';
 import type { NotificationAgentSlack } from '@server/lib/settings';
-import { getSettings } from '@server/lib/settings';
+import { NotificationAgentKey, getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import axios from 'axios';
-import { Notification, hasNotificationType } from '..';
+import {
+  Notification,
+  hasNotificationType,
+  shouldSendAdminNotification,
+} from '..';
 import type { NotificationAgent, NotificationPayload } from './agent';
 import { BaseAgent } from './agent';
+
+const isValidSlackUserId = (id: string): boolean =>
+  SLACK_USER_ID_REGEX.test(id);
 
 interface EmbedField {
   type: 'plain_text' | 'mrkdwn';
@@ -47,6 +57,11 @@ interface SlackBlockEmbed {
   blocks: EmbedBlock[];
 }
 
+interface SlackMentions {
+  notifyUser: string[];
+  admin: string[];
+}
+
 class SlackAgent
   extends BaseAgent<NotificationAgentSlack>
   implements NotificationAgent
@@ -63,7 +78,8 @@ class SlackAgent
 
   public buildEmbed(
     type: Notification,
-    payload: NotificationPayload
+    payload: NotificationPayload,
+    mentions: SlackMentions = { notifyUser: [], admin: [] }
   ): SlackBlockEmbed {
     const settings = this.getSettings();
     const intl = getIntl(settings.options.locale);
@@ -72,10 +88,24 @@ class SlackAgent
 
     const fields: EmbedField[] = [];
 
+    const notifyUserMention = mentions.notifyUser.join(' ');
+    let notifyUserMentionInlined = false;
+
     if (payload.request) {
+      if (
+        notifyUserMention &&
+        payload.notifyUser?.id === payload.request.requestedBy.id
+      ) {
+        notifyUserMentionInlined = true;
+      }
+
       fields.push({
         type: 'mrkdwn',
-        text: `*${intl.formatMessage(globalMessages.requestedBy)}*\n${payload.request.requestedBy.displayName}`,
+        text: `*${intl.formatMessage(globalMessages.requestedBy)}*\n${
+          notifyUserMentionInlined
+            ? notifyUserMention
+            : payload.request.requestedBy.displayName
+        }`,
       });
 
       let status = '';
@@ -110,10 +140,21 @@ class SlackAgent
         text: `*${intl.formatMessage(globalMessages.commentFrom, { userName: payload.comment.user.displayName })}*\n${payload.comment.message}`,
       });
     } else if (payload.issue) {
+      if (
+        notifyUserMention &&
+        payload.notifyUser?.id === payload.issue.createdBy.id
+      ) {
+        notifyUserMentionInlined = true;
+      }
+
       fields.push(
         {
           type: 'mrkdwn',
-          text: `*${intl.formatMessage(globalMessages.reportedBy)}*\n${payload.issue.createdBy.displayName}`,
+          text: `*${intl.formatMessage(globalMessages.reportedBy)}*\n${
+            notifyUserMentionInlined
+              ? notifyUserMention
+              : payload.issue.createdBy.displayName
+          }`,
         },
         {
           type: 'mrkdwn',
@@ -184,6 +225,23 @@ class SlackAgent
       });
     }
 
+    const remainingMentions = [
+      ...(notifyUserMentionInlined ? [] : mentions.notifyUser),
+      ...mentions.admin,
+    ];
+
+    if (remainingMentions.length > 0) {
+      blocks.push({
+        type: 'context',
+        elements: [
+          {
+            type: 'mrkdwn',
+            text: remainingMentions.join(' '),
+          },
+        ],
+      });
+    }
+
     const url = applicationUrl
       ? payload.issue
         ? `${applicationUrl}/issues/${payload.issue.id}`
@@ -248,10 +306,53 @@ class SlackAgent
       type: Notification[type],
       subject: payload.subject,
     });
+
+    const mentions: SlackMentions = { notifyUser: [], admin: [] };
+
     try {
+      if (settings.options.enableMentions) {
+        if (payload.notifyUser) {
+          if (
+            payload.notifyUser.settings?.hasNotificationType(
+              NotificationAgentKey.SLACK,
+              type
+            ) &&
+            payload.notifyUser.settings.slackIds?.length
+          ) {
+            const validIds = payload.notifyUser.settings.slackIds.filter((id) =>
+              isValidSlackUserId(id)
+            );
+            mentions.notifyUser.push(...validIds.map((id) => `<@${id}>`));
+          }
+        }
+
+        if (payload.notifyAdmin) {
+          const userRepository = getRepository(User);
+          const users = await userRepository.find();
+
+          mentions.admin.push(
+            ...users
+              .filter(
+                (user) =>
+                  user.settings?.hasNotificationType(
+                    NotificationAgentKey.SLACK,
+                    type
+                  ) &&
+                  user.settings.slackIds?.length &&
+                  shouldSendAdminNotification(type, user, payload)
+              )
+              .flatMap((user) =>
+                user
+                  .settings!.slackIds.filter((id) => isValidSlackUserId(id))
+                  .map((id) => `<@${id}>`)
+              )
+          );
+        }
+      }
+
       await axios.post(
         settings.options.webhookUrl,
-        this.buildEmbed(type, payload)
+        this.buildEmbed(type, payload, mentions)
       );
 
       return true;
