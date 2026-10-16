@@ -212,6 +212,27 @@ class Media {
   @Column({ nullable: true, type: 'varchar' })
   public ratingKey4k?: string | null;
 
+  @Column({
+    type: 'text',
+    nullable: true,
+    transformer: {
+      from: (value: string | null): string[] | null => {
+        if (value == null) {
+          return null;
+        }
+        try {
+          const parsed = JSON.parse(value);
+          return Array.isArray(parsed) ? parsed : null;
+        } catch {
+          return null;
+        }
+      },
+      to: (value: string[] | null): string | null =>
+        value == null ? null : JSON.stringify(value),
+    },
+  })
+  public plexRatingKeys?: string[] | null;
+
   @Column({ nullable: true, type: 'varchar' })
   public jellyfinMediaId?: string | null;
 
@@ -237,6 +258,36 @@ class Media {
     Object.assign(this, init);
   }
 
+  public addPlexRatingKey(ratingKey?: string | null): boolean {
+    if (!ratingKey) {
+      return false;
+    }
+
+    const keys = this.getPlexRatingKeys();
+    if (keys.includes(ratingKey)) {
+      if (this.plexRatingKeys != null) {
+        return false;
+      }
+      this.plexRatingKeys = keys;
+      return true;
+    }
+
+    this.plexRatingKeys = [...keys, ratingKey];
+    return true;
+  }
+
+  public getPlexRatingKeys(): string[] {
+    if (this.plexRatingKeys) {
+      return this.plexRatingKeys;
+    }
+
+    return [
+      ...new Set(
+        [this.ratingKey, this.ratingKey4k].filter((key): key is string => !!key)
+      ),
+    ];
+  }
+
   public resetServiceData(is4k?: boolean): void {
     if (is4k === undefined || !is4k) {
       this.serviceId = null;
@@ -251,6 +302,9 @@ class Media {
       this.externalServiceSlug4k = null;
       this.ratingKey4k = null;
       this.jellyfinMediaId4k = null;
+    }
+    if (is4k === undefined) {
+      this.plexRatingKeys = null;
     }
   }
 
