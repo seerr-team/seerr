@@ -9,6 +9,10 @@ import type { MediaRequestBody } from '@server/interfaces/api/requestInterfaces'
 import notificationManager, { Notification } from '@server/lib/notifications';
 import overrideRules from '@server/lib/overrideRules';
 import { Permission } from '@server/lib/permissions';
+import {
+  isAnimeMedia,
+  stripDefaultOverrides,
+} from '@server/lib/serviceDefaults';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { DbAwareColumn, resolveDbType } from '@server/utils/DbColumnHelper';
@@ -262,9 +266,25 @@ export class MediaRequest {
       }
     }
 
-    let rootFolder = requestBody.rootFolder;
-    let profileId = requestBody.profileId;
-    let tags = requestBody.tags;
+    // The modal submits whatever its dropdowns show, so anything matching the
+    // service default is dropped before it can pass for a deliberate override
+    const submitted = stripDefaultOverrides({
+      mediaType: requestBody.mediaType,
+      is4k: requestBody.is4k || false,
+      serviceId: requestBody.serverId,
+      isAnime: isAnimeMedia(tmdbMedia),
+      overrides: {
+        rootFolder: requestBody.rootFolder,
+        profileId: requestBody.profileId,
+        languageProfileId: requestBody.languageProfileId,
+        tags: requestBody.tags,
+      },
+    });
+
+    let rootFolder = submitted.rootFolder ?? undefined;
+    let profileId = submitted.profileId ?? undefined;
+    let tags = submitted.tags ?? undefined;
+    const languageProfileId = submitted.languageProfileId ?? undefined;
 
     const ruleResult = await overrideRules({
       mediaType: requestBody.mediaType,
@@ -460,7 +480,7 @@ export class MediaRequest {
         serverId: requestBody.serverId,
         profileId: profileId,
         rootFolder: rootFolder,
-        languageProfileId: requestBody.languageProfileId,
+        languageProfileId: languageProfileId,
         tags: tags,
         seasons: finalSeasons.map(
           (sn) =>
