@@ -43,6 +43,10 @@ class AvailabilitySync {
 
   private sonarrSeasonsCache: Record<string, SonarrSeason[]>;
   private sonarrEpisodesCache: Record<string, CachedSonarrEpisode[]>;
+  private episodePresenceBySeasonTier: Map<string, Map<number, boolean>>;
+  private episodePresenceCensusBySeasonTier: Set<string>;
+  private episodePresenceFailedBySeasonTier: Set<string>;
+  private episodePresenceUnknownBySeasonTier: Map<string, Set<number>>;
   private radarrServers: RadarrSettings[];
   private sonarrServers: SonarrSettings[];
   private enable4kMovie: boolean;
@@ -60,6 +64,10 @@ class AvailabilitySync {
     this.jellyfinEpisodeExistsCache = {};
     this.sonarrSeasonsCache = {};
     this.sonarrEpisodesCache = {};
+    this.episodePresenceBySeasonTier = new Map();
+    this.episodePresenceCensusBySeasonTier = new Set();
+    this.episodePresenceFailedBySeasonTier = new Set();
+    this.episodePresenceUnknownBySeasonTier = new Map();
     this.radarrServers = settings.radarr;
     this.sonarrServers = settings.sonarr;
     this.enable4kMovie = this.radarrServers.some((server) => server.is4k);
@@ -269,22 +277,35 @@ class AvailabilitySync {
               ? settings.metadataSettings.anime === MetadataProviderType.TVDB
               : settings.metadataSettings.tv === MetadataProviderType.TVDB);
 
+          this.episodePresenceBySeasonTier.clear();
+          this.episodePresenceCensusBySeasonTier.clear();
+          this.episodePresenceFailedBySeasonTier.clear();
+          this.episodePresenceUnknownBySeasonTier.clear();
+
           const { existsInPlex, seasonsMap: plexSeasonsMap = new Map() } =
-            await this.mediaExistsInPlex(media, false);
+            await this.mediaExistsInPlex(media, false, episodeTrackingEnabled);
           const {
             existsInPlex: existsInPlex4k,
             seasonsMap: plexSeasonsMap4k = new Map(),
-          } = await this.mediaExistsInPlex(media, true);
+          } = await this.mediaExistsInPlex(media, true, episodeTrackingEnabled);
 
           //jellyfin
           const {
             existsInJellyfin,
             seasonsMap: jellyfinSeasonsMap = new Map(),
-          } = await this.mediaExistsInJellyfin(media, false);
+          } = await this.mediaExistsInJellyfin(
+            media,
+            false,
+            episodeTrackingEnabled
+          );
           const {
             existsInJellyfin: existsInJellyfin4k,
             seasonsMap: jellyfinSeasonsMap4k = new Map(),
-          } = await this.mediaExistsInJellyfin(media, true);
+          } = await this.mediaExistsInJellyfin(
+            media,
+            true,
+            episodeTrackingEnabled
+          );
 
           const { existsInSonarr, seasonsMap: sonarrSeasonsMap } =
             await this.mediaExistsInSonarr(media, false, shouldTrackEpisodes);
@@ -292,6 +313,10 @@ class AvailabilitySync {
             existsInSonarr: existsInSonarr4k,
             seasonsMap: sonarrSeasonsMap4k,
           } = await this.mediaExistsInSonarr(media, true, shouldTrackEpisodes);
+
+          if (episodeTrackingEnabled || shouldTrackEpisodes) {
+            await this.applyEpisodeDemotions(media);
+          }
 
           //plex
           if (mediaServerType === MediaServerType.PLEX) {
@@ -884,46 +909,12 @@ class AvailabilitySync {
             MediaStatus.PARTIALLY_AVAILABLE
       );
 
-      const dbEpisodesBySeasonId = new Map<number, Episode[]>();
-      if (shouldTrackEpisodes && filteredSeasons.length > 0) {
-        try {
-          const existingEpisodes = await getRepository(Episode).find({
-            where: {
-              season: { id: In(filteredSeasons.map((season) => season.id)) },
-            },
-            relations: ['season'],
-          });
-
-          for (const episode of existingEpisodes) {
-            const episodeSeason = await episode.season;
-            if (!episodeSeason) {
-              continue;
-            }
-            const seasonEpisodes = dbEpisodesBySeasonId.get(episodeSeason.id);
-            if (seasonEpisodes) {
-              seasonEpisodes.push(episode);
-            } else {
-              dbEpisodesBySeasonId.set(episodeSeason.id, [episode]);
-            }
-          }
-        } catch (e) {
-          logger.error(
-            `Failed to load episodes for show [TMDB ID ${media.tmdbId}].`,
-            {
-              errorMessage: e.message,
-              label: 'AvailabilitySync',
-            }
-          );
-        }
-      }
-
       for (const season of filteredSeasons) {
         const seasonExists = await this.seasonExistsInSonarr(
           media,
           season,
           is4k,
-          shouldTrackEpisodes,
-          dbEpisodesBySeasonId
+          shouldTrackEpisodes
         );
 
         if (seasonExists) {
@@ -950,8 +941,7 @@ class AvailabilitySync {
     media: Media,
     season: Season,
     is4k: boolean,
-    shouldTrackEpisodes: boolean,
-    dbEpisodesBySeasonId: Map<number, Episode[]>
+    shouldTrackEpisodes: boolean
   ): Promise<boolean> {
     let seasonExists = false;
     const episodeHasFileByNumber = new Map<number, boolean>();
@@ -1008,86 +998,250 @@ class AvailabilitySync {
     }
 
     if (shouldTrackEpisodes && hasEpisodeCache) {
-      const existingEpisodes = dbEpisodesBySeasonId.get(season.id) ?? [];
-      const toSave: Episode[] = [];
-      const toRemove: Episode[] = [];
-
-      for (const existingEpisode of existingEpisodes) {
-        const hasFile = episodeHasFileByNumber.get(
-          existingEpisode.episodeNumber
-        );
-        const currentStatus = existingEpisode[is4k ? 'status4k' : 'status'];
-        const oppositeStatus = existingEpisode[is4k ? 'status' : 'status4k'];
-        const oppositeActive =
-          oppositeStatus !== MediaStatus.DELETED &&
-          oppositeStatus !== MediaStatus.UNKNOWN;
-
-        if (!episodeHasFileByNumber.has(existingEpisode.episodeNumber)) {
-          // only drop the row when neither standard nor 4K is still active
-          if (oppositeActive) {
-            if (
-              currentStatus !== MediaStatus.DELETED &&
-              currentStatus !== MediaStatus.UNKNOWN
-            ) {
-              existingEpisode[is4k ? 'status4k' : 'status'] =
-                MediaStatus.DELETED;
-              toSave.push(existingEpisode);
-            }
-          } else {
-            toRemove.push(existingEpisode);
-          }
-        } else if (
-          hasFile !== true &&
-          currentStatus !== MediaStatus.DELETED &&
-          currentStatus !== MediaStatus.UNKNOWN
-        ) {
-          existingEpisode[is4k ? 'status4k' : 'status'] = MediaStatus.DELETED;
-          toSave.push(existingEpisode);
-        }
-      }
-
-      const episodeRepository = getRepository(Episode);
-
-      if (toRemove.length > 0) {
-        try {
-          await episodeRepository.remove(toRemove);
-          dbEpisodesBySeasonId.set(
-            season.id,
-            existingEpisodes.filter((episode) => !toRemove.includes(episode))
-          );
-        } catch (e) {
-          logger.debug(
-            `Failed to remove obsolete episodes for show [TMDB ID ${media.tmdbId}] season ${season.seasonNumber}.`,
-            {
-              errorMessage: e.message,
-              label: 'AvailabilitySync',
-            }
-          );
-        }
-      }
-
-      if (toSave.length > 0) {
-        try {
-          await episodeRepository.save(toSave);
-        } catch (e) {
-          logger.error(
-            `Failed to soft-remove episodes for show [TMDB ID ${media.tmdbId}] season ${season.seasonNumber}.`,
-            {
-              errorMessage: e.message,
-              label: 'AvailabilitySync',
-            }
-          );
-        }
-      }
+      this.mergeEpisodePresence(season.id, is4k, episodeHasFileByNumber);
+      this.markEpisodePresenceCensus(season.id, is4k);
     }
 
     return seasonExists;
   }
 
+  private async loadDbEpisodesBySeasonId(
+    seasons: Season[],
+    media: Media
+  ): Promise<Map<number, Episode[]>> {
+    const dbEpisodesBySeasonId = new Map<number, Episode[]>();
+    if (seasons.length === 0) {
+      return dbEpisodesBySeasonId;
+    }
+
+    try {
+      const existingEpisodes = await getRepository(Episode).find({
+        where: {
+          season: { id: In(seasons.map((season) => season.id)) },
+        },
+        relations: ['season'],
+      });
+
+      for (const episode of existingEpisodes) {
+        const episodeSeason = await episode.season;
+        if (!episodeSeason) {
+          continue;
+        }
+        const seasonEpisodes = dbEpisodesBySeasonId.get(episodeSeason.id);
+        if (seasonEpisodes) {
+          seasonEpisodes.push(episode);
+        } else {
+          dbEpisodesBySeasonId.set(episodeSeason.id, [episode]);
+        }
+      }
+    } catch (e) {
+      logger.error(
+        `Failed to load episodes for show [TMDB ID ${media.tmdbId}].`,
+        {
+          errorMessage: e.message,
+          label: 'AvailabilitySync',
+        }
+      );
+    }
+
+    return dbEpisodesBySeasonId;
+  }
+
+  private episodePresenceKey(seasonId: number, is4k: boolean): string {
+    return `${seasonId}:${is4k ? '4k' : 'std'}`;
+  }
+
+  private markEpisodePresenceCensus(seasonId: number, is4k: boolean): void {
+    this.episodePresenceCensusBySeasonTier.add(
+      this.episodePresenceKey(seasonId, is4k)
+    );
+  }
+
+  private markEpisodePresenceFailed(seasonId: number, is4k: boolean): void {
+    this.episodePresenceFailedBySeasonTier.add(
+      this.episodePresenceKey(seasonId, is4k)
+    );
+  }
+
+  private markEpisodePresenceUnknown(
+    seasonId: number,
+    is4k: boolean,
+    episodeNumbers: number[]
+  ): void {
+    const key = this.episodePresenceKey(seasonId, is4k);
+    let unknown = this.episodePresenceUnknownBySeasonTier.get(key);
+    if (!unknown) {
+      unknown = new Set();
+      this.episodePresenceUnknownBySeasonTier.set(key, unknown);
+    }
+    for (const episodeNumber of episodeNumbers) {
+      unknown.add(episodeNumber);
+    }
+  }
+
+  private mergeEpisodePresence(
+    seasonId: number,
+    is4k: boolean,
+    updates: Map<number, boolean>
+  ): void {
+    const key = this.episodePresenceKey(seasonId, is4k);
+    let presence = this.episodePresenceBySeasonTier.get(key);
+    if (!presence) {
+      presence = new Map();
+      this.episodePresenceBySeasonTier.set(key, presence);
+    }
+
+    for (const [episodeNumber, hasFile] of updates) {
+      if (hasFile) {
+        presence.set(episodeNumber, true);
+      } else if (!presence.has(episodeNumber)) {
+        presence.set(episodeNumber, false);
+      }
+    }
+  }
+
+  private async applyEpisodeDemotions(media: Media): Promise<void> {
+    const presenceKeys = new Set([
+      ...this.episodePresenceBySeasonTier.keys(),
+      ...this.episodePresenceCensusBySeasonTier,
+      ...this.episodePresenceFailedBySeasonTier,
+    ]);
+    if (presenceKeys.size === 0) {
+      return;
+    }
+
+    const seasonsById = new Map(
+      media.seasons.map((season) => [season.id, season])
+    );
+    const seasonIds = [
+      ...new Set([...presenceKeys].map((key) => Number(key.split(':')[0]))),
+    ];
+    const dbEpisodesBySeasonId = await this.loadDbEpisodesBySeasonId(
+      seasonIds
+        .map((id) => seasonsById.get(id))
+        .filter((season): season is Season => season != null),
+      media
+    );
+
+    for (const key of presenceKeys) {
+      if (this.episodePresenceFailedBySeasonTier.has(key)) {
+        continue;
+      }
+
+      const [seasonIdRaw, tier] = key.split(':');
+      const seasonId = Number(seasonIdRaw);
+      const season = seasonsById.get(seasonId);
+      if (!season) {
+        continue;
+      }
+      const existingEpisodes = dbEpisodesBySeasonId.get(seasonId) ?? [];
+      const remainingEpisodes = await this.unmarkMissingEpisodes(
+        media,
+        season,
+        tier === '4k',
+        this.episodePresenceBySeasonTier.get(key) ?? new Map(),
+        existingEpisodes,
+        this.episodePresenceUnknownBySeasonTier.get(key),
+        this.episodePresenceCensusBySeasonTier.has(key)
+      );
+      dbEpisodesBySeasonId.set(seasonId, remainingEpisodes);
+    }
+  }
+
+  private async unmarkMissingEpisodes(
+    media: Media,
+    season: Season,
+    is4k: boolean,
+    episodeHasFileByNumber: Map<number, boolean>,
+    existingEpisodes: Episode[],
+    unknownEpisodeNumbers?: Set<number>,
+    censusComplete = false
+  ): Promise<Episode[]> {
+    const toSave: Episode[] = [];
+    const toRemove: Episode[] = [];
+
+    for (const existingEpisode of existingEpisodes) {
+      if (unknownEpisodeNumbers?.has(existingEpisode.episodeNumber)) {
+        continue;
+      }
+
+      const hasKey = episodeHasFileByNumber.has(existingEpisode.episodeNumber);
+      const hasFile = episodeHasFileByNumber.get(existingEpisode.episodeNumber);
+      const currentStatus = existingEpisode[is4k ? 'status4k' : 'status'];
+      const oppositeStatus = existingEpisode[is4k ? 'status' : 'status4k'];
+      const oppositeActive =
+        oppositeStatus !== MediaStatus.DELETED &&
+        oppositeStatus !== MediaStatus.UNKNOWN;
+
+      if (!hasKey) {
+        if (!censusComplete) {
+          continue;
+        }
+
+        // only drop the row when neither standard nor 4K is still active
+        if (oppositeActive) {
+          if (
+            currentStatus !== MediaStatus.DELETED &&
+            currentStatus !== MediaStatus.UNKNOWN
+          ) {
+            existingEpisode[is4k ? 'status4k' : 'status'] = MediaStatus.DELETED;
+            toSave.push(existingEpisode);
+          }
+        } else {
+          toRemove.push(existingEpisode);
+        }
+      } else if (
+        hasFile !== true &&
+        currentStatus !== MediaStatus.DELETED &&
+        currentStatus !== MediaStatus.UNKNOWN
+      ) {
+        existingEpisode[is4k ? 'status4k' : 'status'] = MediaStatus.DELETED;
+        toSave.push(existingEpisode);
+      }
+    }
+
+    const episodeRepository = getRepository(Episode);
+    let remainingEpisodes = existingEpisodes;
+
+    if (toRemove.length > 0) {
+      try {
+        await episodeRepository.remove(toRemove);
+        remainingEpisodes = existingEpisodes.filter(
+          (episode) => !toRemove.includes(episode)
+        );
+      } catch (e) {
+        logger.debug(
+          `Failed to remove obsolete episodes for show [TMDB ID ${media.tmdbId}] season ${season.seasonNumber}.`,
+          {
+            errorMessage: e.message,
+            label: 'AvailabilitySync',
+          }
+        );
+      }
+    }
+
+    if (toSave.length > 0) {
+      try {
+        await episodeRepository.save(toSave);
+      } catch (e) {
+        logger.error(
+          `Failed to soft-remove episodes for show [TMDB ID ${media.tmdbId}] season ${season.seasonNumber}.`,
+          {
+            errorMessage: e.message,
+            label: 'AvailabilitySync',
+          }
+        );
+      }
+    }
+
+    return remainingEpisodes;
+  }
+
   // Plex
   private async mediaExistsInPlex(
     media: Media,
-    is4k: boolean
+    is4k: boolean,
+    shouldTrackEpisodes = false
   ): Promise<{ existsInPlex: boolean; seasonsMap?: Map<number, boolean> }> {
     const ratingKey = media.ratingKey;
     const ratingKey4k = media.ratingKey4k;
@@ -1196,19 +1350,26 @@ class AvailabilitySync {
     if (media.mediaType === 'tv') {
       const seasonsMap: Map<number, boolean> = new Map();
 
-      if (!preventSeasonSearch) {
-        const filteredSeasons = media.seasons.filter(
-          (season) =>
-            season[is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE ||
-            season[is4k ? 'status4k' : 'status'] ===
-              MediaStatus.PARTIALLY_AVAILABLE
-        );
+      const filteredSeasons = media.seasons.filter(
+        (season) =>
+          season[is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE ||
+          season[is4k ? 'status4k' : 'status'] ===
+            MediaStatus.PARTIALLY_AVAILABLE
+      );
 
+      if (preventSeasonSearch) {
+        if (shouldTrackEpisodes) {
+          for (const season of filteredSeasons) {
+            this.markEpisodePresenceFailed(season.id, is4k);
+          }
+        }
+      } else {
         for (const season of filteredSeasons) {
           const seasonExists = await this.seasonExistsInPlex(
             media,
             season,
-            is4k
+            is4k,
+            shouldTrackEpisodes
           );
 
           if (seasonExists) {
@@ -1226,7 +1387,8 @@ class AvailabilitySync {
   private async seasonExistsInPlex(
     media: Media,
     season: Season,
-    is4k: boolean
+    is4k: boolean,
+    shouldTrackEpisodes: boolean
   ): Promise<boolean> {
     const ratingKey = media.ratingKey;
     const ratingKey4k = media.ratingKey4k;
@@ -1273,10 +1435,45 @@ class AvailabilitySync {
           } else {
             seasonExistsInPlex = episodeVersions.length > 0;
           }
+
+          if (shouldTrackEpisodes) {
+            const episodeHasFileByNumber = new Map<number, boolean>();
+
+            for (const episode of episodes ?? []) {
+              if (episode.index == null) {
+                continue;
+              }
+
+              const versions = episode.Media ?? [];
+              let hasFile = false;
+
+              if (is4k) {
+                hasFile = versions.some(
+                  (mediaItem) => (mediaItem.width ?? 0) >= 2000
+                );
+              } else if (this.enable4kShow) {
+                hasFile = versions.some(
+                  (mediaItem) => (mediaItem.width ?? 0) < 2000
+                );
+              } else {
+                hasFile = versions.length > 0;
+              }
+
+              if (hasFile) {
+                episodeHasFileByNumber.set(episode.index, true);
+              }
+            }
+
+            this.mergeEpisodePresence(season.id, is4k, episodeHasFileByNumber);
+            this.markEpisodePresenceCensus(season.id, is4k);
+          }
         } catch {
           // If we can't fetch episodes, assume the season exists
           // to avoid false removal
           seasonExistsInPlex = true;
+          if (shouldTrackEpisodes) {
+            this.markEpisodePresenceFailed(season.id, is4k);
+          }
         }
 
         this.plexEpisodeExistsCache[cacheKey] = seasonExistsInPlex;
@@ -1289,7 +1486,8 @@ class AvailabilitySync {
   // Jellyfin
   private async mediaExistsInJellyfin(
     media: Media,
-    is4k: boolean
+    is4k: boolean,
+    shouldTrackEpisodes = false
   ): Promise<{ existsInJellyfin: boolean; seasonsMap?: Map<number, boolean> }> {
     const ratingKey = media.jellyfinMediaId;
     const ratingKey4k = media.jellyfinMediaId4k;
@@ -1345,19 +1543,26 @@ class AvailabilitySync {
     if (media.mediaType === 'tv') {
       const seasonsMap: Map<number, boolean> = new Map();
 
-      if (!preventSeasonSearch) {
-        const filteredSeasons = media.seasons.filter(
-          (season) =>
-            season[is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE ||
-            season[is4k ? 'status4k' : 'status'] ===
-              MediaStatus.PARTIALLY_AVAILABLE
-        );
+      const filteredSeasons = media.seasons.filter(
+        (season) =>
+          season[is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE ||
+          season[is4k ? 'status4k' : 'status'] ===
+            MediaStatus.PARTIALLY_AVAILABLE
+      );
 
+      if (preventSeasonSearch) {
+        if (shouldTrackEpisodes) {
+          for (const season of filteredSeasons) {
+            this.markEpisodePresenceFailed(season.id, is4k);
+          }
+        }
+      } else {
         for (const season of filteredSeasons) {
           const seasonExists = await this.seasonExistsInJellyfin(
             media,
             season,
-            is4k
+            is4k,
+            shouldTrackEpisodes
           );
 
           if (seasonExists) {
@@ -1375,7 +1580,8 @@ class AvailabilitySync {
   private async seasonExistsInJellyfin(
     media: Media,
     season: Season,
-    is4k: boolean
+    is4k: boolean,
+    shouldTrackEpisodes: boolean
   ): Promise<boolean> {
     const ratingKey = media.jellyfinMediaId;
     const ratingKey4k = media.jellyfinMediaId4k;
@@ -1399,26 +1605,127 @@ class AvailabilitySync {
       const seriesId = is4k ? ratingKey4k : ratingKey;
 
       if (seriesId) {
-        const cacheKey = `${seriesId}-${seasonMeta.Id}`;
+        const cacheKey = `${is4k ? '4k' : 'std'}-${seriesId}-${seasonMeta.Id}`;
 
         if (cacheKey in this.jellyfinEpisodeExistsCache) {
           seasonExistsInJellyfin = this.jellyfinEpisodeExistsCache[cacheKey];
+          if (shouldTrackEpisodes) {
+            this.markEpisodePresenceFailed(season.id, is4k);
+          }
         } else {
           try {
             // Season metadata exists, but we need to verify it has actual
             // episode files. Jellyfin keeps season entries even after all
             // episodes are deleted. getEpisodes already filters out
             // virtual episodes.
-            const episodes = await this.jellyfinClient.getEpisodes(
-              seriesId,
-              seasonMeta.Id
-            );
+            if (shouldTrackEpisodes && this.enable4kShow) {
+              const episodes = await this.jellyfinClient.getEpisodes(
+                seriesId,
+                seasonMeta.Id,
+                { includeMediaInfo: true }
+              );
+              const episodeHasFileByNumber = new Map<number, boolean>();
 
-            seasonExistsInJellyfin = episodes.length > 0;
+              for (const episode of episodes) {
+                const episodeNumbers =
+                  episode.IndexNumber == null
+                    ? []
+                    : Array.from(
+                        {
+                          length:
+                            (episode.IndexNumberEnd ?? episode.IndexNumber) -
+                            episode.IndexNumber +
+                            1,
+                        },
+                        (_, i) => episode.IndexNumber! + i
+                      );
+
+                if (episode.MediaSources == null) {
+                  if (episodeNumbers.length > 0) {
+                    this.markEpisodePresenceUnknown(
+                      season.id,
+                      is4k,
+                      episodeNumbers
+                    );
+                  }
+                  seasonExistsInJellyfin = true;
+                  continue;
+                }
+
+                const has4k = episode.MediaSources.some((MediaSource) =>
+                  MediaSource.MediaStreams.some(
+                    (MediaStream) =>
+                      MediaStream.Type === 'Video' &&
+                      (MediaStream.Width ?? 0) >= 2000
+                  )
+                );
+                const hasStandard = episode.MediaSources.some((MediaSource) =>
+                  MediaSource.MediaStreams.some(
+                    (MediaStream) =>
+                      MediaStream.Type === 'Video' &&
+                      (MediaStream.Width ?? 0) < 2000
+                  )
+                );
+
+                if (!(is4k ? has4k : hasStandard)) {
+                  continue;
+                }
+
+                seasonExistsInJellyfin = true;
+
+                for (const episodeNumber of episodeNumbers) {
+                  episodeHasFileByNumber.set(episodeNumber, true);
+                }
+              }
+
+              this.mergeEpisodePresence(
+                season.id,
+                is4k,
+                episodeHasFileByNumber
+              );
+              this.markEpisodePresenceCensus(season.id, is4k);
+            } else {
+              const episodes = await this.jellyfinClient.getEpisodes(
+                seriesId,
+                seasonMeta.Id
+              );
+
+              seasonExistsInJellyfin = episodes.length > 0;
+
+              if (shouldTrackEpisodes) {
+                const episodeHasFileByNumber = new Map<number, boolean>();
+
+                for (const episode of episodes) {
+                  if (episode.IndexNumber == null) {
+                    continue;
+                  }
+
+                  const lastEpisodeNumber =
+                    episode.IndexNumberEnd ?? episode.IndexNumber;
+                  for (
+                    let episodeNumber = episode.IndexNumber;
+                    episodeNumber <= lastEpisodeNumber;
+                    episodeNumber++
+                  ) {
+                    episodeHasFileByNumber.set(episodeNumber, true);
+                  }
+                }
+
+                this.mergeEpisodePresence(
+                  season.id,
+                  is4k,
+                  episodeHasFileByNumber
+                );
+                this.markEpisodePresenceCensus(season.id, is4k);
+              }
+            }
           } catch {
             // If we can't fetch episodes, assume the season exists
             // to avoid false removal
             seasonExistsInJellyfin = true;
+            if (shouldTrackEpisodes) {
+              this.markEpisodePresenceFailed(season.id, is4k);
+            }
           }
 
           this.jellyfinEpisodeExistsCache[cacheKey] = seasonExistsInJellyfin;
