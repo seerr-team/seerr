@@ -10,6 +10,10 @@ The webhook notification agent enables you to send a custom JSON payload to any 
 
 ## Configuration
 
+### Support URL Variables (optional, experimental)
+
+When enabled, template variables such as `{{media_tmdbid}}` are replaced in the webhook URL before the request is sent, and their values are URL-encoded. The available variables are the same as for the JSON payload, see [Template Variables](#template-variables).
+
 ### Webhook URL
 
 The URL you would like to post notifications to. Your JSON will be sent as the body of the request.
