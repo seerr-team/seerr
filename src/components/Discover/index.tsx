@@ -27,7 +27,10 @@ import {
   PencilIcon,
   PlusIcon,
 } from '@heroicons/react/24/solid';
-import { DiscoverSliderType } from '@server/constants/discover';
+import {
+  DiscoverSliderType,
+  TMDB_LIST_ID_REGEX,
+} from '@server/constants/discover';
 import type DiscoverSlider from '@server/entity/DiscoverSlider';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
@@ -395,6 +398,21 @@ const Discover = () => {
                 linkUrl={`/discover/tv?watchRegion=${
                   slider.data?.split(',')[0]
                 }&watchProviders=${slider.data?.split(',')[1]}`}
+              />
+            );
+            break;
+          case DiscoverSliderType.TMDB_LIST:
+            if (!slider.data || !TMDB_LIST_ID_REGEX.test(slider.data)) {
+              sliderComponent = null;
+              break;
+            }
+
+            sliderComponent = (
+              <MediaSlider
+                sliderKey={`custom-slider-${slider.id}`}
+                title={slider.title ?? ''}
+                url={`/api/v1/discover/list/${slider.data}`}
+                linkUrl={`/discover/list/${slider.data}`}
               />
             );
             break;

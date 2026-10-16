@@ -6336,6 +6336,55 @@ paths:
                         - $ref: '#/components/schemas/MovieResult'
                         - $ref: '#/components/schemas/TvResult'
                         - $ref: '#/components/schemas/PersonResult'
+  /discover/list/{listId}:
+    get:
+      summary: Get a TMDB list
+      description: Returns the movies and series from a public TMDB list.
+      tags:
+        - search
+      parameters:
+        - in: path
+          name: listId
+          required: true
+          schema:
+            type: string
+            pattern: '^[1-9]\d{0,11}$'
+          example: '8542986'
+        - in: query
+          name: page
+          schema:
+            type: number
+            minimum: 1
+            default: 1
+      responses:
+        '200':
+          description: Results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: number
+                    example: 1
+                  totalPages:
+                    type: number
+                    example: 1
+                  totalResults:
+                    type: number
+                    example: 20
+                  results:
+                    type: array
+                    items:
+                      anyOf:
+                        - $ref: '#/components/schemas/MovieResult'
+                        - $ref: '#/components/schemas/TvResult'
+        '400':
+          description: Invalid list ID or page
+        '404':
+          description: List not found or not public
+        '500':
+          description: Unable to retrieve the list
   /discover/keyword/{keywordId}/movies:
     get:
       summary: Get movies from keyword
