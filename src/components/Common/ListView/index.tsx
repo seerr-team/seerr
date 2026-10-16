@@ -17,6 +17,7 @@ import { useIntl } from 'react-intl';
 type ListViewProps = {
   items?: (TvResult | MovieResult | PersonResult | CollectionResult)[];
   plexItems?: WatchlistItem[];
+  plexItemsAreAddedToWatchlist?: boolean;
   isEmpty?: boolean;
   isLoading?: boolean;
   isReachingEnd?: boolean;
@@ -31,6 +32,7 @@ const ListView = ({
   onScrollBottom,
   isReachingEnd,
   plexItems,
+  plexItemsAreAddedToWatchlist = true,
   mutateParent,
 }: ListViewProps) => {
   const intl = useIntl();
@@ -57,7 +59,7 @@ const ListView = ({
                 id={title.tmdbId}
                 tmdbId={title.tmdbId}
                 type={title.mediaType}
-                isAddedToWatchlist={true}
+                isAddedToWatchlist={plexItemsAreAddedToWatchlist}
                 canExpand
                 mutateParent={mutateParent}
               />
