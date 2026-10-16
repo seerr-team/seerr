@@ -10,11 +10,13 @@ import Media from '@server/entity/Media';
 import {
   BlocklistedMediaError,
   DuplicateMediaRequestError,
+  InvalidServiceRequestError,
   MediaRequest,
   NoSeasonsAvailableError,
   QuotaRestrictedError,
   RequestPermissionError,
 } from '@server/entity/MediaRequest';
+import MediaServiceStatus from '@server/entity/MediaServiceStatus';
 import SeasonRequest from '@server/entity/SeasonRequest';
 import { User } from '@server/entity/User';
 import type {
@@ -134,6 +136,7 @@ requestRoutes.get<Record<string, unknown>, RequestResultsResponse>(
       let query = getRepository(MediaRequest)
         .createQueryBuilder('request')
         .leftJoinAndSelect('request.media', 'media')
+        .leftJoinAndSelect('media.serviceStatuses', 'serviceStatuses')
         .leftJoinAndSelect('request.seasons', 'seasons')
         .leftJoinAndSelect('request.modifiedBy', 'modifiedBy')
         .leftJoinAndSelect('request.requestedBy', 'requestedBy')
@@ -141,7 +144,7 @@ requestRoutes.get<Record<string, unknown>, RequestResultsResponse>(
           requestStatus: statusFilter,
         })
         .andWhere(
-          '((request.is4k = false AND media.status IN (:...mediaStatus)) OR (request.is4k = true AND media.status4k IN (:...mediaStatus)))',
+          '(request.isServiceRequest = true OR (request.is4k = false AND media.status IN (:...mediaStatus)) OR (request.is4k = true AND media.status4k IN (:...mediaStatus)))',
           {
             mediaStatus: mediaStatusFilter,
           }
@@ -227,21 +230,34 @@ requestRoutes.get<Record<string, unknown>, RequestResultsResponse>(
       let mappedRequests = requests.map((r) => {
         switch (r.type) {
           case MediaType.MOVIE: {
-            const profileName = radarrServers
-              .find((serverr) => serverr.id === r.serverId)
-              ?.profiles?.find((profile) => profile.id === r.profileId)?.name;
+            const radarrServer = radarrServers.find(
+              (serverr) => serverr.id === r.serverId
+            );
+            const profileName = radarrServer?.profiles?.find(
+              (profile) => profile.id === r.profileId
+            )?.name;
+            const serverName =
+              r.serverId != null
+                ? settings.radarr.find((s) => s.id === r.serverId)?.name
+                : undefined;
+
+            return { ...r, profileName, serverName };
+          }
+          case MediaType.TV: {
+            const sonarrServer = sonarrServers.find(
+              (serverr) => serverr.id === r.serverId
+            );
+            const serverName =
+              r.serverId != null
+                ? settings.sonarr.find((s) => s.id === r.serverId)?.name
+                : undefined;
 
             return {
               ...r,
-              profileName,
-            };
-          }
-          case MediaType.TV: {
-            return {
-              ...r,
-              profileName: sonarrServers
-                .find((serverr) => serverr.id === r.serverId)
-                ?.profiles?.find((profile) => profile.id === r.profileId)?.name,
+              profileName: sonarrServer?.profiles?.find(
+                (profile) => profile.id === r.profileId
+              )?.name,
+              serverName,
             };
           }
         }
@@ -338,6 +354,8 @@ requestRoutes.post<never, MediaRequest, MediaRequestBody>(
           return next({ status: 202, message: error.message });
         case BlocklistedMediaError:
           return next({ status: 403, message: error.message });
+        case InvalidServiceRequestError:
+          return next({ status: 400, message: error.message });
         default:
           return next({ status: 500, message: error.message });
       }
@@ -441,7 +459,11 @@ requestRoutes.get('/:requestId', async (req, res, next) => {
   try {
     const request = await requestRepository.findOneOrFail({
       where: { id: Number(req.params.requestId) },
-      relations: { requestedBy: true, modifiedBy: true },
+      relations: {
+        requestedBy: true,
+        modifiedBy: true,
+        media: { serviceStatuses: true },
+      },
     });
 
     if (
@@ -505,6 +527,17 @@ requestRoutes.put<{ requestId: string }>(
           });
         }
 
+        if (
+          request.isServiceRequest &&
+          req.body.serverId != null &&
+          req.body.serverId !== request.serverId
+        ) {
+          return next({
+            status: 400,
+            message: 'The server of a service request cannot be changed.',
+          });
+        }
+
         const previousOwnerId = request.requestedBy.id;
         let requestUser = request.requestedBy;
 
@@ -543,7 +576,9 @@ requestRoutes.put<{ requestId: string }>(
               }
             }
 
-            request.serverId = req.body.serverId;
+            if (!request.isServiceRequest) {
+              request.serverId = req.body.serverId;
+            }
             request.profileId = req.body.profileId;
             request.rootFolder = req.body.rootFolder;
             request.tags = req.body.tags;
@@ -552,7 +587,9 @@ requestRoutes.put<{ requestId: string }>(
             await requestRepository.save(request);
           } else if (req.body.mediaType === MediaType.TV) {
             const mediaRepository = getRepository(Media);
-            request.serverId = req.body.serverId;
+            if (!request.isServiceRequest) {
+              request.serverId = req.body.serverId;
+            }
             request.profileId = req.body.profileId;
             request.rootFolder = req.body.rootFolder;
             request.languageProfileId = req.body.languageProfileId;
@@ -585,7 +622,9 @@ requestRoutes.put<{ requestId: string }>(
                 const existingSeasons = media.requests
                   .filter(
                     (r) =>
-                      r.is4k === request.is4k &&
+                      (request.isServiceRequest
+                        ? r.isServiceRequest && r.serverId === request.serverId
+                        : !r.isServiceRequest && r.is4k === request.is4k) &&
                       r.id !== request.id &&
                       r.status !== MediaRequestStatus.DECLINED &&
                       r.status !== MediaRequestStatus.COMPLETED
@@ -604,15 +643,33 @@ requestRoutes.put<{ requestId: string }>(
 
                 // Seasons the media already covers cannot be requested again, while
                 // the ones this request holds stay on it
-                const coveredSeasons = (media.seasons ?? [])
+                const serviceStatus = request.isServiceRequest
+                  ? await getRepository(MediaServiceStatus).findOne({
+                      where: {
+                        mediaId: media.id,
+                        serviceId: request.serverId,
+                      },
+                    })
+                  : null;
+                const coveredSeasons = (
+                  request.isServiceRequest
+                    ? Object.entries(serviceStatus?.seasonStatuses ?? {}).map(
+                        ([seasonNumber, status]) => ({
+                          seasonNumber: Number(seasonNumber),
+                          status,
+                        })
+                      )
+                    : (media.seasons ?? []).map((season) => ({
+                        seasonNumber: season.seasonNumber,
+                        status: season[request.is4k ? 'status4k' : 'status'],
+                      }))
+                )
                   .filter(
-                    (season) =>
-                      season[request.is4k ? 'status4k' : 'status'] !==
-                        MediaStatus.UNKNOWN &&
-                      season[request.is4k ? 'status4k' : 'status'] !==
-                        MediaStatus.DELETED
+                    ({ status }) =>
+                      status !== MediaStatus.UNKNOWN &&
+                      status !== MediaStatus.DELETED
                   )
-                  .map((season) => season.seasonNumber)
+                  .map(({ seasonNumber }) => seasonNumber)
                   .filter((sn) => !currentSeasons.includes(sn));
 
                 const filteredSeasons = requestedSeasons.filter(

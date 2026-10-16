@@ -69,6 +69,11 @@ const messages = defineMessages('components.Settings.SonarrModal', {
   syncEnabled: 'Enable Scan',
   externalUrl: 'External URL',
   enableSearch: 'Enable Automatic Search',
+  animeOnly: 'Anime Only',
+  animeOnlyHelp: 'Only show this server’s request button for anime content.',
+  buttonLabel: 'Request Button Label',
+  buttonLabelHelp:
+    'Short label shown on the request button for this server (e.g. "ITA", "ENG"). Leave blank to hide the button.',
   tagRequests: 'Tag Requests',
   tagRequestsInfo:
     "Automatically add an additional tag with the requester's user ID & display name",
@@ -261,6 +266,8 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
           syncEnabled: sonarr?.syncEnabled ?? false,
           enableSearch: !sonarr?.preventSearch,
           tagRequests: sonarr?.tagRequests ?? false,
+          buttonLabel: sonarr?.buttonLabel ?? '',
+          animeOnly: sonarr?.animeOnly ?? false,
           monitorNewItems: sonarr?.monitorNewItems ?? 'all',
         }}
         validationSchema={SonarrSettingsSchema}
@@ -305,6 +312,8 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
               syncEnabled: values.syncEnabled,
               preventSearch: !values.enableSearch,
               tagRequests: values.tagRequests,
+              buttonLabel: values.buttonLabel || undefined,
+              animeOnly: values.animeOnly,
               monitorNewItems: values.monitorNewItems,
             };
             if (!sonarr) {
@@ -1101,6 +1110,35 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
                       id="tagRequests"
                       name="tagRequests"
                     />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label htmlFor="buttonLabel" className="text-label">
+                    {intl.formatMessage(messages.buttonLabel)}
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.buttonLabelHelp)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <div className="form-input-field">
+                      <Field
+                        type="text"
+                        id="buttonLabel"
+                        name="buttonLabel"
+                        placeholder="ITA"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label htmlFor="animeOnly" className="checkbox-label">
+                    {intl.formatMessage(messages.animeOnly)}
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.animeOnlyHelp)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <Field type="checkbox" id="animeOnly" name="animeOnly" />
                   </div>
                 </div>
               </div>

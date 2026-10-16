@@ -3,6 +3,7 @@ import Button from '@app/components/Common/Button';
 import LoadingSpinner from '@app/components/Common/LoadingSpinner';
 import PageTitle from '@app/components/Common/PageTitle';
 import PermissionEdit from '@app/components/PermissionEdit';
+import RequestServicesEdit from '@app/components/RequestServicesEdit';
 import useToasts from '@app/hooks/useToasts';
 import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
@@ -37,7 +38,7 @@ const UserPermissions = () => {
     data,
     error,
     mutate: revalidate,
-  } = useSWR<{ permissions?: number }>(
+  } = useSWR<{ permissions?: number; requestServices?: string[] }>(
     user ? `/api/v1/user/${user?.id}/settings/permissions` : null
   );
 
@@ -80,12 +81,14 @@ const UserPermissions = () => {
       <Formik
         initialValues={{
           currentPermissions: data?.permissions,
+          requestServices: data?.requestServices ?? [],
         }}
         enableReinitialize
         onSubmit={async (values) => {
           try {
             await axios.post(`/api/v1/user/${user?.id}/settings/permissions`, {
               permissions: values.currentPermissions ?? 0,
+              requestServices: values.requestServices ?? [],
             });
 
             addToast(intl.formatMessage(messages.toastSettingsSuccess), {
@@ -116,6 +119,12 @@ const UserPermissions = () => {
                   }
                 />
               </div>
+              <RequestServicesEdit
+                value={values.requestServices ?? []}
+                onChange={(services) =>
+                  setFieldValue('requestServices', services)
+                }
+              />
               <div className="actions">
                 <div className="flex justify-end">
                   <span className="ml-3 inline-flex rounded-md shadow-sm">

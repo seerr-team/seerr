@@ -43,6 +43,12 @@ interface TitleCardProps {
   inProgress?: boolean;
   isAddedToWatchlist?: number | boolean;
   mutateParent?: () => void;
+  serviceStatuses?: {
+    serviceId: number;
+    label: string;
+    status: MediaStatus;
+    inProgress?: boolean;
+  }[];
 }
 
 const messages = defineMessages('components.TitleCard', {
@@ -67,6 +73,7 @@ const TitleCard = ({
   inProgress = false,
   canExpand = false,
   mutateParent,
+  serviceStatuses = [],
 }: TitleCardProps) => {
   const isTouch = useIsTouch();
   const intl = useIntl();
@@ -456,15 +463,31 @@ const TitleCard = ({
                   </Button>
                 </Tooltip>
               )}
-            {currentStatus && currentStatus !== MediaStatus.UNKNOWN && (
-              <div className="flex flex-col items-center gap-1">
-                <div className="pointer-events-none z-40 flex">
-                  <StatusBadgeMini
-                    status={currentStatus}
-                    inProgress={inProgress}
-                    shrink
-                  />
-                </div>
+            {((currentStatus && currentStatus !== MediaStatus.UNKNOWN) ||
+              serviceStatuses.length > 0) && (
+              <div className="flex flex-col items-end gap-1">
+                {currentStatus && currentStatus !== MediaStatus.UNKNOWN && (
+                  <div className="pointer-events-none z-40 flex">
+                    <StatusBadgeMini
+                      status={currentStatus}
+                      inProgress={inProgress}
+                      shrink
+                    />
+                  </div>
+                )}
+                {serviceStatuses.map((serviceStatus) => (
+                  <div
+                    key={`service-status-${serviceStatus.serviceId}`}
+                    className="pointer-events-none z-40 flex"
+                  >
+                    <StatusBadgeMini
+                      status={serviceStatus.status}
+                      inProgress={serviceStatus.inProgress}
+                      label={serviceStatus.label}
+                      shrink
+                    />
+                  </div>
+                ))}
               </div>
             )}
           </div>
