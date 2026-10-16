@@ -49,6 +49,8 @@ const messages = defineMessages('components.RequestModal', {
   requestcancelled: 'Request for <strong>{title}</strong> canceled.',
   autoapproval: 'Automatic Approval',
   requesterror: 'Something went wrong while submitting the request.',
+  noSeasonsAvailable:
+    'All of the selected seasons are already requested or available.',
   pendingapproval: 'Your request is pending approval.',
 });
 
@@ -112,7 +114,7 @@ const TvRequestModal = ({
 
     try {
       if (selectedSeasons.length > 0) {
-        await axios.put(`/api/v1/request/${editRequest.id}`, {
+        const response = await axios.put(`/api/v1/request/${editRequest.id}`, {
           mediaType: 'tv',
           serverId: requestOverrides?.server,
           profileId: requestOverrides?.profile,
@@ -122,6 +124,15 @@ const TvRequestModal = ({
           tags: requestOverrides?.tags,
           seasons: selectedSeasons.sort((a, b) => a - b),
         });
+
+        // 202: the edit left no seasons to request, so nothing was changed
+        if (response.status === 202) {
+          addToast(intl.formatMessage(messages.noSeasonsAvailable), {
+            appearance: 'info',
+            autoDismiss: true,
+          });
+          return;
+        }
 
         if (alsoApproveRequest) {
           await axios.post(`/api/v1/request/${editRequest.id}/approve`);
@@ -194,22 +205,25 @@ const TvRequestModal = ({
           tags: requestOverrides.tags,
         };
       }
-      const response = await axios.post<MediaRequest>('/api/v1/request', {
-        mediaId: data?.id,
-        tvdbId: tvdbId ?? data?.externalIds.tvdbId,
-        mediaType: 'tv',
-        is4k,
-        ignoreQuota: requestOverrides?.ignoreQuota,
-        seasons: settings.currentSettings.partialRequestsEnabled
-          ? selectedSeasons.sort((a, b) => a - b)
-          : getAllSeasons().filter(
-              (season) => !getAllRequestedSeasons().includes(season)
-            ),
-        ...overrideParams,
-      });
+      const response = await axios.post<MediaRequest | { message: string }>(
+        '/api/v1/request',
+        {
+          mediaId: data?.id,
+          tvdbId: tvdbId ?? data?.externalIds.tvdbId,
+          mediaType: 'tv',
+          is4k,
+          ignoreQuota: requestOverrides?.ignoreQuota,
+          seasons: settings.currentSettings.partialRequestsEnabled
+            ? selectedSeasons.sort((a, b) => a - b)
+            : getAllSeasons().filter(
+                (season) => !getAllRequestedSeasons().includes(season)
+              ),
+          ...overrideParams,
+        }
+      );
       mutate('/api/v1/request?filter=all&take=10&sort=modified&skip=0');
 
-      if (response.data) {
+      if (response.data && 'media' in response.data) {
         if (onComplete) {
           onComplete(response.data.media.status);
         }
@@ -222,6 +236,12 @@ const TvRequestModal = ({
           </span>,
           { appearance: 'success', autoDismiss: true }
         );
+      } else if (response.data) {
+        // 202: every requested season is already covered, nothing new to request
+        addToast(intl.formatMessage(messages.noSeasonsAvailable), {
+          appearance: 'info',
+          autoDismiss: true,
+        });
       }
     } catch {
       addToast(intl.formatMessage(messages.requesterror), {
