@@ -32,6 +32,7 @@ export interface PublicSettingsResponse {
   hideAvailable: boolean;
   hideBlocklisted: boolean;
   hideRequested: boolean;
+  warnNonReleased: boolean;
   localLogin: boolean;
   mediaServerLogin: boolean;
   movie4kEnabled: boolean;
