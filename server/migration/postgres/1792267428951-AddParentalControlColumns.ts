@@ -1,0 +1,32 @@
+import type { MigrationInterface, QueryRunner } from 'typeorm';
+
+export class AddParentalControlColumns1792267428951 implements MigrationInterface {
+  name = 'AddParentalControlColumns1792267428951';
+
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    const table = await queryRunner.getTable('user_settings');
+    if (table?.findColumnByName('maxMovieRating')) return;
+
+    await queryRunner.query(
+      `ALTER TABLE "user_settings" ADD "maxMovieRating" character varying`
+    );
+    await queryRunner.query(
+      `ALTER TABLE "user_settings" ADD "maxTvRating" character varying`
+    );
+    await queryRunner.query(
+      `ALTER TABLE "user_settings" ADD "blockUnrated" boolean NOT NULL DEFAULT false`
+    );
+  }
+
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(
+      `ALTER TABLE "user_settings" DROP COLUMN "blockUnrated"`
+    );
+    await queryRunner.query(
+      `ALTER TABLE "user_settings" DROP COLUMN "maxTvRating"`
+    );
+    await queryRunner.query(
+      `ALTER TABLE "user_settings" DROP COLUMN "maxMovieRating"`
+    );
+  }
+}
