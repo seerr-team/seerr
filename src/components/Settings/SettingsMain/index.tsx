@@ -65,6 +65,9 @@ const messages = defineMessages('components.Settings.SettingsMain', {
   hideRequested: 'Hide Requested Media',
   hideRequestedTip:
     'Hide media that has been requested from the discover pages but not search results',
+  releaseDateRestrictionEnabled: 'Enable Release Date Restrictions',
+  releaseDateRestrictionEnabledTip:
+    'Prevent users from requesting movies before a Digital release in any region or TV seasons before their air date. Users with Manage Requests can bypass this restriction.',
   cacheImages: 'Enable Image Caching',
   cacheImagesTip:
     'Cache externally sourced images (requires a significant amount of disk space)',
@@ -170,6 +173,8 @@ const SettingsMain = () => {
             hideAvailable: data?.hideAvailable,
             hideBlocklisted: data?.hideBlocklisted,
             hideRequested: data?.hideRequested,
+            releaseDateRestrictionEnabled:
+              data?.releaseDateRestrictionEnabled ?? false,
             locale: data?.locale ?? 'en',
             discoverRegion: data?.discoverRegion,
             originalLanguage: data?.originalLanguage,
@@ -194,6 +199,8 @@ const SettingsMain = () => {
                 hideAvailable: values.hideAvailable,
                 hideBlocklisted: values.hideBlocklisted,
                 hideRequested: values.hideRequested,
+                releaseDateRestrictionEnabled:
+                  values.releaseDateRestrictionEnabled,
                 locale: values.locale,
                 discoverRegion: values.discoverRegion,
                 streamingRegion: values.streamingRegion,
@@ -578,6 +585,36 @@ const SettingsMain = () => {
                         setFieldValue(
                           'partialRequestsEnabled',
                           !values.partialRequestsEnabled
+                        );
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label
+                    htmlFor="releaseDateRestrictionEnabled"
+                    className="checkbox-label"
+                  >
+                    <span className="mr-2">
+                      {intl.formatMessage(
+                        messages.releaseDateRestrictionEnabled
+                      )}
+                    </span>
+                    <span className="label-tip">
+                      {intl.formatMessage(
+                        messages.releaseDateRestrictionEnabledTip
+                      )}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <Field
+                      type="checkbox"
+                      id="releaseDateRestrictionEnabled"
+                      name="releaseDateRestrictionEnabled"
+                      onChange={() => {
+                        setFieldValue(
+                          'releaseDateRestrictionEnabled',
+                          !values.releaseDateRestrictionEnabled
                         );
                       }}
                     />
