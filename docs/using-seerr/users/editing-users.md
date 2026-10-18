@@ -53,6 +53,12 @@ All "local users" are assigned passwords upon creation, but users imported from 
 
 Passwords must be a minimum of 8 characters long.
 
+## API Key
+
+Users can generate a personal API key for scripts and integrations. The key authenticates as that user, with their permissions, and is only shown once. Regenerating or revoking it stops the old key from working.
+
+Each user manages their own key. To act as the owner, use the API key in [General settings](/using-seerr/settings/general#api-key) instead.
+
 ## Notifications
 
 Users can configure their personal notification settings here. Please see [Notifications](/using-seerr/notifications/) for details on configuring and enabling notifications.
