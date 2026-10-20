@@ -32,7 +32,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - parallel:
-          - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+          - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
             if: always() && steps.lint_pr_title.outputs.error_message != null
             env:
               ERROR_MESSAGE: ${{ steps.lint_pr_title.outputs.error_message }}
@@ -141,11 +141,31 @@ jobs:
           PR_BODY: ${{ github.event.pull_request.body }}
         run: printf '%s' "$PR_BODY" > /tmp/pr-body.txt
 
+      - name: Look up author permission
+        if: steps.bot-check.outputs.skip != 'true'
+        id: permission
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          result-encoding: string
+          script: |
+            try {
+              const { data } = await github.rest.repos.getCollaboratorPermissionLevel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                username: context.payload.pull_request.user.login,
+              });
+              return data.permission;
+            } catch (e) {
+              console.log('Could not look up author permission:', e.message);
+              return 'none';
+            }
+
       - name: Run template check
         if: steps.bot-check.outputs.skip != 'true'
         id: check
         env:
-          AUTHOR_ASSOCIATION: ${{ github.event.pull_request.author_association }}
+          AUTHOR_PERMISSION: ${{ steps.permission.outputs.result }}
         run: |
           set +e
           ISSUES=$(node bin/check-pr-template.mjs /tmp/pr-body.txt)
