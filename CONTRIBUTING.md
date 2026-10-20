@@ -2,6 +2,12 @@
 
 All help is welcome and greatly appreciated! If you would like to contribute to the project, the following instructions should get you started...
 
+## Review Times
+
+Seerr is maintained entirely by volunteers in their free time, so there is no set timeline for reviews.
+Depending on maintainer availability and how much review a change needs, it can take anywhere from days to months, and a small diff does not mean a quick review.
+**Commenting to ask why a pull request hasn't been reviewed or merged yet, pinging maintainers, or re-requesting reviews will not speed it up.** This applies to comments on other people's pull requests too.
+
 ## Before Contributing
 
 > [!WARNING]
@@ -14,9 +20,9 @@ All help is welcome and greatly appreciated! If you would like to contribute to 
 
 > [!IMPORTANT]
 >
-> Automated AI-generated contributions without human review are not allowed and will be rejected. This is an open-source project maintained by volunteers. We do not have the resources to review pull requests that could have been avoided with proper human oversight. While we have no issue with contributors using AI tools as an aid, it is your responsibility as a contributor to ensure that all submissions are carefully reviewed and meet our quality standards.
+> AI-driven contributions are not allowed and will be rejected, even if you reviewed and tested them. This is an open-source project maintained by volunteers, and our time goes to reviewing your work, not your AI's. We have no issue with contributors using AI tools as an aid, but the contribution has to be yours, and it is your responsibility to make sure it meets our quality standards.
 >
-> **We expect AI-assisted development, not AI-driven development.** Use AI as a tool to help you write code. Do not let an AI agent autonomously generate an entire contribution and submit it on your behalf. It does not matter who clicks submit, an agent acting on its own or a human relaying its output unread. What matters is whether you reviewed, tested, and understood the change before it went up. We have been increasingly receiving low-effort, fully AI-generated PRs and will not tolerate them. Contributors who repeatedly submit unreviewed AI output may be banned.
+> **We expect AI-assisted development, not AI-driven development.** Use AI as a tool to help you understand the codebase, debug, or scaffold something you then write yourself. If an AI wrote the change, reviewing it, testing it, and submitting it yourself does not make it AI-assisted. The approach and the implementation have to be yours, and you have to understand every line of it. Whether a PR is AI-assisted or AI-driven is the maintainers' call, based on how the contribution reads and how you handle review, and claiming you drove it doesn't override that. We have been increasingly receiving low-effort, fully AI-generated PRs and will not tolerate them. Contributors who repeatedly submit AI-driven work may be banned.
 >
 > **Submissions that appear to be unreviewed AI output will be considered low-effort and may result in a ban if repeated even after several warnings.** Signs of unreviewed AI output include but are not limited to:
 >
@@ -122,11 +128,11 @@ Please be respectful to maintainers and disclose AI assistance.
    git switch -c BRANCH_NAME develop
    ```
 
-   - It is recommended to give your branch a meaningful name, relevant to the feature or fix you are working on.
+   - Name your branch `<type>/<short-description>`, where `<type>` is the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) type of the change.
      - Good examples:
-       - `docs-docker`
-       - `feature-new-system`
-       - `fix-title-cards`
+       - `docs/docker`
+       - `feat/new-system`
+       - `fix/title-cards`
      - Bad examples:
        - `bug`
        - `docs`
