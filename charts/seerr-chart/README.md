@@ -1,6 +1,6 @@
 # seerr-chart
 
-![Version: 3.10.0](https://img.shields.io/badge/Version-3.10.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v3.5.0](https://img.shields.io/badge/AppVersion-v3.5.0-informational?style=flat-square)
+![Version: 3.11.0](https://img.shields.io/badge/Version-3.11.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v3.5.0](https://img.shields.io/badge/AppVersion-v3.5.0-informational?style=flat-square)
 
 Seerr helm chart for Kubernetes
 
@@ -26,6 +26,10 @@ Refer to [Seerr kubernetes documentation](https://docs.seerr.dev/getting-started
 
 ## Update Notes
 
+### Updating to 3.11.0
+
+`replicaCount` is back, but only accepts `0` or `1` (default `1`). Set it to `0` to scale down, e.g. for migrations.
+
 ### Updating to 3.0.0
 
 Nothing has changed; we just rebranded the `jellyseerr` Helm chart to `seerr` 🥳 refer to our [Migration guide](https://docs.seerr.dev/migration-guide).
@@ -37,7 +41,7 @@ Seerr is a stateful application and it is not designed to have multiple replicas
 - replacing `Deployment` with `StatefulSet`
 - removing `replicaCount` value
 
-If `replicaCount` value was used - remove it. Helm update should work fine after that.
+If `replicaCount` value was used - remove it (re-added in 3.11.0, limited to `0` or `1`). Helm update should work fine after that.
 
 ## Values
 
@@ -82,6 +86,7 @@ If `replicaCount` value was used - remove it. Helm update should work fine after
 | probes.livenessProbe | object | `{"initialDelaySeconds":20,"periodSeconds":15,"timeoutSeconds":3}` | Configure liveness probe |
 | probes.readinessProbe | object | `{"initialDelaySeconds":60,"periodSeconds":15,"timeoutSeconds":3}` | Configure readiness probe |
 | probes.startupProbe | string | `nil` | Configure startup probe |
+| replicaCount | int | `1` | Number of replicas: 0 or 1 only (Seerr does not support multiple replicas). Set to 0 to scale down, e.g. for migrations. |
 | resources | object | `{}` |  |
 | route.main.additionalRules | list | `[]` |  |
 | route.main.annotations | object | `{}` |  |
