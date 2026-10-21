@@ -17,7 +17,7 @@
     nodejs.enable = true;
     pnpm = {
       enable = true;
-      package = pkgs.pnpm_10;
+      package = pkgs.pnpm_11;
       install.enable = true;
     };
   };
