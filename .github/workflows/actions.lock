@@ -27,7 +27,7 @@ workflows:
         - 'actions/cache@v6.1.0'
         - 'actions/checkout@v7.0.1'
         - 'actions/setup-node@v7.0.0'
-        - 'cypress-io/github-action@v7.4.3'
+        - 'cypress-io/github-action@v7.4.6'
         - 'pnpm/action-setup@v6.0.10'
     '.github/workflows/detect-duplicate.yml':
         - 'actions/cache@v6.1.0'
@@ -214,9 +214,9 @@ dependencies:
         commit: 'sha1-9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310'
         owner_id: 6844498
         repo_id: 210310251
-    'cypress-io/github-action@v7.4.3':
-        ref: 'v7.4.3'
-        commit: 'sha1-09090944bd8aaa2a517cefb6e38bf1aae336b42b'
+    'cypress-io/github-action@v7.4.6':
+        ref: 'v7.4.6'
+        commit: 'sha1-c541a95ea92d9239347a2355f2e895cd4b3f8060'
         owner_id: 8908513
         repo_id: 219649445
     'docker/build-push-action@v7.3.0':
