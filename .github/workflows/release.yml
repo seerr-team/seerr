@@ -20,7 +20,7 @@ env:
 jobs:
   changelog:
     name: Generate changelog
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
     outputs:
@@ -44,7 +44,7 @@ jobs:
 
   create-draft-release:
     name: Create draft release
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: write
     needs: changelog
@@ -106,7 +106,7 @@ jobs:
   publish:
     name: Publish multi-arch manifests
     needs: build
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
       packages: write
@@ -196,7 +196,7 @@ jobs:
   sign:
     name: Sign images and create SBOM attestations
     needs: publish
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
       id-token: write
@@ -266,7 +266,7 @@ jobs:
   verify:
     name: Verify signatures and attestations
     needs: [publish, sign]
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
     env:
@@ -301,7 +301,7 @@ jobs:
   publish-release:
     name: Publish release
     needs: [create-draft-release, verify]
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: write
     env:

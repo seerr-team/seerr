@@ -25,7 +25,7 @@ jobs:
   i18n:
     name: i18n Check
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
       pull-requests: write
@@ -90,7 +90,7 @@ jobs:
   test:
     name: Lint & Test Build
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     container: node:22.22.2-alpine3.23@sha256:8ea2348b068a9544dae7317b4f3aafcdc032df1647bb7d768a05a5cad1a7683f
     steps:
       - name: Checkout
@@ -132,7 +132,7 @@ jobs:
   unit-test:
     name: Unit Tests
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     container: node:22.22.2-alpine3.23@sha256:8ea2348b068a9544dae7317b4f3aafcdc032df1647bb7d768a05a5cad1a7683f
     permissions:
       checks: write
@@ -219,7 +219,7 @@ jobs:
   publish:
     name: Publish multi-arch image
     needs: build
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
       packages: write
@@ -287,7 +287,7 @@ jobs:
     name: Send Discord Notification
     needs: publish
     if: always() && github.event_name != 'pull_request'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Determine Workflow Status
         id: status

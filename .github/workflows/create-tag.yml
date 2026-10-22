@@ -16,7 +16,7 @@ jobs:
   determine-tag-version:
     name: Determine tag version
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
     outputs:
@@ -47,7 +47,7 @@ jobs:
   create-tag:
     name: Create tag
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: write
     needs: determine-tag-version

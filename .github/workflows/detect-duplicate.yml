@@ -13,7 +13,7 @@ env:
 
 jobs:
   detect-duplicate:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     if: ${{ !github.event.issue.pull_request }}
     permissions:
       issues: write
