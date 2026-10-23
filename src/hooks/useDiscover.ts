@@ -95,7 +95,7 @@ const useDiscover = <
     }
   );
 
-  const resultIds: Set<number> = new Set<number>();
+  const resultIds: Set<string> = new Set<string>();
 
   const isLoadingInitialData = !data && !error;
   const isLoadingMore =
@@ -113,8 +113,9 @@ const useDiscover = <
     const results: T[] = [];
 
     for (const result of v.results) {
-      if (!resultIds.has(result.id)) {
-        resultIds.add(result.id);
+      const resultKey = `${result.mediaType}:${result.id}`;
+      if (!resultIds.has(resultKey)) {
+        resultIds.add(resultKey);
         results.push(result);
       }
     }

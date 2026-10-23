@@ -22,7 +22,10 @@ export enum DiscoverSliderType {
   TMDB_NETWORK,
   TMDB_MOVIE_STREAMING_SERVICES,
   TMDB_TV_STREAMING_SERVICES,
+  TMDB_LIST,
 }
+
+export const TMDB_LIST_ID_REGEX = /^[1-9]\d{0,11}$/;
 
 export const defaultSliders: Partial<DiscoverSlider>[] = [
   {
