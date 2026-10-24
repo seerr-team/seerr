@@ -17,6 +17,9 @@ importers:
       '@dr.pogodin/csurf':
         specifier: ^1.16.9
         version: 1.16.9
+      '@floating-ui/react':
+        specifier: ^0.27.20
+        version: 0.27.20(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       '@fontsource-variable/inter':
         specifier: ^5.2.8
         version: 5.2.8
@@ -176,9 +179,6 @@ importers:
       react-markdown:
         specifier: 10.1.0
         version: 10.1.0(@types/react@19.2.14)(react@19.2.6)
-      react-popper-tooltip:
-        specifier: 4.4.2
-        version: 4.4.2(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       react-select:
         specifier: 5.10.2
         version: 5.10.2(@types/react@19.2.14)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -1292,6 +1292,12 @@ packages:
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
 
+  '@floating-ui/react@0.27.20':
+    resolution: {integrity: sha512-CMqMy7OaXl9W0eq1Uy7L7i2Y/anPvHmFmESd2CEw0t5YvZhcVCeo4MBevAmswRllX7Y2dEidA4ozGPunLSTQpw==}
+    peerDependencies:
+      react: '>=17.0.0'
+      react-dom: '>=17.0.0'
+
   '@floating-ui/utils@0.2.12':
     resolution: {integrity: sha512-HpCo8tmWzLVad5s2d19EhAz5zqrrQ6s69qd6moPMQvkOuSwDT1YgRfWSVuc4ennqrgv3OHppiOGMQ7oC13yIww==}
 
@@ -1944,9 +1950,6 @@ packages:
   '@pkgr/core@0.2.9':
     resolution: {integrity: sha512-QNqXyfVS2wm9hweSYD2O7F0G06uurj9kZ96TRQE5Y9hU7+tgdZwIkbAKc5Ocy1HxEY2kuDQa6cQ1WRs/O5LFKA==}
     engines: {node: ^12.20.0 || ^14.18.0 || >=16.0.0}
-
-  '@popperjs/core@2.11.8':
-    resolution: {integrity: sha512-P1st0aksCrn9sGZhp8GMYwBnQsbvAWsZAX44oXNNvLHGqAOcoVxmjZiohstwQ7SqKnbR47akdNi+uleWD8+g6A==}
 
   '@react-aria/breadcrumbs@3.6.0':
     resolution: {integrity: sha512-JP7ljB15BJ+vQgD3AHseMPC4GFZD3fiZRytVTk9Lzks43Q2ZvcQEld5XUjItfbM10bKYWazw8xlyyXY/OZzsuw==}
@@ -6651,9 +6654,6 @@ packages:
   react-fast-compare@2.0.4:
     resolution: {integrity: sha512-suNP+J1VU1MWFKcyt7RtjiSWUjvidmQSlqu+eHslq+342xCbGTYmC0mEhPCOHxlW0CywylOC1u2DFAT+bv4dBw==}
 
-  react-fast-compare@3.2.2:
-    resolution: {integrity: sha512-nsO+KSNgo1SbJqJEYRE9ERzo7YtYbou/OqjSQKxV7jcKox7+usiUVZOAC+XnDOABXggQTno0Y1CpVnuWEc1boQ==}
-
   react-hot-toast@2.6.0:
     resolution: {integrity: sha512-bH+2EBMZ4sdyou/DPrfgIouFpcRLCJ+HoCA32UoAYHn6T3Ur5yfcDCeSr5mwldl6pFOsiocmrXMuoCJ1vV8bWg==}
     engines: {node: '>=10'}
@@ -6690,19 +6690,6 @@ packages:
     peerDependencies:
       '@types/react': 19.2.14
       react: '>=18'
-
-  react-popper-tooltip@4.4.2:
-    resolution: {integrity: sha512-y48r0mpzysRTZAIh8m2kpZ8S1YPNqGtQPDrlXYSGvDS1c1GpG/NUXbsbIdfbhXfmSaRJuTcaT6N1q3CKuHRVbg==}
-    peerDependencies:
-      react: '>=16.6.0'
-      react-dom: '>=16.6.0'
-
-  react-popper@2.3.0:
-    resolution: {integrity: sha512-e1hj8lL3uM+sgSR4Lxzn5h1GxBlpa4CQz0XLF8kx4MDrDRWY0Ena4c97PUeSX9i5W3UAfDP0z0FXCTQkoXUl3Q==}
-    peerDependencies:
-      '@popperjs/core': ^2.0.0
-      react: ^16.8.0 || ^17 || ^18
-      react-dom: ^16.8.0 || ^17 || ^18
 
   react-select@5.10.2:
     resolution: {integrity: sha512-Z33nHdEFWq9tfnfVXaiM12rbJmk+QjFEztWLtmXqQhz6Al4UZZ9xc0wiatmGtUOCCnHN0WizL3tCMYRENX4rVQ==}
@@ -7824,9 +7811,6 @@ packages:
 
   walker@1.0.8:
     resolution: {integrity: sha512-ts/8E8l5b7kY0vlWLewOkDXMmPdLcVV4GmOQLyxuSswIJsweeFZtAsMF7k1Nszz+TYBQrlYRmzOnr398y1JemQ==}
-
-  warning@4.0.3:
-    resolution: {integrity: sha512-rpJyN222KWIvHJ/F53XSZv0Zl/accqHR8et1kpaMTD/fLCRxtV8iX8czMzY7sVZupTI3zcUTg8eycS2kNF9l6w==}
 
   wcwidth@1.0.1:
     resolution: {integrity: sha512-XHPEwS0q6TaxcvG85+8EYkbiCux2XtWG2mkc47Ng2A77BQu9+DqIOJldST4HgPkuea7dvKSj5VgX3P1d4rW8Tg==}
@@ -9174,6 +9158,14 @@ snapshots:
       react-dom: 19.2.6(react@19.2.6)
       tabbable: 6.5.0
 
+  '@floating-ui/react@0.27.20(react-dom@19.2.6(react@19.2.6))(react@19.2.6)':
+    dependencies:
+      '@floating-ui/react-dom': 2.1.9(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+      '@floating-ui/utils': 0.2.12
+      react: 19.2.6
+      react-dom: 19.2.6(react@19.2.6)
+      tabbable: 6.5.0
+
   '@floating-ui/utils@0.2.12': {}
 
   '@fontsource-variable/inter@5.2.8': {}
@@ -9787,8 +9779,6 @@ snapshots:
     optional: true
 
   '@pkgr/core@0.2.9': {}
-
-  '@popperjs/core@2.11.8': {}
 
   '@react-aria/breadcrumbs@3.6.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)':
     dependencies:
@@ -15490,8 +15480,6 @@ snapshots:
 
   react-fast-compare@2.0.4: {}
 
-  react-fast-compare@3.2.2: {}
-
   react-hot-toast@2.6.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6):
     dependencies:
       csstype: 3.2.3
@@ -15541,22 +15529,6 @@ snapshots:
       vfile: 6.0.3
     transitivePeerDependencies:
       - supports-color
-
-  react-popper-tooltip@4.4.2(react-dom@19.2.6(react@19.2.6))(react@19.2.6):
-    dependencies:
-      '@babel/runtime': 7.29.2
-      '@popperjs/core': 2.11.8
-      react: 19.2.6
-      react-dom: 19.2.6(react@19.2.6)
-      react-popper: 2.3.0(@popperjs/core@2.11.8)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
-
-  react-popper@2.3.0(@popperjs/core@2.11.8)(react-dom@19.2.6(react@19.2.6))(react@19.2.6):
-    dependencies:
-      '@popperjs/core': 2.11.8
-      react: 19.2.6
-      react-dom: 19.2.6(react@19.2.6)
-      react-fast-compare: 3.2.2
-      warning: 4.0.3
 
   react-select@5.10.2(@types/react@19.2.14)(react-dom@19.2.6(react@19.2.6))(react@19.2.6):
     dependencies:
@@ -16862,10 +16834,6 @@ snapshots:
     dependencies:
       makeerror: 1.0.12
     optional: true
-
-  warning@4.0.3:
-    dependencies:
-      loose-envify: 1.4.0
 
   wcwidth@1.0.1:
     dependencies:

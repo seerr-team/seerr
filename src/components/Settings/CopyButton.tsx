@@ -1,8 +1,7 @@
-import Tooltip from '@app/components/Common/Tooltip';
+import Tooltip, { type TooltipConfig } from '@app/components/Common/Tooltip';
 import useToasts from '@app/hooks/useToasts';
 import { ClipboardDocumentIcon } from '@heroicons/react/24/solid';
 import React, { useEffect } from 'react';
-import type { Config } from 'react-popper-tooltip';
 import useClipboard from 'react-use-clipboard';
 
 type CopyButtonProps = {
@@ -11,7 +10,7 @@ type CopyButtonProps = {
   toastMessage?: string;
 
   tooltipContent?: React.ReactNode;
-  tooltipConfig?: Partial<Config>;
+  tooltipConfig?: TooltipConfig;
 };
 
 const CopyButton = ({
