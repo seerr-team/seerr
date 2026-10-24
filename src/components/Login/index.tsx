@@ -1,12 +1,13 @@
 import EmbyLogo from '@app/assets/services/emby-icon-only.svg';
 import JellyfinLogo from '@app/assets/services/jellyfin-icon.svg';
 import PlexLogo from '@app/assets/services/plex.svg';
-import Button from '@app/components/Common/Button';
+import ButtonWithLoader from '@app/components/Common/ButtonWithLoader';
 import ImageFader from '@app/components/Common/ImageFader';
 import PageTitle from '@app/components/Common/PageTitle';
 import LanguagePicker from '@app/components/Layout/LanguagePicker';
 import JellyfinLogin from '@app/components/Login/JellyfinLogin';
 import LocalLogin from '@app/components/Login/LocalLogin';
+import OidcLoginButton from '@app/components/Login/OidcLoginButton';
 import PlexLoginButton from '@app/components/Login/PlexLoginButton';
 import useSettings from '@app/hooks/useSettings';
 import { useUser } from '@app/hooks/useUser';
@@ -121,10 +122,10 @@ const Login = () => {
       ) : (
         settings.currentSettings.localLogin &&
         (mediaServerLogin ? (
-          <Button
+          <ButtonWithLoader
             key="seerr"
             data-testid="seerr-login-button"
-            className="flex-1 bg-transparent"
+            className="min-w-0 flex-grow"
             onClick={() => setMediaServerLogin(false)}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -134,19 +135,26 @@ const Login = () => {
               className="mr-2 h-5"
             />
             <span>{settings.currentSettings.applicationTitle}</span>
-          </Button>
+          </ButtonWithLoader>
         ) : (
-          <Button
+          <ButtonWithLoader
             key="mediaserver"
             data-testid="mediaserver-login-button"
-            className="flex-1 bg-transparent"
+            className="min-w-0 flex-grow"
             onClick={() => setMediaServerLogin(true)}
           >
             <MediaServerLogo />
             <span>{mediaServerName}</span>
-          </Button>
+          </ButtonWithLoader>
         ))
       )),
+    ...settings.currentSettings.openIdProviders.map((provider) => (
+      <OidcLoginButton
+        key={provider.slug}
+        provider={provider}
+        onError={setError}
+      />
+    )),
   ].filter((o): o is JSX.Element => !!o);
 
   return (
@@ -169,7 +177,7 @@ const Login = () => {
       </div>
       <div className="relative z-50 mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div
-          className="bg-gray-800/50 shadow sm:rounded-lg"
+          className="overflow-hidden bg-gray-800/50 shadow sm:rounded-lg"
           style={{ backdropFilter: 'blur(5px)' }}
         >
           <>
@@ -183,7 +191,7 @@ const Login = () => {
               leaveFrom="opacity-100"
               leaveTo="opacity-0"
             >
-              <div className="mb-4 rounded-md bg-red-600 p-4">
+              <div className="bg-red-600 p-4">
                 <div className="flex">
                   <div className="flex-shrink-0">
                     <XCircleIcon className="h-5 w-5 text-red-300" />
@@ -197,39 +205,42 @@ const Login = () => {
               </div>
             </Transition>
             <div className="px-10 py-8">
-              <SwitchTransition mode="out-in">
-                <CSSTransition
-                  key={mediaServerLogin ? 'ms' : 'local'}
-                  nodeRef={loginRef}
-                  timeout={{ enter: 300, exit: 150 }}
-                  onEntered={() => {
-                    document
-                      .querySelector<HTMLInputElement>('#email, #username')
-                      ?.focus();
-                  }}
-                  classNames={{
-                    enter: 'opacity-0',
-                    enterActive: 'transition-opacity duration-300 opacity-100',
-                    exit: 'opacity-100',
-                    exitActive: 'transition-opacity duration-150 opacity-0',
-                  }}
-                >
-                  <div ref={loginRef} className="button-container">
-                    {isJellyfin &&
-                    (mediaServerLogin ||
-                      !settings.currentSettings.localLogin) ? (
-                      <JellyfinLogin
-                        serverType={settings.currentSettings.mediaServerType}
-                        revalidate={revalidate}
-                      />
-                    ) : (
-                      settings.currentSettings.localLogin && (
-                        <LocalLogin revalidate={revalidate} />
-                      )
-                    )}
-                  </div>
-                </CSSTransition>
-              </SwitchTransition>
+              {loginFormVisible && (
+                <SwitchTransition mode="out-in">
+                  <CSSTransition
+                    key={mediaServerLogin ? 'ms' : 'local'}
+                    nodeRef={loginRef}
+                    timeout={{ enter: 300, exit: 150 }}
+                    onEntered={() => {
+                      document
+                        .querySelector<HTMLInputElement>('#email, #username')
+                        ?.focus();
+                    }}
+                    classNames={{
+                      enter: 'opacity-0',
+                      enterActive:
+                        'transition-opacity duration-300 opacity-100',
+                      exit: 'opacity-100',
+                      exitActive: 'transition-opacity duration-150 opacity-0',
+                    }}
+                  >
+                    <div ref={loginRef} className="button-container">
+                      {isJellyfin &&
+                      (mediaServerLogin ||
+                        !settings.currentSettings.localLogin) ? (
+                        <JellyfinLogin
+                          serverType={settings.currentSettings.mediaServerType}
+                          revalidate={revalidate}
+                        />
+                      ) : (
+                        settings.currentSettings.localLogin && (
+                          <LocalLogin revalidate={revalidate} />
+                        )
+                      )}
+                    </div>
+                  </CSSTransition>
+                </SwitchTransition>
+              )}
 
               {additionalLoginOptions.length > 0 &&
                 (loginFormVisible ? (
