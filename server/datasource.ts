@@ -12,6 +12,8 @@ import { User } from '@server/entity/User';
 import { UserPushSubscription } from '@server/entity/UserPushSubscription';
 import { UserSettings } from '@server/entity/UserSettings';
 import { Watchlist } from '@server/entity/Watchlist';
+import { WatchlistSyncEntry } from '@server/entity/WatchlistSyncEntry';
+import { WatchlistSyncEntrySeason } from '@server/entity/WatchlistSyncEntrySeason';
 import { IssueCommentSubscriber } from '@server/subscriber/IssueCommentSubscriber';
 import { IssueSubscriber } from '@server/subscriber/IssueSubscriber';
 import { MediaRequestSubscriber } from '@server/subscriber/MediaRequestSubscriber';
@@ -39,6 +41,8 @@ const entities = [
   UserPushSubscription,
   UserSettings,
   Watchlist,
+  WatchlistSyncEntry,
+  WatchlistSyncEntrySeason,
 ];
 
 const subscribers = [
