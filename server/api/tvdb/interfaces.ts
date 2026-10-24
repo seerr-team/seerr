@@ -39,6 +39,11 @@ export interface TvdbRemoteId {
 // sourceName 'TheMovieDB.com' is shared with movie (10), person (15) and collection (28)
 export const TVDB_SOURCE_TYPE_TMDB_TV = 12;
 
+export interface TvdbOfficialSeason {
+  seasonNumber: number;
+  year: number | null;
+}
+
 export interface TvdbSeriesBaseRecord {
   id: number;
   name: string;

@@ -7,6 +7,9 @@ import type {
 import SonarrAPI from '@server/api/servarr/sonarr';
 import TheMovieDb from '@server/api/themoviedb';
 import { ANIME_KEYWORD_ID } from '@server/api/themoviedb/constants';
+import type { TmdbTvSeasonResult } from '@server/api/themoviedb/interfaces';
+import Tvdb from '@server/api/tvdb';
+import type { TvdbOfficialSeason } from '@server/api/tvdb/interfaces';
 import {
   MediaRequestStatus,
   MediaStatus,
@@ -480,6 +483,49 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
     }
   }
 
+  // a manual pick is refused by the backfill when another media row already
+  // owns that ID, so dispatch resolves it again
+  private async resolveMissingTvdbId(
+    tmdbId: number,
+    sonarr: SonarrAPI
+  ): Promise<number | undefined> {
+    try {
+      const tvdb = await Tvdb.getInstance();
+      const resolved = await tvdb.resolveTvdbId(tmdbId);
+
+      if (resolved) {
+        return resolved;
+      }
+    } catch {
+      // TheTVDB being unavailable must not skip the Sonarr fallback
+    }
+
+    return (await sonarr.getSeriesByTmdbId(tmdbId))?.tvdbId;
+  }
+
+  private async getOfficialTvdbSeasons(
+    tvdbId: number
+  ): Promise<TvdbOfficialSeason[] | null> {
+    try {
+      const tvdb = await Tvdb.getInstance();
+
+      return await tvdb.getOfficialSeasons(tvdbId);
+    } catch {
+      return null;
+    }
+  }
+
+  private seasonsMatch(
+    tmdbSeason: TmdbTvSeasonResult | undefined,
+    tvdbSeason: TvdbOfficialSeason | undefined
+  ): boolean {
+    if (!tmdbSeason?.air_date || !tvdbSeason?.year) {
+      return false;
+    }
+
+    return Number(tmdbSeason.air_date.slice(0, 4)) === tvdbSeason.year;
+  }
+
   public async sendToSonarr(
     entity: MediaRequest,
     manager: EntityManager
@@ -573,13 +619,120 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           url: SonarrAPI.buildUrl(sonarrSettings, '/api/v3'),
         });
         const series = await tmdb.getTvShow({ tvId: media.tmdbId });
-        const tvdbId = series.external_ids.tvdb_id ?? media.tvdbId;
 
-        if (!tvdbId) {
+        let resolvedTvdbId = series.external_ids.tvdb_id ?? media.tvdbId;
+
+        if (!resolvedTvdbId) {
+          resolvedTvdbId = await this.resolveMissingTvdbId(
+            media.tmdbId,
+            sonarr
+          );
+
+          if (resolvedTvdbId) {
+            const conflict = await mediaRepository.findOne({
+              where: { tvdbId: resolvedTvdbId },
+            });
+
+            // deliberately uncaught: a unique violation would abort the request
+            // transaction on Postgres and break the FAILED save below
+            if (!conflict) {
+              media.tvdbId = resolvedTvdbId;
+              await mediaRepository.save(media);
+            }
+          }
+        }
+
+        if (!resolvedTvdbId) {
           const requestRepository = manager.getRepository(MediaRequest);
-          await mediaRepository.remove(media);
-          await requestRepository.remove(entity);
-          throw new Error('TVDB ID not found');
+          entity.status = MediaRequestStatus.FAILED;
+          await requestRepository.save(entity);
+
+          logger.warn(
+            'Could not resolve a TVDB ID for series request, marking status as FAILED',
+            {
+              label: 'Media Request',
+              requestId: entity.id,
+              mediaId: entity.media.id,
+              tmdbId: media.tmdbId,
+            }
+          );
+
+          MediaRequest.sendNotification(
+            entity,
+            media,
+            Notification.MEDIA_FAILED
+          );
+          return;
+        }
+
+        const tvdbId = resolvedTvdbId;
+
+        // shows TMDB has no TVDB ID for are the ones whose season numbering
+        // can diverge from Sonarr's
+        if (!series.external_ids.tvdb_id) {
+          const tvdbSeasons = await this.getOfficialTvdbSeasons(tvdbId);
+
+          if (!tvdbSeasons) {
+            const requestRepository = manager.getRepository(MediaRequest);
+            entity.status = MediaRequestStatus.FAILED;
+            await requestRepository.save(entity);
+
+            logger.warn(
+              'Could not confirm the TVDB season numbering for series request, marking status as FAILED',
+              {
+                label: 'Media Request',
+                requestId: entity.id,
+                mediaId: entity.media.id,
+                tvdbId,
+              }
+            );
+
+            MediaRequest.sendNotification(
+              entity,
+              media,
+              Notification.MEDIA_FAILED
+            );
+            return;
+          }
+
+          const unmatchedSeasons = entity.seasons
+            .map((season) => season.seasonNumber)
+            .filter(
+              (seasonNumber) =>
+                seasonNumber > 0 &&
+                !this.seasonsMatch(
+                  series.seasons.find(
+                    (season) => season.season_number === seasonNumber
+                  ),
+                  tvdbSeasons.find(
+                    (season) => season.seasonNumber === seasonNumber
+                  )
+                )
+            );
+
+          if (tvdbSeasons.length > 0 && unmatchedSeasons.length > 0) {
+            const requestRepository = manager.getRepository(MediaRequest);
+            entity.status = MediaRequestStatus.FAILED;
+            await requestRepository.save(entity);
+
+            logger.warn(
+              'Requested seasons do not match the TVDB season numbering, marking status as FAILED',
+              {
+                label: 'Media Request',
+                requestId: entity.id,
+                mediaId: entity.media.id,
+                tvdbId,
+                unmatchedSeasons,
+              }
+            );
+
+            MediaRequest.sendNotification(
+              entity,
+              media,
+              Notification.MEDIA_FAILED
+            );
+            return;
+          }
         }
 
         const isAnime = series.keywords.results.some(

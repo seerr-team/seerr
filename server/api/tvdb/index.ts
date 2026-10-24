@@ -13,6 +13,7 @@ import {
   type TvdbBaseResponse,
   type TvdbEpisode,
   type TvdbLoginResponse,
+  type TvdbOfficialSeason,
   type TvdbRemoteId,
   type TvdbSearchByRemoteIdResult,
   type TvdbSeasonDetails,
@@ -287,6 +288,36 @@ class Tvdb extends ExternalAPI implements TvShowProvider {
       );
       return null;
     }
+  }
+
+  public async getOfficialSeasons(
+    tvdbId: number
+  ): Promise<TvdbOfficialSeason[] | null> {
+    await this.refreshToken();
+
+    const tvdbData = await this.fetchTvdbShowData(tvdbId);
+
+    // an incomplete record confirms nothing, unlike a show that really has
+    // no official seasons
+    if (!tvdbData?.seasons || !tvdbData.episodes) {
+      return null;
+    }
+
+    return tvdbData.seasons
+      .filter((season) => season.type?.type === 'official' && season.number > 0)
+      .sort((a, b) => a.number - b.number)
+      .map((season) => {
+        // the season record's own year is null on this endpoint
+        const years = tvdbData.episodes
+          .filter((episode) => episode.seasonNumber === season.number)
+          .map((episode) => Number(episode.aired?.slice(0, 4)))
+          .filter((year) => !!year);
+
+        return {
+          seasonNumber: season.number,
+          year: years.length ? Math.min(...years) : null,
+        };
+      });
   }
 
   private async fetchTvdbSeriesRemoteIds(
