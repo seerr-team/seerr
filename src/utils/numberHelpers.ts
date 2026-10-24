@@ -1,3 +1,5 @@
+export const PHONE_REGEX = /^\+?[0-9]{1,15}$/;
+
 export const formatBytes = (bytes: number, decimals = 2): string => {
   if (bytes === 0) return '0 Bytes';
 

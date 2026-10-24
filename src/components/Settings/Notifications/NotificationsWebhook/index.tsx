@@ -48,6 +48,7 @@ const defaultPayload = {
     request_id: '{{request_id}}',
     requestedBy_email: '{{requestedBy_email}}',
     requestedBy_username: '{{requestedBy_username}}',
+    requestedBy_phoneNumber: '{{requestedBy_phoneNumber}}',
     requestedBy_avatar: '{{requestedBy_avatar}}',
     requestedBy_jellyfinUserId: '{{requestedBy_jellyfinUserId}}',
     requestedBy_settings_discordIds: '{{requestedBy_settings_discordIds}}',
@@ -60,6 +61,7 @@ const defaultPayload = {
     issue_status: '{{issue_status}}',
     reportedBy_email: '{{reportedBy_email}}',
     reportedBy_username: '{{reportedBy_username}}',
+    reportedBy_phoneNumber: '{{reportedBy_phoneNumber}}',
     reportedBy_avatar: '{{reportedBy_avatar}}',
     reportedBy_settings_discordIds: '{{reportedBy_settings_discordIds}}',
     reportedBy_settings_telegramChatId:
@@ -69,6 +71,7 @@ const defaultPayload = {
     comment_message: '{{comment_message}}',
     commentedBy_email: '{{commentedBy_email}}',
     commentedBy_username: '{{commentedBy_username}}',
+    commentedBy_phoneNumber: '{{commentedBy_phoneNumber}}',
     commentedBy_avatar: '{{commentedBy_avatar}}',
     commentedBy_settings_discordIds: '{{commentedBy_settings_discordIds}}',
     commentedBy_settings_telegramChatId:
