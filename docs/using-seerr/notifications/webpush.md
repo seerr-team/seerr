@@ -25,3 +25,9 @@ For Web Push notifications to work on mobile you need to add Seerr to your home 
 :::info[iOS Users]
 On iOS you may need to enable the Safari notifications feature flag by going to **Settings → Safari → Advanced → Feature Flags** and enabling "Notifications".
 :::
+
+## Configuration
+
+### Embed Poster (optional)
+
+When enabled, the poster image of the requested movie or series is included in the notification when one is available.

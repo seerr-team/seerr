@@ -20,6 +20,11 @@ Add an application to your Gotify server, and set this field to the generated ap
 Please refer to the [Gotify API documentation](https://gotify.net/docs) for more details on configuring these notifications.
 :::
 
+### Embed Poster (optional)
+
+When enabled, the poster image of the requested movie or series is included in the notification when one is available.
+
 ### Notification Language
 
 Sets the language for notifications sent to this Gotify server.
+
