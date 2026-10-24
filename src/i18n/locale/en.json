@@ -1706,6 +1706,7 @@
   "i18n.usersettings": "User Settings",
   "i18n.view": "View",
   "pages.errormessagewithcode": "{statusCode} - {error}",
+  "pages.forbidden": "Forbidden",
   "pages.internalservererror": "Internal Server Error",
   "pages.oops": "Oops",
   "pages.pagenotfound": "Page Not Found",

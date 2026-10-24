@@ -182,7 +182,8 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
   }
 
   if (!data) {
-    return <ErrorPage statusCode={404} />;
+    const statusCode = error?.response?.status === 403 ? 403 : 404;
+    return <ErrorPage statusCode={statusCode} />;
   }
 
   const showAllStudios = data.productionCompanies.length <= minStudios + 1;
