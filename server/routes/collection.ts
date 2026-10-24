@@ -9,11 +9,12 @@ const collectionRoutes = Router();
 
 collectionRoutes.get<{ id: string }>('/:id', async (req, res, next) => {
   const tmdb = new TheMovieDb();
+  const mediaLocale = req.user?.settings?.mediaLocale || req.locale;
 
   try {
     const collection = await tmdb.getCollection({
       collectionId: Number(req.params.id),
-      language: (req.query.language as string) ?? req.locale,
+      language: (req.query.language as string) || mediaLocale,
     });
 
     const media = await Media.getRelatedMedia(
