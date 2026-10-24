@@ -36,9 +36,13 @@ class SonarrScanner
   private sonarrApi: SonarrAPI;
   private scannedTvdbIds: Set<number> = new Set();
   private scanned4kTvdbIds: Set<number> = new Set();
-  // Keyed on tmdbId: media.tvdbId can be null. Excludes unmonitored titles.
-  private processingTmdbIds: Set<number> = new Set();
-  private processing4kTmdbIds: Set<number> = new Set();
+  // Season numbers keyed on tmdbId, as media.tvdbId can be null. Excludes unmonitored seasons.
+  private processingTmdbIds: Map<number, Set<number>> = new Map();
+  private processing4kTmdbIds: Map<number, Set<number>> = new Map();
+  // A lookup can fail before its tmdbId is known, so failures are matched through other servers' lookups.
+  private failedTvdbIds: Set<number> = new Set();
+  private failed4kTvdbIds: Set<number> = new Set();
+  private tmdbIdsByTvdbId: Map<number, number> = new Map();
   private didScanStandard = false;
   private didScan4k = false;
   private serverReturnedEmpty = false;
@@ -65,6 +69,9 @@ class SonarrScanner
     this.scanned4kTvdbIds.clear();
     this.processingTmdbIds.clear();
     this.processing4kTmdbIds.clear();
+    this.failedTvdbIds.clear();
+    this.failed4kTvdbIds.clear();
+    this.tmdbIdsByTvdbId.clear();
     this.didScanStandard = false;
     this.didScan4k = false;
     this.serverReturnedEmpty = false;
@@ -144,13 +151,22 @@ class SonarrScanner
         this.didScan4k = false;
       }
 
-      await this.resolveStatusResets((media, is4k) => {
+      await this.resolveStatusResets((media, is4k, seasonNumber) => {
         const scanComplete = is4k ? this.didScan4k : this.didScanStandard;
+        const failedToScan = [
+          ...(is4k ? this.failed4kTvdbIds : this.failedTvdbIds),
+        ].some((tvdbId) => this.tmdbIdsByTvdbId.get(tvdbId) === media.tmdbId);
         const processingIds = is4k
           ? this.processing4kTmdbIds
           : this.processingTmdbIds;
 
-        return scanComplete && !processingIds.has(media.tmdbId);
+        return (
+          scanComplete &&
+          !failedToScan &&
+          (seasonNumber === undefined
+            ? !processingIds.has(media.tmdbId)
+            : !processingIds.get(media.tmdbId)?.has(seasonNumber))
+        );
       });
 
       await this.cleanupOrphanedShows();
@@ -188,6 +204,7 @@ class SonarrScanner
       }
 
       const tmdbId = tvShow.id;
+      this.tmdbIdsByTvdbId.set(sonarrSeries.tvdbId, tmdbId);
       const metadataProvider = tvShow.keywords.results.some(
         (keyword: TmdbKeyword) => keyword.id === ANIME_KEYWORD_ID
       )
@@ -236,11 +253,18 @@ class SonarrScanner
         });
       }
 
-      if (processableSeasons.some((season) => season.processing)) {
-        if (server4k) {
-          this.processing4kTmdbIds.add(tmdbId);
-        } else {
-          this.processingTmdbIds.add(tmdbId);
+      const processing = server4k
+        ? this.processing4kTmdbIds
+        : this.processingTmdbIds;
+
+      for (const season of processableSeasons) {
+        if (season.processing) {
+          processing.set(
+            tmdbId,
+            (processing.get(tmdbId) ?? new Set<number>()).add(
+              season.seasonNumber
+            )
+          );
         }
       }
 
@@ -252,6 +276,9 @@ class SonarrScanner
         is4k: server4k,
       });
     } catch (e) {
+      (server4k ? this.failed4kTvdbIds : this.failedTvdbIds).add(
+        sonarrSeries.tvdbId
+      );
       this.log('Failed to process Sonarr media', 'error', {
         errorMessage: e.message,
         title: sonarrSeries.title,

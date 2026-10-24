@@ -33,10 +33,17 @@ class HarnessScanner extends BaseScanner<unknown> {
     tmdbId: number,
     seasons: ProcessableSeason[]
   ): Promise<void> {
-    await this.processShow(tmdbId, undefined, seasons, {
+    await this.processSeasons(tmdbId, seasons);
+    await this.resolve();
+  }
+
+  public processSeasons(
+    tmdbId: number,
+    seasons: ProcessableSeason[]
+  ): Promise<void> {
+    return this.processShow(tmdbId, undefined, seasons, {
       title: 'Test Show',
     });
-    await this.resolve();
   }
 
   public scanAbandonedMovie(tmdbId: number): Promise<void> {
@@ -63,7 +70,16 @@ const LIBRARY_HAS_NO_EPISODES: ProcessableSeason[] = [
   },
 ];
 
-async function seedInFlightShow(tmdbId: number): Promise<MediaRequest> {
+async function seedInFlightShow(
+  tmdbId: number,
+  seasons = [
+    new Season({
+      seasonNumber: 1,
+      status: MediaStatus.PROCESSING,
+      status4k: MediaStatus.UNKNOWN,
+    }),
+  ]
+): Promise<MediaRequest> {
   const mediaRepository = getRepository(Media);
   const requestRepository = getRepository(MediaRequest);
   const userRepository = getRepository(User);
@@ -76,13 +92,7 @@ async function seedInFlightShow(tmdbId: number): Promise<MediaRequest> {
       mediaType: MediaType.TV,
       status: MediaStatus.PROCESSING,
       status4k: MediaStatus.UNKNOWN,
-      seasons: [
-        new Season({
-          seasonNumber: 1,
-          status: MediaStatus.PROCESSING,
-          status4k: MediaStatus.UNKNOWN,
-        }),
-      ],
+      seasons,
     })
   );
 
@@ -168,6 +178,52 @@ describe('BaseScanner', () => {
       });
 
       assert.strictEqual(updated.status, MediaRequestStatus.DECLINED);
+    });
+
+    it('resets a season in the loop for a scanner that has not opted in', async () => {
+      const mediaRepository = getRepository(Media);
+      const requestRepository = getRepository(MediaRequest);
+      const request = await seedInFlightShow(7005);
+
+      await new HarnessScanner().processSeasons(7005, LIBRARY_HAS_NO_EPISODES);
+
+      const media = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 7005 },
+      });
+      const updated = await requestRepository.findOneOrFail({
+        where: { id: request.id },
+      });
+
+      assert.strictEqual(media.seasons[0].status, MediaStatus.UNKNOWN);
+      assert.strictEqual(media.status, MediaStatus.UNKNOWN);
+      assert.strictEqual(updated.status, MediaRequestStatus.APPROVED);
+    });
+
+    it('leaves a show alone at resolve time once something else has set it processing', async () => {
+      const mediaRepository = getRepository(Media);
+      const requestRepository = getRepository(MediaRequest);
+      const request = await seedInFlightShow(7006, []);
+      const scanner = new HarnessScanner(true);
+
+      await scanner.processSeasons(7006, LIBRARY_HAS_NO_EPISODES);
+
+      const revived = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 7006 },
+      });
+      revived.status = MediaStatus.PROCESSING;
+      await mediaRepository.save(revived);
+
+      await scanner.resolve();
+
+      const media = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 7006 },
+      });
+      const updated = await requestRepository.findOneOrFail({
+        where: { id: request.id },
+      });
+
+      assert.strictEqual(media.status, MediaStatus.PROCESSING);
+      assert.strictEqual(updated.status, MediaRequestStatus.APPROVED);
     });
 
     it('resets a movie in the loop for a scanner that has not opted in', async () => {
