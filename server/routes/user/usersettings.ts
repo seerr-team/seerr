@@ -13,7 +13,7 @@ import type {
 import { Permission } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
-import { isAuthenticated } from '@server/middleware/auth';
+import { hashApiKey, isAuthenticated } from '@server/middleware/auth';
 import { quickConnectSecret } from '@server/routes/auth';
 import { ApiError } from '@server/types/error';
 import { getHostname } from '@server/utils/getHostname';
@@ -21,9 +21,10 @@ import {
   isOwnProfile,
   isOwnProfileOrAdmin,
 } from '@server/utils/profileMiddleware';
+import { randomBytes } from 'crypto';
 import { Router } from 'express';
 import net from 'net';
-import { Not } from 'typeorm';
+import { IsNull, Not } from 'typeorm';
 import { canMakePermissionsChange } from '.';
 
 const userSettingsRoutes = Router({ mergeParams: true });
@@ -160,6 +161,57 @@ userSettingsRoutes.post<
     return next({ status: 500, message: e.message });
   }
 });
+
+const setApiKeyHash = async (user: User, apiKeyHash: string | null) => {
+  user.settings ??= new UserSettings({ user });
+  user.settings.apiKeyHash = apiKeyHash;
+  await getRepository(User).save(user);
+};
+
+userSettingsRoutes.get<{ id: string }, { hasApiKey: boolean }>(
+  '/api-key',
+  isOwnProfile(),
+  async (req, res, next) => {
+    try {
+      const hasApiKey = await getRepository(UserSettings).exists({
+        where: {
+          user: { id: Number(req.params.id) },
+          apiKeyHash: Not(IsNull()),
+        },
+      });
+      return res.status(200).json({ hasApiKey });
+    } catch (e) {
+      next({ status: 500, message: e.message });
+    }
+  }
+);
+
+userSettingsRoutes.post<{ id: string }, { apiKey: string }>(
+  '/api-key',
+  isOwnProfile(),
+  async (req, res, next) => {
+    const apiKey = randomBytes(32).toString('base64url');
+    try {
+      await setApiKeyHash(req.user as User, hashApiKey(apiKey));
+      return res.status(200).json({ apiKey });
+    } catch (e) {
+      next({ status: 500, message: e.message });
+    }
+  }
+);
+
+userSettingsRoutes.delete<{ id: string }>(
+  '/api-key',
+  isOwnProfile(),
+  async (req, res, next) => {
+    try {
+      await setApiKeyHash(req.user as User, null);
+      return res.status(204).send();
+    } catch (e) {
+      next({ status: 500, message: e.message });
+    }
+  }
+);
 
 userSettingsRoutes.get<{ id: string }, { hasPassword: boolean }>(
   '/password',

@@ -18,6 +18,7 @@ import useSWR from 'swr';
 const messages = defineMessages('components.UserProfile.UserSettings', {
   menuGeneralSettings: 'General',
   menuChangePass: 'Password',
+  menuApiKey: 'API Key',
   menuLinkedAccounts: 'Linked Accounts',
   menuNotifications: 'Notifications',
   menuPermissions: 'Permissions',
@@ -63,6 +64,12 @@ const UserSettings = ({ children }: UserSettingsProps) => {
         (currentUser?.id !== 1 &&
           currentUser?.id !== user?.id &&
           hasPermission(Permission.ADMIN, user?.permissions ?? 0)),
+    },
+    {
+      text: intl.formatMessage(messages.menuApiKey),
+      route: '/settings/api-key',
+      regex: /\/settings\/api-key/,
+      hidden: currentUser?.id !== user?.id,
     },
     {
       text: intl.formatMessage(messages.menuLinkedAccounts),
