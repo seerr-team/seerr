@@ -5,6 +5,7 @@ import { User } from '@server/entity/User';
 import { defineMessages, getIntl } from '@server/i18n';
 import globalMessages from '@server/i18n/globalMessages';
 import PreparedEmail from '@server/lib/email';
+import { resolveNotificationEvent } from '@server/lib/notifications/eventMessages';
 import type { NotificationAgentEmail } from '@server/lib/settings';
 import { NotificationAgentKey, getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
@@ -193,7 +194,7 @@ class EmailAgent
           to: recipientEmail,
         },
         locals: {
-          event: payload.event,
+          event: resolveNotificationEvent(type, payload, locale),
           body,
           mediaName: payload.subject,
           mediaExtra: payload.extra ?? [],

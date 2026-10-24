@@ -18,6 +18,7 @@ import { MediaRequest } from '@server/entity/MediaRequest';
 import Season from '@server/entity/Season';
 import SeasonRequest from '@server/entity/SeasonRequest';
 import notificationManager, { Notification } from '@server/lib/notifications';
+import { formatNotificationEvent } from '@server/lib/notifications/eventMessages';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { withNestedTransaction } from '@server/utils/nestedTransaction';
@@ -77,7 +78,13 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
       });
 
       notificationManager.sendNotification(Notification.MEDIA_AVAILABLE, {
-        event: `${entity.is4k ? '4K ' : ''}Movie Request Now Available`,
+        event: formatNotificationEvent(
+          Notification.MEDIA_AVAILABLE,
+          'movie',
+          entity.is4k
+        ),
+        mediaType: 'movie',
+        is4k: entity.is4k,
         notifyAdmin: false,
         notifySystem: true,
         notifyUser: entity.requestedBy,
@@ -148,7 +155,13 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
       const tv = await tmdb.getTvShow({ tvId: entity.media.tmdbId });
 
       notificationManager.sendNotification(Notification.MEDIA_AVAILABLE, {
-        event: `${entity.is4k ? '4K ' : ''}Series Request Now Available`,
+        event: formatNotificationEvent(
+          Notification.MEDIA_AVAILABLE,
+          'series',
+          entity.is4k
+        ),
+        mediaType: 'series',
+        is4k: entity.is4k,
         subject: `${tv.name}${
           tv.first_air_date ? ` (${tv.first_air_date.slice(0, 4)})` : ''
         }`,
