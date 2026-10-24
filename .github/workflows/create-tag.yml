@@ -30,7 +30,7 @@ jobs:
               persist-credentials: false
 
           - name: Install git-cliff
-            uses: taiki-e/install-action@v2.87.1
+            uses: taiki-e/install-action@v2.87.29
             with:
               tool: git-cliff
 
@@ -62,10 +62,10 @@ jobs:
 
       - parallel:
           - name: Pnpm Setup
-            uses: pnpm/action-setup@v6.0.10
+            uses: pnpm/action-setup@v6.1.0
 
           - name: Set up Node.js
-            uses: actions/setup-node@v7.0.0
+            uses: actions/setup-node@v7.1.0
             with:
               node-version-file: 'package.json'
               # For workflows with elevated privileges we recommend disabling automatic caching.
