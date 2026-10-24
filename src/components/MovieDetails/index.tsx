@@ -50,7 +50,11 @@ import {
 } from '@heroicons/react/24/solid';
 import { type RatingResponse } from '@server/api/ratings';
 import { IssueStatus } from '@server/constants/issue';
-import { MediaStatus, MediaType } from '@server/constants/media';
+import {
+  MediaRequestStatus,
+  MediaStatus,
+  MediaType,
+} from '@server/constants/media';
 import { MediaServerType } from '@server/constants/server';
 import type { MovieDetails as MovieDetailsType } from '@server/models/Movie';
 import axios from 'axios';
@@ -188,8 +192,22 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
   const showAllStudios = data.productionCompanies.length <= minStudios + 1;
   const mediaLinks: PlayButtonLink[] = [];
 
+  const hasOwnRequest = (is4k: boolean): boolean =>
+    (data.mediaInfo?.requests ?? []).some(
+      (request) =>
+        request.requestedBy.id === user?.id &&
+        request.is4k === is4k &&
+        (request.status === MediaRequestStatus.APPROVED ||
+          request.status === MediaRequestStatus.COMPLETED)
+    );
+  const requestedByUser = hasOwnRequest(false);
+  const requestedByUser4k = hasOwnRequest(true);
+  const hiddenFromUser = (byUser: boolean): boolean =>
+    !byUser && settings.currentSettings.otherUserAvailability !== 'show';
+
   if (
     plexUrl &&
+    !hiddenFromUser(requestedByUser) &&
     hasPermission([Permission.REQUEST, Permission.REQUEST_MOVIE], {
       type: 'or',
     })
@@ -204,6 +222,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
   if (
     settings.currentSettings.movie4kEnabled &&
     plexUrl4k &&
+    !hiddenFromUser(requestedByUser4k) &&
     hasPermission([Permission.REQUEST_4K, Permission.REQUEST_4K_MOVIE], {
       type: 'or',
     })
@@ -517,6 +536,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
               mediaType="movie"
               plexUrl={plexUrl}
               serviceUrl={data.mediaInfo?.serviceUrl}
+              requestedByUser={requestedByUser}
             />
             {settings.currentSettings.movie4kEnabled &&
               hasPermission(
@@ -541,6 +561,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
                   mediaType="movie"
                   plexUrl={plexUrl4k}
                   serviceUrl={data.mediaInfo?.serviceUrl4k}
+                  requestedByUser={requestedByUser4k}
                 />
               )}
           </div>
