@@ -4,6 +4,7 @@ import Issue from '@server/entity/Issue';
 import IssueComment from '@server/entity/IssueComment';
 import Media from '@server/entity/Media';
 import { MediaRequest } from '@server/entity/MediaRequest';
+import MediaServiceStatus from '@server/entity/MediaServiceStatus';
 import OverrideRule from '@server/entity/OverrideRule';
 import Season from '@server/entity/Season';
 import SeasonRequest from '@server/entity/SeasonRequest';
@@ -24,13 +25,14 @@ import { DataSource } from 'typeorm';
 
 const DB_SSL_PREFIX = 'DB_SSL_';
 
-const entities = [
+export const entities = [
   Blocklist,
   DiscoverSlider,
   Issue,
   IssueComment,
   Media,
   MediaRequest,
+  MediaServiceStatus,
   OverrideRule,
   Season,
   SeasonRequest,

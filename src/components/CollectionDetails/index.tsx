@@ -7,7 +7,7 @@ import PageTitle from '@app/components/Common/PageTitle';
 import Tooltip from '@app/components/Common/Tooltip';
 import RequestModal from '@app/components/RequestModal';
 import Slider from '@app/components/Slider';
-import StatusBadge from '@app/components/StatusBadge';
+import StatusBadge, { getStatusLabel } from '@app/components/StatusBadge';
 import TitleCard from '@app/components/TitleCard';
 import useSettings from '@app/hooks/useSettings';
 import useToasts from '@app/hooks/useToasts';
@@ -17,12 +17,18 @@ import ErrorPage from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
 import { refreshIntervalHelper } from '@app/utils/refreshIntervalHelper';
 import {
+  getLabelledServices,
+  getMediaServiceStatus,
+} from '@app/utils/serviceRequestStatus';
+import {
   ArrowDownTrayIcon,
   EyeIcon,
   EyeSlashIcon,
 } from '@heroicons/react/24/outline';
 import { MediaStatus } from '@server/constants/media';
+import type { ServiceCommonServer } from '@server/interfaces/api/serviceInterfaces';
 import type { Collection } from '@server/models/Collection';
+import type { MovieResult } from '@server/models/Search';
 import axios from 'axios';
 import { uniq } from 'lodash';
 import Link from 'next/link';
@@ -38,6 +44,8 @@ const messages = defineMessages('components.CollectionDetails', {
     '{removeLabel} ({count, plural, one {# movie} other {# movies}})',
   requestcollection: 'Request Collection',
   requestcollection4k: 'Request Collection in 4K',
+  requestcollectioninservice: 'Request Collection in {label}',
+  statusinservice: '{status} in {label}',
 });
 
 interface CollectionDetailsProps {
@@ -48,9 +56,12 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
   const intl = useIntl();
   const router = useRouter();
   const settings = useSettings();
-  const { hasPermission } = useUser();
-  const [requestModal, setRequestModal] = useState(false);
-  const [is4k, setIs4k] = useState(false);
+  const { user, hasPermission } = useUser();
+  const [requestModal, setRequestModal] = useState<{
+    show: boolean;
+    is4k: boolean;
+    serverId?: number;
+  }>({ show: false, is4k: false });
   const [showBlocklistModal, setShowBlocklistModal] = useState(false);
   const [isBlocklistUpdating, setIsBlocklistUpdating] = useState(false);
   const { addToast } = useToasts();
@@ -83,6 +94,10 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
 
   const { data: genres } =
     useSWR<{ id: number; name: string }[]>(`/api/v1/genres/movie`);
+
+  const { data: radarrServices } = useSWR<ServiceCommonServer[]>(
+    '/api/v1/service/radarr'
+  );
 
   const onClickHideItemBtn = async (): Promise<void> => {
     setIsBlocklistUpdating(true);
@@ -212,10 +227,26 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
     collectionStatus4k = MediaStatus.PARTIALLY_AVAILABLE;
   }
 
+  const canRequestMovies = hasPermission(
+    [Permission.REQUEST, Permission.REQUEST_MOVIE],
+    { type: 'or' }
+  );
+  const collectionServices = getLabelledServices(radarrServices).filter(
+    (service) => !service.animeOnly
+  );
+  const restrictToServices =
+    !hasPermission(Permission.MANAGE_REQUESTS) &&
+    (radarrServices
+      ? collectionServices.some((service) =>
+          (user?.requestServices ?? []).includes(`radarr:${service.id}`)
+        )
+      : (user?.requestServices ?? []).some((service) =>
+          service.startsWith('radarr:')
+        ));
+
   const hasRequestable =
-    hasPermission([Permission.REQUEST, Permission.REQUEST_MOVIE], {
-      type: 'or',
-    }) &&
+    !restrictToServices &&
+    canRequestMovies &&
     data.parts.filter(
       (part) =>
         !part.mediaInfo ||
@@ -224,6 +255,7 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
     ).length > 0;
 
   const hasRequestable4k =
+    !restrictToServices &&
     settings.currentSettings.movie4kEnabled &&
     hasPermission([Permission.REQUEST_4K, Permission.REQUEST_4K_MOVIE], {
       type: 'or',
@@ -234,6 +266,111 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
         part.mediaInfo.status4k === MediaStatus.DELETED ||
         part.mediaInfo.status4k === MediaStatus.UNKNOWN
     ).length > 0;
+
+  const requestableServices = canRequestMovies
+    ? collectionServices.filter(
+        (service) =>
+          (hasPermission(Permission.MANAGE_REQUESTS) ||
+            (user?.requestServices ?? []).includes(`radarr:${service.id}`)) &&
+          data.parts.some(
+            (part) =>
+              part.mediaInfo?.status !== MediaStatus.BLOCKLISTED &&
+              getMediaServiceStatus(part.mediaInfo, service.id).status ===
+                MediaStatus.UNKNOWN
+          )
+      )
+    : [];
+
+  const requestOptions: {
+    id: string;
+    text: string;
+    is4k: boolean;
+    serverId?: number;
+  }[] = [];
+
+  if (hasRequestable) {
+    requestOptions.push({
+      id: 'request',
+      text: intl.formatMessage(messages.requestcollection),
+      is4k: false,
+    });
+  }
+
+  if (hasRequestable4k) {
+    requestOptions.push({
+      id: 'request-4k',
+      text: intl.formatMessage(messages.requestcollection4k),
+      is4k: true,
+    });
+  }
+
+  for (const service of requestableServices) {
+    requestOptions.push({
+      id: `request-service-${service.id}`,
+      text: intl.formatMessage(messages.requestcollectioninservice, {
+        label: service.buttonLabel,
+      }),
+      is4k: false,
+      serverId: service.id,
+    });
+  }
+
+  const [primaryRequestOption, ...otherRequestOptions] = requestOptions;
+
+  const getPartServiceStatuses = (part: MovieResult) =>
+    getLabelledServices(radarrServices)
+      .map((service) => ({
+        service,
+        ...getMediaServiceStatus(part.mediaInfo, service.id),
+      }))
+      .filter(({ status }) => status !== MediaStatus.UNKNOWN);
+
+  const collectionServiceStatuses = getLabelledServices(radarrServices)
+    .map((service) => {
+      const partStatuses = data.parts
+        .filter((part) => part.mediaInfo?.status !== MediaStatus.BLOCKLISTED)
+        .map((part) => ({
+          title: part.title,
+          ...getMediaServiceStatus(part.mediaInfo, service.id),
+        }));
+      const availableCount = partStatuses.filter(
+        ({ status }) => status === MediaStatus.AVAILABLE
+      ).length;
+      const downloading = partStatuses.filter(
+        ({ downloadItem }) => downloadItem.length > 0
+      );
+
+      return {
+        service,
+        status:
+          partStatuses.length > 0 && availableCount === partStatuses.length
+            ? MediaStatus.AVAILABLE
+            : availableCount > 0
+              ? MediaStatus.PARTIALLY_AVAILABLE
+              : partStatuses.some(
+                    ({ status }) => status === MediaStatus.PROCESSING
+                  )
+                ? MediaStatus.PROCESSING
+                : partStatuses.some(
+                      ({ status }) => status === MediaStatus.PENDING
+                    )
+                  ? MediaStatus.PENDING
+                  : MediaStatus.UNKNOWN,
+        downloadItem: downloading.flatMap(({ downloadItem }) => downloadItem),
+        titles: downloading.map(({ title }) => title),
+      };
+    })
+    .filter(({ status }) => status !== MediaStatus.UNKNOWN);
+
+  const isCoveredByCollectionServiceStatus = (is4k: boolean) => {
+    const defaultServiceId = radarrServices?.find(
+      (service) => service.isDefault && service.is4k === is4k
+    )?.id;
+
+    return collectionServiceStatuses.some(
+      ({ service }) => service.id === defaultServiceId
+    );
+  };
 
   const blocklistVisibility = hasPermission(
     [Permission.MANAGE_BLOCKLIST, Permission.VIEW_BLOCKLIST],
@@ -305,14 +442,17 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
       <PageTitle title={data.name} />
       <RequestModal
         tmdbId={data.id}
-        show={requestModal}
+        show={requestModal.show}
         type="collection"
-        is4k={is4k}
+        is4k={requestModal.is4k}
+        serverId={requestModal.serverId}
         onComplete={() => {
           revalidate();
-          setRequestModal(false);
+          setRequestModal((current) => ({ ...current, show: false }));
         }}
-        onCancel={() => setRequestModal(false)}
+        onCancel={() =>
+          setRequestModal((current) => ({ ...current, show: false }))
+        }
       />
       <BlocklistModal
         tmdbId={data.id}
@@ -342,20 +482,47 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
         </div>
         <div className="media-title">
           <div className="media-status">
-            <StatusBadge
-              status={collectionStatus}
-              downloadItem={downloadStatus}
-              title={titles}
-              statusLabelOverride={
-                isCollectionPartiallyBlocklisted
-                  ? intl.formatMessage(globalMessages.partiallyblocklisted)
-                  : undefined
-              }
-              inProgress={data.parts.some(
-                (part) => (part.mediaInfo?.downloadStatus ?? []).length > 0
+            {!isCollectionBlocklisted &&
+              collectionServiceStatuses.map(
+                ({ service, status, downloadItem, titles }) => (
+                  <StatusBadge
+                    key={`service-status-${service.id}`}
+                    status={status}
+                    downloadItem={downloadItem}
+                    title={titles}
+                    inProgress={downloadItem.length > 0}
+                    statusLabelOverride={intl.formatMessage(
+                      messages.statusinservice,
+                      {
+                        status: getStatusLabel(
+                          intl,
+                          status,
+                          downloadItem.length > 0
+                        ),
+                        label: service.buttonLabel ?? service.name,
+                      }
+                    )}
+                  />
+                )
               )}
-            />
-            {settings.currentSettings.movie4kEnabled &&
+            {(isCollectionBlocklisted ||
+              !isCoveredByCollectionServiceStatus(false)) && (
+              <StatusBadge
+                status={collectionStatus}
+                downloadItem={downloadStatus}
+                title={titles}
+                statusLabelOverride={
+                  isCollectionPartiallyBlocklisted
+                    ? intl.formatMessage(globalMessages.partiallyblocklisted)
+                    : undefined
+                }
+                inProgress={data.parts.some(
+                  (part) => (part.mediaInfo?.downloadStatus ?? []).length > 0
+                )}
+              />
+            )}
+            {!isCoveredByCollectionServiceStatus(true) &&
+              settings.currentSettings.movie4kEnabled &&
               hasPermission(
                 [Permission.REQUEST_4K, Permission.REQUEST_4K_MOVIE],
                 {
@@ -431,40 +598,41 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
                 </Button>
               </Tooltip>
             ))}
-          {(hasRequestable || hasRequestable4k) && (
+          {primaryRequestOption && (
             <ButtonWithDropdown
               buttonType="primary"
-              onClick={() => {
-                setRequestModal(true);
-                setIs4k(!hasRequestable);
-              }}
+              onClick={() =>
+                setRequestModal({
+                  show: true,
+                  is4k: primaryRequestOption.is4k,
+                  serverId: primaryRequestOption.serverId,
+                })
+              }
               text={
                 <>
                   <ArrowDownTrayIcon />
-                  <span>
-                    {intl.formatMessage(
-                      hasRequestable
-                        ? messages.requestcollection
-                        : messages.requestcollection4k
-                    )}
-                  </span>
+                  <span>{primaryRequestOption.text}</span>
                 </>
               }
             >
-              {hasRequestable && hasRequestable4k && (
-                <ButtonWithDropdown.Item
-                  buttonType="primary"
-                  onClick={() => {
-                    setRequestModal(true);
-                    setIs4k(true);
-                  }}
-                >
-                  <ArrowDownTrayIcon />
-                  <span>
-                    {intl.formatMessage(messages.requestcollection4k)}
-                  </span>
-                </ButtonWithDropdown.Item>
-              )}
+              {otherRequestOptions.length > 0
+                ? otherRequestOptions.map((option) => (
+                    <ButtonWithDropdown.Item
+                      key={`collection-${option.id}`}
+                      buttonType="primary"
+                      onClick={() =>
+                        setRequestModal({
+                          show: true,
+                          is4k: option.is4k,
+                          serverId: option.serverId,
+                        })
+                      }
+                    >
+                      <ArrowDownTrayIcon />
+                      <span>{option.text}</span>
+                    </ButtonWithDropdown.Item>
+                  ))
+                : null}
             </ButtonWithDropdown>
           )}
         </div>
@@ -506,6 +674,14 @@ const CollectionDetails = ({ collection }: CollectionDetailsProps) => {
               year={title.releaseDate}
               mediaType={title.mediaType}
               mutateParent={revalidate}
+              serviceStatuses={getPartServiceStatuses(title).map(
+                ({ service, status, downloadItem }) => ({
+                  serviceId: service.id,
+                  label: service.buttonLabel ?? service.name,
+                  status,
+                  inProgress: downloadItem.length > 0,
+                })
+              )}
             />
           ))}
       />

@@ -107,6 +107,13 @@ components:
           readOnly: true
         requestedBy:
           $ref: '#/components/schemas/User'
+    RequestServices:
+      type: array
+      description: Servers the user may request in through their per-service request buttons
+      items:
+        type: string
+        pattern: '^(radarr|sonarr):\d+$'
+        example: 'radarr:0'
     User:
       type: object
       properties:
@@ -136,6 +143,8 @@ components:
         permissions:
           type: number
           example: 0
+        requestServices:
+          $ref: '#/components/schemas/RequestServices'
         avatar:
           type: string
           readOnly: true
@@ -624,6 +633,15 @@ components:
         preventSearch:
           type: boolean
           example: false
+        buttonLabel:
+          type: string
+          nullable: true
+          example: ITA
+          description: When set, a dedicated "Request in {buttonLabel}" button is shown for this server
+        animeOnly:
+          type: boolean
+          example: false
+          description: Only show this server's request button for anime
       required:
         - name
         - hostname
@@ -703,6 +721,15 @@ components:
         preventSearch:
           type: boolean
           example: false
+        buttonLabel:
+          type: string
+          nullable: true
+          example: ITA
+          description: When set, a dedicated "Request in {buttonLabel}" button is shown for this server
+        animeOnly:
+          type: boolean
+          example: false
+          description: Only show this server's request button for anime
       required:
         - name
         - hostname
@@ -1287,6 +1314,9 @@ components:
           example: false
         serverId:
           type: number
+        isServiceRequest:
+          type: boolean
+          example: false
         profileId:
           type: number
         rootFolder:
@@ -1320,6 +1350,11 @@ components:
           readOnly: true
           items:
             $ref: '#/components/schemas/MediaRequest'
+        serviceStatuses:
+          type: array
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/MediaServiceStatus'
         createdAt:
           type: string
           example: '2020-09-12T10:00:27.000Z'
@@ -1328,6 +1363,36 @@ components:
           type: string
           example: '2020-09-12T10:00:27.000Z'
           readOnly: true
+    MediaServiceStatus:
+      type: object
+      readOnly: true
+      properties:
+        id:
+          type: number
+        mediaId:
+          type: number
+        serviceId:
+          type: number
+          description: ID of the Radarr/Sonarr server
+        serviceType:
+          type: string
+          enum: [radarr, sonarr]
+        status:
+          type: number
+          example: 5
+          description: Availability of the media in this server. 1 = `UNKNOWN`, 2 = `PENDING`, 3 = `PROCESSING`, 4 = `PARTIALLY_AVAILABLE`, 5 = `AVAILABLE`, 6 = `DELETED`
+        externalServiceId:
+          type: number
+          nullable: true
+        externalServiceSlug:
+          type: string
+          nullable: true
+        seasonStatuses:
+          type: object
+          nullable: true
+          description: Availability per season number (Sonarr only)
+          additionalProperties:
+            type: number
     Cast:
       type: object
       properties:
@@ -5448,6 +5513,8 @@ paths:
                   permissions:
                     type: number
                     example: 2
+                  requestServices:
+                    $ref: '#/components/schemas/RequestServices'
     post:
       summary: Update permission settings for a user
       description: Updates and returns permission settings for a specific user. Requires `MANAGE_USERS` permission if editing other users.
@@ -5468,6 +5535,8 @@ paths:
               properties:
                 permissions:
                   type: number
+                requestServices:
+                  $ref: '#/components/schemas/RequestServices'
               required:
                 - permissions
       responses:
@@ -5481,6 +5550,8 @@ paths:
                   permissions:
                     type: number
                     example: 2
+                  requestServices:
+                    $ref: '#/components/schemas/RequestServices'
   /user/{userId}/watch_data:
     get:
       summary: Get watch data
@@ -6620,6 +6691,10 @@ paths:
                   example: false
                 serverId:
                   type: number
+                isServiceRequest:
+                  type: boolean
+                  example: false
+                  description: Set to true when explicitly requesting in a specific service via a per-service request button. Requires a valid serverId.
                 profileId:
                   type: number
                 rootFolder:
@@ -7376,6 +7451,13 @@ paths:
           example: false
           schema:
             type: boolean
+        - in: query
+          name: serviceId
+          description: ID of the Radarr/Sonarr server to remove the media from (overrides is4k)
+          required: false
+          example: 1
+          schema:
+            type: integer
       responses:
         '204':
           description: Successfully removed media item

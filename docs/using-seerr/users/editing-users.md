@@ -60,3 +60,15 @@ Users can configure their personal notification settings here. Please see [Notif
 ## Permissions
 
 Users cannot modify their own permissions. Users with the **Manage Users** permission can manage permissions of other users, except those of users with the **Admin** permission.
+
+## Request Services
+
+If any of your Radarr/Sonarr servers have a [Request Button Label](/using-seerr/settings/services#request-button-label-optional) configured, a **Request Services** section appears below the permissions list. It controls which per-service request buttons the user can see and use.
+
+- With **no services selected** (the default), the user only sees the regular request button.
+- Selecting individual services shows that service's request button to the user. When a user has been granted at least one service for a media type, the regular request button is **replaced** by their per-service buttons for that media type.
+- **All Services** grants every configured service at once.
+
+These grants are enforced server-side: requests targeting a service the user has not been granted are rejected. Users with the **Manage Requests** permission can always use every per-service button without explicit grants.
+
+Grants are automatically removed when the corresponding server is deleted from **Settings &rarr; Services**.
