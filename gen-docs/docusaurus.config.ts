@@ -193,6 +193,7 @@ const config: Config = {
         'nix',
         'nginx',
         'batch',
+        'liquid',
       ],
     },
   } satisfies Preset.ThemeConfig,

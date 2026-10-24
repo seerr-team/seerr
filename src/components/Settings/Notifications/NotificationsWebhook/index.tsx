@@ -29,53 +29,54 @@ const JSONEditor = dynamic(() => import('@app/components/JSONEditor'), {
   ssr: false,
 });
 
-const defaultPayload = {
-  notification_type: '{{notification_type}}',
-  event: '{{event}}',
-  subject: '{{subject}}',
-  message: '{{message}}',
-  image: '{{image}}',
-  '{{media}}': {
-    media_type: '{{media_type}}',
-    imdbId: '{{media_imdbid}}',
-    tmdbId: '{{media_tmdbid}}',
-    tvdbId: '{{media_tvdbid}}',
-    jellyfinMediaId: '{{media_jellyfinMediaId}}',
-    status: '{{media_status}}',
-    status4k: '{{media_status4k}}',
-  },
-  '{{request}}': {
-    request_id: '{{request_id}}',
-    requestedBy_email: '{{requestedBy_email}}',
-    requestedBy_username: '{{requestedBy_username}}',
-    requestedBy_avatar: '{{requestedBy_avatar}}',
-    requestedBy_jellyfinUserId: '{{requestedBy_jellyfinUserId}}',
-    requestedBy_settings_discordIds: '{{requestedBy_settings_discordIds}}',
-    requestedBy_settings_telegramChatId:
-      '{{requestedBy_settings_telegramChatId}}',
-  },
-  '{{issue}}': {
-    issue_id: '{{issue_id}}',
-    issue_type: '{{issue_type}}',
-    issue_status: '{{issue_status}}',
-    reportedBy_email: '{{reportedBy_email}}',
-    reportedBy_username: '{{reportedBy_username}}',
-    reportedBy_avatar: '{{reportedBy_avatar}}',
-    reportedBy_settings_discordIds: '{{reportedBy_settings_discordIds}}',
-    reportedBy_settings_telegramChatId:
-      '{{reportedBy_settings_telegramChatId}}',
-  },
-  '{{comment}}': {
-    comment_message: '{{comment_message}}',
-    commentedBy_email: '{{commentedBy_email}}',
-    commentedBy_username: '{{commentedBy_username}}',
-    commentedBy_avatar: '{{commentedBy_avatar}}',
-    commentedBy_settings_discordIds: '{{commentedBy_settings_discordIds}}',
-    commentedBy_settings_telegramChatId:
-      '{{commentedBy_settings_telegramChatId}}',
-  },
-  '{{extra}}': [],
-};
+// Liquid template rendered into the webhook payload. Optional sections use
+// `{% if %}…{% else %}null{% endif %}` so they render as null (not omitted)
+// when absent, and free-text values use the `json` filter to quote and escape
+// themselves so characters like `"` or newlines can't break the JSON.
+const defaultPayload = `{
+  "notification_type": "{{ notification_type }}",
+  "event": "{{ event }}",
+  "subject": {{ subject | json }},
+  "message": {{ message | json }},
+  "image": "{{ image }}",
+  "media": {% if media %}{
+    "media_type": "{{ media_type }}",
+    "imdbId": "{{ media_imdbid }}",
+    "tmdbId": "{{ media_tmdbid }}",
+    "tvdbId": "{{ media_tvdbid }}",
+    "jellyfinMediaId": "{{ media_jellyfinMediaId }}",
+    "status": "{{ media_status }}",
+    "status4k": "{{ media_status4k }}"
+  }{% else %}null{% endif %},
+  "request": {% if request %}{
+    "request_id": "{{ request_id }}",
+    "requestedBy_email": "{{ requestedBy_email }}",
+    "requestedBy_username": {{ requestedBy_username | json }},
+    "requestedBy_avatar": "{{ requestedBy_avatar }}",
+    "requestedBy_jellyfinUserId": "{{ requestedBy_jellyfinUserId }}",
+    "requestedBy_settings_discordIds": "{{ requestedBy_settings_discordIds | join: ',' }}",
+    "requestedBy_settings_telegramChatId": "{{ requestedBy_settings_telegramChatId }}"
+  }{% else %}null{% endif %},
+  "issue": {% if issue %}{
+    "issue_id": "{{ issue_id }}",
+    "issue_type": "{{ issue_type }}",
+    "issue_status": "{{ issue_status }}",
+    "reportedBy_email": "{{ reportedBy_email }}",
+    "reportedBy_username": {{ reportedBy_username | json }},
+    "reportedBy_avatar": "{{ reportedBy_avatar }}",
+    "reportedBy_settings_discordIds": "{{ reportedBy_settings_discordIds | join: ',' }}",
+    "reportedBy_settings_telegramChatId": "{{ reportedBy_settings_telegramChatId }}"
+  }{% else %}null{% endif %},
+  "comment": {% if comment %}{
+    "comment_message": {{ comment_message | json }},
+    "commentedBy_email": "{{ commentedBy_email }}",
+    "commentedBy_username": {{ commentedBy_username | json }},
+    "commentedBy_avatar": "{{ commentedBy_avatar }}",
+    "commentedBy_settings_discordIds": "{{ commentedBy_settings_discordIds | join: ',' }}",
+    "commentedBy_settings_telegramChatId": "{{ commentedBy_settings_telegramChatId }}"
+  }{% else %}null{% endif %},
+  "extra": {{ extra | json }}
+}`;
 
 const messages = defineMessages(
   'components.Settings.Notifications.NotificationsWebhook',
@@ -181,29 +182,14 @@ const NotificationsWebhook = () => {
         }
       ),
 
-    jsonPayload: Yup.string()
-      .when('enabled', {
-        is: true,
-        then: (schema) =>
-          schema
-            .nullable()
-            .required(
-              intl.formatMessage(messages.validationJsonPayloadRequired)
-            ),
-        otherwise: (schema) => schema.nullable(),
-      })
-      .test(
-        'validate-json',
-        intl.formatMessage(messages.validationJsonPayloadRequired),
-        (value) => {
-          try {
-            JSON.parse(value ?? '');
-            return true;
-          } catch {
-            return false;
-          }
-        }
-      ),
+    jsonPayload: Yup.string().when('enabled', {
+      is: true,
+      then: (schema) =>
+        schema
+          .nullable()
+          .required(intl.formatMessage(messages.validationJsonPayloadRequired)),
+      otherwise: (schema) => schema.nullable(),
+    }),
   });
 
   if (!data && !error) {
@@ -267,10 +253,7 @@ const NotificationsWebhook = () => {
         setFieldTouched,
       }) => {
         const resetPayload = () => {
-          setFieldValue(
-            'jsonPayload',
-            JSON.stringify(defaultPayload, undefined, '    ')
-          );
+          setFieldValue('jsonPayload', defaultPayload);
           addToast(intl.formatMessage(messages.resetPayloadSuccess), {
             appearance: 'info',
             autoDismiss: true,
