@@ -2,8 +2,8 @@ import animeList from '@server/api/animelist';
 import type {
   JellyfinLibraryItem,
   JellyfinLibraryItemExtended,
-} from '@server/api/jellyfin';
-import JellyfinAPI from '@server/api/jellyfin';
+} from '@server/api/jellyfinMain';
+import JellyfinMainAPI from '@server/api/jellyfinMain';
 import TheMovieDb from '@server/api/themoviedb';
 import type {
   TmdbTvDetails,
@@ -35,7 +35,7 @@ Object.defineProperty(animeList, 'sync', {
   writable: true,
 });
 
-// --- Mock JellyfinAPI ---
+// --- Mock JellyfinMainAPI ---
 let getLibraryContentsImpl: (
   id: string
 ) => Promise<JellyfinLibraryItem[]> = async () => [];
@@ -50,7 +50,7 @@ let getEpisodesImpl: (
   seasonID: string
 ) => Promise<JellyfinLibraryItem[]> = async () => [];
 
-Object.defineProperty(JellyfinAPI.prototype, 'getLibraryContents', {
+Object.defineProperty(JellyfinMainAPI.prototype, 'getLibraryContents', {
   get() {
     return async (id: string) => getLibraryContentsImpl(id);
   },
@@ -58,7 +58,7 @@ Object.defineProperty(JellyfinAPI.prototype, 'getLibraryContents', {
   configurable: true,
 });
 
-Object.defineProperty(JellyfinAPI.prototype, 'getItemData', {
+Object.defineProperty(JellyfinMainAPI.prototype, 'getItemData', {
   get() {
     return async (id: string) => getItemDataImpl(id);
   },
@@ -66,7 +66,7 @@ Object.defineProperty(JellyfinAPI.prototype, 'getItemData', {
   configurable: true,
 });
 
-Object.defineProperty(JellyfinAPI.prototype, 'getSeasons', {
+Object.defineProperty(JellyfinMainAPI.prototype, 'getSeasons', {
   get() {
     return async (seriesID: string) => getSeasonsImpl(seriesID);
   },
@@ -74,7 +74,7 @@ Object.defineProperty(JellyfinAPI.prototype, 'getSeasons', {
   configurable: true,
 });
 
-Object.defineProperty(JellyfinAPI.prototype, 'getEpisodes', {
+Object.defineProperty(JellyfinMainAPI.prototype, 'getEpisodes', {
   get() {
     return async (seriesID: string, seasonID: string) =>
       getEpisodesImpl(seriesID, seasonID);
@@ -83,7 +83,7 @@ Object.defineProperty(JellyfinAPI.prototype, 'getEpisodes', {
   configurable: true,
 });
 
-Object.defineProperty(JellyfinAPI.prototype, 'setUserId', {
+Object.defineProperty(JellyfinMainAPI.prototype, 'setUserId', {
   get() {
     return () => {};
   },
