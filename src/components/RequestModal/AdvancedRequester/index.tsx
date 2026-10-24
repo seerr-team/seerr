@@ -206,32 +206,47 @@ const AdvancedRequester = ({
     }
   }, [data]);
 
-  useEffect(() => {
-    if (serverData) {
-      const defaultProfile = serverData.profiles.find(
+  const serverDefaults = useMemo(() => {
+    if (!serverData) {
+      return null;
+    }
+
+    return {
+      profile: serverData.profiles.find(
         (profile) =>
           profile.id ===
           (isAnime && serverData.server.activeAnimeProfileId
             ? serverData.server.activeAnimeProfileId
             : serverData.server.activeProfileId)
-      );
-      const defaultFolder = serverData.rootFolders.find(
+      ),
+      folder: serverData.rootFolders.find(
         (folder) =>
           folder.path ===
           (isAnime && serverData.server.activeAnimeDirectory
             ? serverData.server.activeAnimeDirectory
             : serverData.server.activeDirectory)
-      );
-      const defaultLanguage = serverData.languageProfiles?.find(
+      ),
+      language: serverData.languageProfiles?.find(
         (language) =>
           language.id ===
           (isAnime && serverData.server.activeAnimeLanguageProfileId
             ? serverData.server.activeAnimeLanguageProfileId
             : serverData.server.activeLanguageProfileId)
-      );
-      const defaultTags = isAnime
+      ),
+      tags: isAnime
         ? serverData.server.activeAnimeTags
-        : serverData.server.activeTags;
+        : serverData.server.activeTags,
+    };
+  }, [serverData, isAnime]);
+
+  useEffect(() => {
+    if (serverData && serverDefaults) {
+      const {
+        profile: defaultProfile,
+        folder: defaultFolder,
+        language: defaultLanguage,
+        tags: defaultTags,
+      } = serverDefaults;
 
       const applyOverrides =
         defaultOverrides &&
@@ -270,7 +285,7 @@ const AdvancedRequester = ({
         setSelectedTags(defaultTags);
       }
     }
-  }, [serverData]);
+  }, [serverData, serverDefaults]);
 
   useEffect(() => {
     if (defaultOverrides && defaultOverrides.server != null) {
