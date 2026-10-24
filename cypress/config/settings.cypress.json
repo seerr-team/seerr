@@ -25,6 +25,7 @@
     "mediaServerType": 1,
     "partialRequestsEnabled": true,
     "enableSpecialEpisodes": false,
+    "enableEpisodeAvailability": false,
     "locale": "en"
   },
   "plex": {
