@@ -87,6 +87,7 @@ const UserNotificationsDiscord = () => {
           await axios.post(`/api/v1/user/${user?.id}/settings/notifications`, {
             pgpKey: data?.pgpKey,
             discordIds: values.discordIds,
+            slackIds: data?.slackIds,
             pushbulletAccessToken: data?.pushbulletAccessToken,
             pushoverApplicationToken: data?.pushoverApplicationToken,
             pushoverUserKey: data?.pushoverUserKey,
