@@ -8,6 +8,7 @@ import type {
 import { getRepository } from '@server/datasource';
 import DiscoverSlider from '@server/entity/DiscoverSlider';
 import type { StatusResponse } from '@server/interfaces/api/settingsInterfaces';
+import { readCustomCss } from '@server/lib/customCss';
 import { Permission } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
@@ -153,6 +154,20 @@ router.get(
     }
   }
 );
+router.get('/custom.css', async (_req, res, next) => {
+  try {
+    const css = await readCustomCss();
+    res.setHeader('Content-Type', 'text/css; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-store');
+    return res.status(200).send(css);
+  } catch {
+    return next({
+      status: 500,
+      message: 'Unable to read custom CSS.',
+    });
+  }
+});
+
 router.use('/settings', isAuthenticated(Permission.ADMIN), settingsRoutes);
 router.use('/search', isAuthenticated(), searchRoutes);
 router.use('/discover', isAuthenticated(), discoverRoutes);

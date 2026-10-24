@@ -1,0 +1,111 @@
+/* Space-separated RGB channels for Tailwind opacity (not hex). Override on :root. */
+
+:root {
+  /* gray */
+  --color-gray-50: 249 250 251;
+  --color-gray-100: 243 244 246;
+  --color-gray-200: 229 231 235;
+  --color-gray-300: 209 213 219;
+  --color-gray-400: 156 163 175;
+  --color-gray-500: 107 114 128;
+  --color-gray-600: 75 85 99;
+  --color-gray-700: 55 65 81;
+  --color-gray-800: 31 41 55;
+  --color-gray-900: 17 24 39;
+  --color-gray-950: 3 7 18;
+
+  /* indigo */
+  --color-indigo-50: 238 242 255;
+  --color-indigo-100: 224 231 255;
+  --color-indigo-200: 199 210 254;
+  --color-indigo-300: 165 180 252;
+  --color-indigo-400: 129 140 248;
+  --color-indigo-500: 99 102 241;
+  --color-indigo-600: 79 70 229;
+  --color-indigo-700: 67 56 202;
+  --color-indigo-800: 55 48 163;
+  --color-indigo-900: 49 46 129;
+  --color-indigo-950: 30 27 75;
+
+  /* purple */
+  --color-purple-50: 250 245 255;
+  --color-purple-100: 243 232 255;
+  --color-purple-200: 233 213 255;
+  --color-purple-300: 216 180 254;
+  --color-purple-400: 192 132 252;
+  --color-purple-500: 168 85 247;
+  --color-purple-600: 147 51 234;
+  --color-purple-700: 126 34 206;
+  --color-purple-800: 107 33 168;
+  --color-purple-900: 88 28 135;
+  --color-purple-950: 59 7 100;
+
+  /* red */
+  --color-red-50: 254 242 242;
+  --color-red-100: 254 226 226;
+  --color-red-200: 254 202 202;
+  --color-red-300: 252 165 165;
+  --color-red-400: 248 113 113;
+  --color-red-500: 239 68 68;
+  --color-red-600: 220 38 38;
+  --color-red-700: 185 28 28;
+  --color-red-800: 153 27 27;
+  --color-red-900: 127 29 29;
+  --color-red-950: 69 10 10;
+
+  /* yellow */
+  --color-yellow-50: 254 252 232;
+  --color-yellow-100: 254 249 195;
+  --color-yellow-200: 254 240 138;
+  --color-yellow-300: 253 224 71;
+  --color-yellow-400: 250 204 21;
+  --color-yellow-500: 234 179 8;
+  --color-yellow-600: 202 138 4;
+  --color-yellow-700: 161 98 7;
+  --color-yellow-800: 133 77 14;
+  --color-yellow-900: 113 63 18;
+  --color-yellow-950: 66 32 6;
+
+  /* green */
+  --color-green-50: 240 253 244;
+  --color-green-100: 220 252 231;
+  --color-green-200: 187 247 208;
+  --color-green-300: 134 239 172;
+  --color-green-400: 74 222 128;
+  --color-green-500: 34 197 94;
+  --color-green-600: 22 163 74;
+  --color-green-700: 21 128 61;
+  --color-green-800: 22 101 52;
+  --color-green-900: 20 83 45;
+  --color-green-950: 5 46 22;
+
+  /* blue */
+  --color-blue-50: 239 246 255;
+  --color-blue-100: 219 234 254;
+  --color-blue-200: 191 219 254;
+  --color-blue-300: 147 197 253;
+  --color-blue-400: 96 165 250;
+  --color-blue-500: 59 130 246;
+  --color-blue-600: 37 99 235;
+  --color-blue-700: 29 78 216;
+  --color-blue-800: 30 64 175;
+  --color-blue-900: 30 58 138;
+  --color-blue-950: 23 37 84;
+
+  /* semantic */
+  --color-bg: var(--color-gray-900);
+  --color-surface: var(--color-gray-800);
+  --color-surface-elevated: var(--color-gray-700);
+  --color-border: var(--color-gray-700);
+  --color-border-subtle: var(--color-gray-600);
+  --color-text: var(--color-gray-200);
+  --color-text-muted: var(--color-gray-400);
+  --color-primary: var(--color-indigo-500);
+  --color-primary-hover: var(--color-indigo-600);
+  --color-accent: var(--color-purple-400);
+  --color-danger: var(--color-red-500);
+  --color-warning: var(--color-yellow-500);
+  --color-success: var(--color-green-500);
+  --color-sidebar-start: var(--color-gray-800);
+  --color-sidebar-end: 19 25 40; /* #131928 */
+}

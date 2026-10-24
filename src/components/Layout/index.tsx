@@ -99,7 +99,7 @@ const Layout = ({ children }: LayoutProps) => {
         >
           <div className="flex flex-1 items-center justify-between px-4 md:pl-4 md:pr-4">
             <button
-              className={`mr-2 hidden text-white sm:block ${
+              className={`mr-2 hidden text-gray-100 sm:block ${
                 isScrolled ? 'opacity-90' : 'opacity-70'
               } transition duration-300 focus:outline-none lg:hidden`}
               aria-label="Open sidebar"
@@ -109,9 +109,9 @@ const Layout = ({ children }: LayoutProps) => {
               <Bars3BottomLeftIcon className="h-7 w-7" />
             </button>
             <button
-              className={`mr-2 text-white ${
+              className={`mr-2 text-gray-100 ${
                 isScrolled ? 'opacity-90' : 'opacity-70'
-              } pwa-only transition duration-300 hover:text-white focus:text-white focus:outline-none`}
+              } pwa-only transition duration-300 hover:text-gray-50 focus:text-gray-50 focus:outline-none`}
               onClick={() => router.back()}
             >
               <ArrowLeftIcon className="w-7" />

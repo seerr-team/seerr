@@ -17,14 +17,14 @@ const SearchInput = () => {
         <label htmlFor="search_field" className="sr-only">
           Search
         </label>
-        <div className="relative flex w-full items-center text-white focus-within:text-gray-200">
+        <div className="relative flex w-full items-center text-gray-100 focus-within:text-gray-200">
           <div className="pointer-events-none absolute inset-y-0 left-4 flex items-center">
             <MagnifyingGlassIcon className="h-5 w-5" />
           </div>
           <input
             id="search_field"
             style={{ paddingRight: searchValue.length > 0 ? '1.75rem' : '' }}
-            className="block w-full rounded-full border border-gray-600 bg-gray-900/80 py-2 pl-10 text-white placeholder-gray-300 hover:border-gray-500 focus:border-gray-500 focus:bg-gray-900 focus:placeholder-gray-400 focus:outline-none focus:ring-0 sm:text-base"
+            className="block w-full rounded-full border border-gray-600 bg-gray-900/80 py-2 pl-10 text-gray-100 placeholder-gray-300 hover:border-gray-500 focus:border-gray-500 focus:bg-gray-900 focus:placeholder-gray-400 focus:outline-none focus:ring-0 sm:text-base"
             placeholder={intl.formatMessage(messages.searchPlaceholder)}
             type="search"
             autoComplete="off"
@@ -45,7 +45,7 @@ const SearchInput = () => {
           />
           {searchValue.length > 0 && (
             <button
-              className="absolute inset-y-0 right-2 m-auto h-7 w-7 border-none p-1 text-gray-400 outline-none transition hover:text-white focus:border-none focus:outline-none"
+              className="absolute inset-y-0 right-2 m-auto h-7 w-7 border-none p-1 text-gray-400 outline-none transition hover:text-gray-50 focus:border-none focus:outline-none"
               onClick={() => clear()}
             >
               <XCircleIcon className="h-5 w-5" />

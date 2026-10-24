@@ -1,4 +1,5 @@
 import Layout from '@app/components/Layout';
+import CustomThemeStyles from '@app/components/Layout/CustomThemeStyles';
 import LoadingBar from '@app/components/LoadingBar';
 import PWAHeader from '@app/components/PWAHeader';
 import ServiceWorkerSetup from '@app/components/ServiceWorkerSetup';
@@ -216,6 +217,7 @@ const CoreApp: Omit<NextAppComponentType, 'origGetInitialProps'> = ({
                   applicationTitle={currentSettings.applicationTitle}
                 />
               </Head>
+              <CustomThemeStyles />
               <StatusChecker />
               <ServiceWorkerSetup />
               <UserContext initialUser={user}>{component}</UserContext>
