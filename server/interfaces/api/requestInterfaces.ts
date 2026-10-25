@@ -5,6 +5,7 @@ import type { NonFunctionProperties, PaginatedResponse } from './common';
 export interface RequestResultsResponse extends PaginatedResponse {
   results: (NonFunctionProperties<MediaRequest> & {
     profileName?: string;
+    serverName?: string;
     canRemove?: boolean;
   })[];
   serviceErrors: {
@@ -20,6 +21,7 @@ export type MediaRequestBody = {
   seasons?: number[] | 'all';
   is4k?: boolean;
   serverId?: number;
+  isServiceRequest?: boolean;
   profileId?: number;
   profileName?: string;
   rootFolder?: string;

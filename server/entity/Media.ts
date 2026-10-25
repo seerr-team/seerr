@@ -29,6 +29,7 @@ import {
 } from 'typeorm';
 import Issue from './Issue';
 import { MediaRequest } from './MediaRequest';
+import MediaServiceStatus from './MediaServiceStatus';
 import Season from './Season';
 
 @Entity()
@@ -37,7 +38,10 @@ class Media {
   public static async getRelatedMedia(
     user: User | undefined,
     items: { tmdbId: number; mediaType: string }[],
-    { includeActiveRequest = false }: { includeActiveRequest?: boolean } = {}
+    {
+      includeActiveRequest = false,
+      includeServiceData = false,
+    }: { includeActiveRequest?: boolean; includeServiceData?: boolean } = {}
   ): Promise<Media[]> {
     const mediaRepository = getRepository(Media);
 
@@ -48,7 +52,7 @@ class Media {
 
       const finalIds = [...new Set(items.map((i) => i.tmdbId))];
 
-      const media = await mediaRepository
+      const mediaQuery = mediaRepository
         .createQueryBuilder('media')
         .leftJoinAndSelect(
           'media.watchlists',
@@ -56,8 +60,15 @@ class Media {
           'media.id= watchlist.media and watchlist.requestedBy = :userId',
           { userId: user?.id }
         )
-        .where(' media.tmdbId in (:...finalIds)', { finalIds })
-        .getMany();
+        .where(' media.tmdbId in (:...finalIds)', { finalIds });
+
+      if (includeServiceData) {
+        mediaQuery
+          .leftJoinAndSelect('media.serviceStatuses', 'serviceStatus')
+          .leftJoinAndSelect('media.requests', 'request');
+      }
+
+      const media = await mediaQuery.getMany();
 
       const relatedMedia = media.filter((m) =>
         items.some((i) => i.tmdbId === m.tmdbId && i.mediaType === m.mediaType)
@@ -104,7 +115,7 @@ class Media {
     try {
       const media = await mediaRepository.findOne({
         where: { tmdbId: id, mediaType: mediaType },
-        relations: { requests: true, issues: true },
+        relations: { requests: true, issues: true, serviceStatuses: true },
       });
 
       return media ?? undefined;
@@ -156,6 +167,9 @@ class Media {
 
   @OneToMany(() => Issue, (issue) => issue.media, { cascade: true })
   public issues: Issue[];
+
+  @OneToMany(() => MediaServiceStatus, (serviceStatus) => serviceStatus.media)
+  public serviceStatuses: MediaServiceStatus[];
 
   @OneToOne(() => Blocklist, (blocklist) => blocklist.media)
   public blocklist: Promise<Blocklist>;
@@ -425,6 +439,27 @@ class Media {
         );
       }
     }
+
+    this.serviceStatuses?.forEach((serviceStatus) => {
+      if (
+        serviceStatus.externalServiceId === undefined ||
+        serviceStatus.externalServiceId === null
+      ) {
+        serviceStatus.downloadStatus = [];
+        return;
+      }
+
+      serviceStatus.downloadStatus =
+        serviceStatus.serviceType === 'sonarr'
+          ? downloadTracker.getSeriesProgress(
+              serviceStatus.serviceId,
+              serviceStatus.externalServiceId
+            )
+          : downloadTracker.getMovieProgress(
+              serviceStatus.serviceId,
+              serviceStatus.externalServiceId
+            );
+    });
   }
 
   public filter(user?: User): Media {

@@ -12,6 +12,7 @@ import { MediaStatus } from '@server/constants/media';
 interface StatusBadgeMiniProps {
   status: MediaStatus;
   is4k?: boolean;
+  label?: string;
   inProgress?: boolean;
   // Should the badge shrink on mobile to a smaller size? (TitleCard)
   shrink?: boolean;
@@ -20,6 +21,7 @@ interface StatusBadgeMiniProps {
 const StatusBadgeMini = ({
   status,
   is4k = false,
+  label,
   inProgress = false,
   shrink = false,
 }: StatusBadgeMiniProps) => {
@@ -74,10 +76,11 @@ const StatusBadgeMini = ({
     <div
       className={`relative inline-flex whitespace-nowrap rounded-full border-gray-700 text-xs font-semibold leading-5 ring-gray-700 ${
         shrink ? '' : 'ring-1'
-      }`}
+      } ${label ? 'bg-gray-800/80 shadow-md' : ''}`}
     >
       <div className={badgeStyle.join(' ')}>{indicatorIcon}</div>
       {is4k && <span className="pl-1 pr-2 text-gray-200">4K</span>}
+      {label && <span className="pl-1 pr-2 text-gray-200">{label}</span>}
     </div>
   );
 };
