@@ -251,6 +251,7 @@ const UserWebPushSettings = () => {
               {
                 pgpKey: data?.pgpKey,
                 discordIds: data?.discordIds,
+                slackIds: data?.slackIds,
                 pushbulletAccessToken: data?.pushbulletAccessToken,
                 pushoverApplicationToken: data?.pushoverApplicationToken,
                 pushoverUserKey: data?.pushoverUserKey,
