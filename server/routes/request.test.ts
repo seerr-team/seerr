@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { afterEach, before, beforeEach, describe, it, mock } from 'node:test';
 
+import RadarrAPI from '@server/api/servarr/radarr';
+import SonarrAPI from '@server/api/servarr/sonarr';
 import TheMovieDb from '@server/api/themoviedb';
 import type {
   TmdbMovieDetails,
@@ -79,6 +81,7 @@ Object.defineProperty(TheMovieDb.prototype, 'getTvShow', {
 function fakeTmdbMovie(tmdbId: number): TmdbMovieDetails {
   return {
     id: tmdbId,
+    release_date: '2020-01-01',
     genres: [],
     original_language: 'en',
     keywords: { keywords: [] },
@@ -394,7 +397,7 @@ describe('PUT /request/:requestId (movie)', () => {
     assert.strictEqual(saved.rootFolder, '/updated/movies');
   });
 
-  it('refuses to modify a request that is no longer pending', async () => {
+  it('refuses to modify a request that is neither pending nor failed', async () => {
     const requestRepo = getRepository(MediaRequest);
     const mediaRequest = await seedRequest(MediaRequestStatus.APPROVED);
 
@@ -406,13 +409,145 @@ describe('PUT /request/:requestId (movie)', () => {
     });
 
     assert.strictEqual(res.status, 409);
-    assert.match(res.body.message, /pending/i);
+    assert.match(res.body.message, /pending or failed/i);
 
     const saved = await requestRepo.findOneOrFail({
       where: { id: mediaRequest.id },
     });
     assert.strictEqual(saved.serverId, null);
     assert.strictEqual(saved.rootFolder, null);
+  });
+});
+
+describe('PUT /request/:requestId, failed request', () => {
+  afterEach(() => {
+    const settings = getSettings();
+    settings.radarr = [];
+    settings.sonarr = [];
+  });
+
+  it('lets a manager repoint a failed request and resubmits it', async (t) => {
+    configureRadarr([{ id: 2, isDefault: true, is4k: false }]);
+    const failed = await seedRequest(MediaRequestStatus.FAILED, {
+      serverId: 999,
+    });
+    const admin = await loginAs('admin@seerr.dev', 'test1234');
+    const sendToRadarr = t.mock.method(
+      MediaRequestSubscriber.prototype,
+      'sendToRadarr',
+      async () => undefined
+    );
+
+    const res = await admin.put(`/request/${failed.id}`).send({
+      mediaType: MediaType.MOVIE,
+      serverId: 2,
+      profileId: 7,
+      rootFolder: '/movies',
+      tags: [],
+    });
+
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.body.serverId, 2);
+    assert.strictEqual(res.body.modifiedBy.email, 'admin@seerr.dev');
+
+    const saved = await getRepository(MediaRequest).findOneOrFail({
+      where: { id: failed.id },
+    });
+    assert.strictEqual(saved.status, MediaRequestStatus.APPROVED);
+    assert.strictEqual(saved.serverId, 2);
+    assert.strictEqual(sendToRadarr.mock.callCount(), 1);
+  });
+
+  it('resubmits to the stored server when a failed-request edit omits serverId', async (t) => {
+    configureRadarr([
+      { id: 0, isDefault: true, is4k: false },
+      { id: 1, isDefault: false, is4k: false },
+    ]);
+    const failed = await seedRequest(MediaRequestStatus.FAILED, {
+      serverId: 1,
+    });
+    const admin = await loginAs('admin@seerr.dev', 'test1234');
+    const sendToRadarr = t.mock.method(
+      MediaRequestSubscriber.prototype,
+      'sendToRadarr',
+      async () => undefined
+    );
+
+    const res = await admin.put(`/request/${failed.id}`).send({
+      mediaType: MediaType.MOVIE,
+      profileId: 7,
+    });
+
+    assert.strictEqual(res.status, 200);
+
+    const saved = await getRepository(MediaRequest).findOneOrFail({
+      where: { id: failed.id },
+    });
+    assert.strictEqual(saved.status, MediaRequestStatus.APPROVED);
+    assert.strictEqual(saved.serverId, 1);
+    assert.strictEqual(sendToRadarr.mock.callCount(), 1);
+  });
+
+  it('rejects a failed-request edit that still points at a missing server', async () => {
+    configureRadarr([{ id: 2, isDefault: true, is4k: false }]);
+    const requestRepo = getRepository(MediaRequest);
+    const failed = await seedRequest(MediaRequestStatus.FAILED, {
+      serverId: 999,
+    });
+    const admin = await loginAs('admin@seerr.dev', 'test1234');
+
+    const res = await admin.put(`/request/${failed.id}`).send({
+      mediaType: MediaType.MOVIE,
+      serverId: 998,
+    });
+
+    assert.strictEqual(res.status, 400);
+    assert.match(res.body.message, /not configured/i);
+
+    const saved = await requestRepo.findOneOrFail({ where: { id: failed.id } });
+    assert.strictEqual(saved.status, MediaRequestStatus.FAILED);
+    assert.strictEqual(saved.serverId, 999);
+  });
+
+  it('rejects a failed-request edit that omits serverId while the stored server is missing', async () => {
+    configureRadarr([{ id: 2, isDefault: true, is4k: false }]);
+    const requestRepo = getRepository(MediaRequest);
+    const failed = await seedRequest(MediaRequestStatus.FAILED, {
+      serverId: 999,
+    });
+    const admin = await loginAs('admin@seerr.dev', 'test1234');
+
+    const res = await admin.put(`/request/${failed.id}`).send({
+      mediaType: MediaType.MOVIE,
+      profileId: 7,
+    });
+
+    assert.strictEqual(res.status, 400);
+    assert.match(res.body.message, /not configured/i);
+
+    const saved = await requestRepo.findOneOrFail({ where: { id: failed.id } });
+    assert.strictEqual(saved.status, MediaRequestStatus.FAILED);
+    assert.strictEqual(saved.serverId, 999);
+  });
+
+  it('forbids a non-manager from modifying a failed request', async () => {
+    const requestRepo = getRepository(MediaRequest);
+    const failed = await seedPendingTvRequest(MediaRequestStatus.FAILED, {
+      serverId: 999,
+    });
+    const friend = await loginAs('demo@seerr.dev', 'test1234');
+
+    const res = await friend.put(`/request/${failed.id}`).send({
+      mediaType: MediaType.TV,
+      serverId: 2,
+      seasons: [1],
+    });
+
+    assert.strictEqual(res.status, 403);
+    assert.match(res.body.message, /manager/i);
+
+    const saved = await requestRepo.findOneOrFail({ where: { id: failed.id } });
+    assert.strictEqual(saved.status, MediaRequestStatus.FAILED);
   });
 });
 
@@ -1123,6 +1258,50 @@ describe('POST /request/:requestId/retry', () => {
   });
 });
 
+describe('POST /request/:requestId/retry, stale server', () => {
+  afterEach(() => {
+    const settings = getSettings();
+    settings.radarr = [];
+    settings.sonarr = [];
+  });
+
+  it('refuses to retry when the request server no longer exists', async () => {
+    configureRadarr([{ id: 0, isDefault: true, is4k: false }]);
+    const repo = getRepository(MediaRequest);
+    const failed = await seedRequest(MediaRequestStatus.FAILED, {
+      serverId: 999,
+    });
+    const admin = await loginAs('admin@seerr.dev', 'test1234');
+
+    const res = await admin.post(`/request/${failed.id}/retry`);
+
+    assert.strictEqual(res.status, 409);
+    assert.match(res.body.message, /no longer exists/i);
+
+    const persisted = await repo.findOneOrFail({ where: { id: failed.id } });
+    assert.strictEqual(persisted.status, MediaRequestStatus.FAILED);
+  });
+
+  it('retries when the request server still exists', async (t) => {
+    configureRadarr([{ id: 5, isDefault: true, is4k: false }]);
+    const failed = await seedRequest(MediaRequestStatus.FAILED, {
+      serverId: 5,
+    });
+    const admin = await loginAs('admin@seerr.dev', 'test1234');
+    const sendToRadarr = t.mock.method(
+      MediaRequestSubscriber.prototype,
+      'sendToRadarr',
+      async () => undefined
+    );
+
+    const res = await admin.post(`/request/${failed.id}/retry`);
+
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.body.modifiedBy.email, 'admin@seerr.dev');
+    assert.strictEqual(sendToRadarr.mock.callCount(), 1);
+  });
+});
+
 describe('POST /request/:requestId/:status, unresolved *arr server', () => {
   afterEach(() => {
     // configureRadarr/configureSonarr mutate the shared settings singleton and
@@ -1424,6 +1603,58 @@ describe('POST /request/:requestId/:status, unresolved *arr server', () => {
     });
     assert.strictEqual(persisted.status, MediaRequestStatus.FAILED);
 
+    assert.ok(failedNotificationSent());
+  });
+
+  it('fails a movie request with a stale serverId instead of sending it to the default Radarr server', async (t) => {
+    configureRadarr([{ id: 0, isDefault: true, is4k: false }]);
+    getSettings().sonarr = [];
+
+    const pending = await seedRequest(MediaRequestStatus.PENDING, {
+      serverId: 999,
+    });
+    const admin = await loginAs('admin@seerr.dev', 'test1234');
+    const getMovieByTmdbId = t.mock.method(
+      RadarrAPI.prototype,
+      'getMovieByTmdbId',
+      async () => ({}) as never
+    );
+
+    const res = await admin.post(`/request/${pending.id}/approve`);
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(getMovieByTmdbId.mock.callCount(), 0);
+
+    const persisted = await getRepository(MediaRequest).findOneOrFail({
+      where: { id: pending.id },
+    });
+    assert.strictEqual(persisted.status, MediaRequestStatus.FAILED);
+    assert.ok(failedNotificationSent());
+  });
+
+  it('fails a series request with a stale serverId instead of sending it to the default Sonarr server', async (t) => {
+    configureSonarr([{ id: 0, isDefault: true, is4k: false }]);
+    getSettings().radarr = [];
+
+    const pending = await seedPendingTvRequest(MediaRequestStatus.PENDING, {
+      serverId: 999,
+    });
+    // Give the fallback a tvdbId so it would get as far as addSeries
+    await getRepository(Media).update(pending.media.id, { tvdbId: 12345 });
+    const admin = await loginAs('admin@seerr.dev', 'test1234');
+    const addSeries = t.mock.method(
+      SonarrAPI.prototype,
+      'addSeries',
+      async () => ({}) as never
+    );
+
+    const res = await admin.post(`/request/${pending.id}/approve`);
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(addSeries.mock.callCount(), 0);
+
+    const persisted = await getRepository(MediaRequest).findOneOrFail({
+      where: { id: pending.id },
+    });
+    assert.strictEqual(persisted.status, MediaRequestStatus.FAILED);
     assert.ok(failedNotificationSent());
   });
 

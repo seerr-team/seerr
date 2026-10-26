@@ -35,6 +35,18 @@ import { Router } from 'express';
 
 const requestRoutes = Router();
 
+const arrServerConfigured = (
+  serverId: number | null | undefined,
+  type: MediaType,
+  is4k: boolean,
+  settings = getSettings()
+): boolean =>
+  serverId == null ||
+  serverId < 0 ||
+  (type === MediaType.MOVIE ? settings.radarr : settings.sonarr).some(
+    (server) => server.id === serverId && server.is4k === is4k
+  );
+
 requestRoutes.get<Record<string, unknown>, RequestResultsResponse>(
   '/',
   async (req, res, next) => {
@@ -498,10 +510,23 @@ requestRoutes.put<{ requestId: string }>(
           });
         }
 
-        if (request.status !== MediaRequestStatus.PENDING) {
+        if (
+          request.status !== MediaRequestStatus.PENDING &&
+          request.status !== MediaRequestStatus.FAILED
+        ) {
           return next({
             status: 409,
-            message: 'Only pending requests can be modified.',
+            message: 'Only pending or failed requests can be modified.',
+          });
+        }
+
+        if (
+          request.status === MediaRequestStatus.FAILED &&
+          !req.user?.hasPermission(Permission.MANAGE_REQUESTS)
+        ) {
+          return next({
+            status: 403,
+            message: 'Only request managers can modify a failed request.',
           });
         }
 
@@ -526,6 +551,27 @@ requestRoutes.put<{ requestId: string }>(
           });
         }
 
+        // An omitted serverId leaves the stored one in place
+        const effectiveServerId =
+          req.body.serverId === undefined
+            ? request.serverId
+            : req.body.serverId;
+
+        const resubmitAfterEdit = request.status === MediaRequestStatus.FAILED;
+        if (resubmitAfterEdit) {
+          if (
+            !arrServerConfigured(effectiveServerId, request.type, request.is4k)
+          ) {
+            return next({
+              status: 400,
+              message:
+                'The selected server is not configured. Choose a valid server before resubmitting.',
+            });
+          }
+          request.status = MediaRequestStatus.APPROVED;
+          request.modifiedBy = req.user as User;
+        }
+
         // Reassignment moves every season on the request onto the new owner's
         // quota, so it is charged in full rather than as a delta
         const ownerChanging = requestUser.id !== previousOwnerId;
@@ -543,7 +589,7 @@ requestRoutes.put<{ requestId: string }>(
               }
             }
 
-            request.serverId = req.body.serverId;
+            request.serverId = effectiveServerId;
             request.profileId = req.body.profileId;
             request.rootFolder = req.body.rootFolder;
             request.tags = req.body.tags;
@@ -558,7 +604,7 @@ requestRoutes.put<{ requestId: string }>(
                 { type: 'or' }
               )
             ) {
-              request.serverId = req.body.serverId;
+              request.serverId = effectiveServerId;
               request.profileId = req.body.profileId;
               request.rootFolder = req.body.rootFolder;
               request.languageProfileId = req.body.languageProfileId;
@@ -771,6 +817,16 @@ requestRoutes.post<{
           return next({
             status: 409,
             message: 'Only failed requests can be retried.',
+          });
+        }
+
+        if (
+          !arrServerConfigured(request.serverId, request.type, request.is4k)
+        ) {
+          return next({
+            status: 409,
+            message:
+              'The server this request was sent to no longer exists. Edit the request to choose a new one.',
           });
         }
 
