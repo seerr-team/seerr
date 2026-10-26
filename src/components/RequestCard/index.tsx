@@ -339,7 +339,7 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
         tmdbId={request.media.tmdbId}
         type={request.type}
         is4k={request.is4k}
-        editRequest={request}
+        editRequest={requestData}
         onCancel={() => setShowEditModal(false)}
         onComplete={() => {
           revalidate();
@@ -480,20 +480,37 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
           <div className="flex flex-1 items-end space-x-2">
             {requestData.status === MediaRequestStatus.FAILED &&
               hasPermission(Permission.MANAGE_REQUESTS) && (
-                <Button
-                  buttonType="primary"
-                  buttonSize="sm"
-                  disabled={isRetrying}
-                  onClick={() => retryRequest()}
-                >
-                  <ArrowPathIcon
-                    className={isRetrying ? 'animate-spin' : ''}
-                    style={{ marginRight: '0', animationDirection: 'reverse' }}
-                  />
-                  <span className="ml-1.5 hidden sm:block">
-                    {intl.formatMessage(globalMessages.retry)}
-                  </span>
-                </Button>
+                <>
+                  <Button
+                    buttonType="primary"
+                    buttonSize="sm"
+                    aria-label={intl.formatMessage(messages.editrequest)}
+                    disabled={isRetrying}
+                    onClick={() => setShowEditModal(true)}
+                  >
+                    <PencilIcon />
+                    <span className="ml-1.5 hidden sm:block">
+                      {intl.formatMessage(messages.editrequest)}
+                    </span>
+                  </Button>
+                  <Button
+                    buttonType="primary"
+                    buttonSize="sm"
+                    disabled={isRetrying}
+                    onClick={() => retryRequest()}
+                  >
+                    <ArrowPathIcon
+                      className={isRetrying ? 'animate-spin' : ''}
+                      style={{
+                        marginRight: '0',
+                        animationDirection: 'reverse',
+                      }}
+                    />
+                    <span className="ml-1.5 hidden sm:block">
+                      {intl.formatMessage(globalMessages.retry)}
+                    </span>
+                  </Button>
+                </>
               )}
             {requestData.status === MediaRequestStatus.PENDING &&
               hasPermission(Permission.MANAGE_REQUESTS) && (
