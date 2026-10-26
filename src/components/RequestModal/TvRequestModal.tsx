@@ -33,6 +33,10 @@ const messages = defineMessages('components.RequestModal', {
   cancel: 'Cancel Request',
   pendingrequest: 'Pending Request',
   pending4krequest: 'Pending 4K Request',
+  failedseriesrequest: 'Failed Series Request',
+  failedseries4krequest: 'Failed 4K Series Request',
+  failedresubmit: 'Choose a server and resubmit this request.',
+  resubmit: 'Resubmit Request',
   requestfrom: "{username}'s request is pending approval.",
   requestseasons:
     'Request {seasonCount} {seasonCount, plural, one {Season} other {Seasons}}',
@@ -46,6 +50,8 @@ const messages = defineMessages('components.RequestModal', {
   errorediting: 'Something went wrong while editing the request.',
   requestedited: 'Request for <strong>{title}</strong> edited successfully!',
   requestApproved: 'Request for <strong>{title}</strong> approved!',
+  requestRetried:
+    'Request for <strong>{title}</strong> updated and resubmitted.',
   requestcancelled: 'Request for <strong>{title}</strong> canceled.',
   autoapproval: 'Automatic Approval',
   requesterror: 'Something went wrong while submitting the request.',
@@ -71,6 +77,7 @@ const TvRequestModal = ({
   editRequest,
   is4k = false,
 }: RequestModalProps) => {
+  const isFailed = editRequest?.status === MediaRequestStatus.FAILED;
   const settings = useSettings();
   const { addToast } = useToasts();
   const editingSeasons: number[] = (editRequest?.seasons ?? []).map(
@@ -112,6 +119,7 @@ const TvRequestModal = ({
       mutate('/api/v1/request/count');
     }
 
+    // The PUT resubmits a failed request itself; /approve would 409 on it.
     try {
       if (selectedSeasons.length > 0) {
         const response = await axios.put(`/api/v1/request/${editRequest.id}`, {
@@ -134,7 +142,7 @@ const TvRequestModal = ({
           return;
         }
 
-        if (alsoApproveRequest) {
+        if (alsoApproveRequest && !isFailed) {
           await axios.post(`/api/v1/request/${editRequest.id}/approve`);
         }
       } else {
@@ -147,9 +155,11 @@ const TvRequestModal = ({
         <span>
           {selectedSeasons.length > 0
             ? intl.formatMessage(
-                alsoApproveRequest
-                  ? messages.requestApproved
-                  : messages.requestedited,
+                isFailed
+                  ? messages.requestRetried
+                  : alsoApproveRequest
+                    ? messages.requestApproved
+                    : messages.requestedited,
                 {
                   title: data?.name,
                   strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
@@ -423,9 +433,13 @@ const TvRequestModal = ({
       }
       title={intl.formatMessage(
         editRequest
-          ? is4k
-            ? messages.pending4krequest
-            : messages.pendingrequest
+          ? isFailed
+            ? is4k
+              ? messages.failedseries4krequest
+              : messages.failedseriesrequest
+            : is4k
+              ? messages.pending4krequest
+              : messages.pendingrequest
           : is4k
             ? messages.requestseries4ktitle
             : messages.requestseriestitle
@@ -436,7 +450,9 @@ const TvRequestModal = ({
           ? selectedSeasons.length === 0
             ? intl.formatMessage(messages.cancel)
             : hasPermission(Permission.MANAGE_REQUESTS)
-              ? intl.formatMessage(messages.approve)
+              ? intl.formatMessage(
+                  isFailed ? messages.resubmit : messages.approve
+                )
               : intl.formatMessage(messages.edit)
           : unrequestedSeasons.length === 0
             ? intl.formatMessage(messages.alreadyrequested)
@@ -485,11 +501,13 @@ const TvRequestModal = ({
       backdrop={`https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${data?.backdropPath}`}
     >
       {editRequest
-        ? isOwner
-          ? intl.formatMessage(messages.pendingapproval)
-          : intl.formatMessage(messages.requestfrom, {
-              username: editRequest?.requestedBy.displayName,
-            })
+        ? isFailed
+          ? intl.formatMessage(messages.failedresubmit)
+          : isOwner
+            ? intl.formatMessage(messages.pendingapproval)
+            : intl.formatMessage(messages.requestfrom, {
+                username: editRequest?.requestedBy.displayName,
+              })
         : null}
       {hasPermission(
         [

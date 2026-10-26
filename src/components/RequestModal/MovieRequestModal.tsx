@@ -7,7 +7,7 @@ import useToasts from '@app/hooks/useToasts';
 import { useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
-import { MediaStatus } from '@server/constants/media';
+import { MediaRequestStatus, MediaStatus } from '@server/constants/media';
 import type { MediaRequest } from '@server/entity/MediaRequest';
 import type { NonFunctionProperties } from '@server/interfaces/api/common';
 import type { QuotaResponse } from '@server/interfaces/api/userInterfaces';
@@ -29,10 +29,16 @@ const messages = defineMessages('components.RequestModal', {
   cancel: 'Cancel Request',
   pendingrequest: 'Pending Movie Request',
   pending4krequest: 'Pending 4K Movie Request',
+  failedmovierequest: 'Failed Movie Request',
+  failedmovie4krequest: 'Failed 4K Movie Request',
+  failedresubmit: 'Choose a server and resubmit this request.',
+  resubmit: 'Resubmit Request',
   requestfrom: "{username}'s request is pending approval.",
   errorediting: 'Something went wrong while editing the request.',
   requestedited: 'Request for <strong>{title}</strong> edited successfully!',
   requestApproved: 'Request for <strong>{title}</strong> approved!',
+  requestRetried:
+    'Request for <strong>{title}</strong> updated and resubmitted.',
   requesterror: 'Something went wrong while submitting the request.',
   pendingapproval: 'Your request is pending approval.',
 });
@@ -55,6 +61,7 @@ const MovieRequestModal = ({
   is4k = false,
 }: RequestModalProps) => {
   const [isUpdating, setIsUpdating] = useState(false);
+  const isFailed = editRequest?.status === MediaRequestStatus.FAILED;
   const [requestOverrides, setRequestOverrides] =
     useState<RequestOverrides | null>(null);
   const { addToast } = useToasts();
@@ -176,6 +183,7 @@ const MovieRequestModal = ({
   const updateRequest = async (alsoApproveRequest = false) => {
     setIsUpdating(true);
 
+    // The PUT resubmits a failed request itself; /approve would 409 on it.
     try {
       await axios.put(`/api/v1/request/${editRequest?.id}`, {
         mediaType: 'movie',
@@ -186,7 +194,7 @@ const MovieRequestModal = ({
         tags: requestOverrides?.tags,
       });
 
-      if (alsoApproveRequest) {
+      if (alsoApproveRequest && !isFailed) {
         await axios.post(`/api/v1/request/${editRequest?.id}/approve`);
       }
       mutate('/api/v1/request?filter=all&take=10&sort=modified&skip=0');
@@ -195,9 +203,11 @@ const MovieRequestModal = ({
       addToast(
         <span>
           {intl.formatMessage(
-            alsoApproveRequest
-              ? messages.requestApproved
-              : messages.requestedited,
+            isFailed
+              ? messages.requestRetried
+              : alsoApproveRequest
+                ? messages.requestApproved
+                : messages.requestedited,
             {
               title: data?.title,
               strong: (msg: React.ReactNode) => <strong>{msg}</strong>,
@@ -232,7 +242,13 @@ const MovieRequestModal = ({
         backgroundClickable
         onCancel={onCancel}
         title={intl.formatMessage(
-          is4k ? messages.pending4krequest : messages.pendingrequest
+          isFailed
+            ? is4k
+              ? messages.failedmovie4krequest
+              : messages.failedmovierequest
+            : is4k
+              ? messages.pending4krequest
+              : messages.pendingrequest
         )}
         subTitle={data?.title}
         onOk={() =>
@@ -245,7 +261,9 @@ const MovieRequestModal = ({
         okDisabled={isUpdating}
         okText={
           hasPermission(Permission.MANAGE_REQUESTS)
-            ? intl.formatMessage(messages.approve)
+            ? intl.formatMessage(
+                isFailed ? messages.resubmit : messages.approve
+              )
             : hasPermission(Permission.REQUEST_ADVANCED)
               ? intl.formatMessage(messages.edit)
               : intl.formatMessage(messages.cancel)
@@ -280,11 +298,13 @@ const MovieRequestModal = ({
         cancelText={intl.formatMessage(globalMessages.close)}
         backdrop={`https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/${data?.backdropPath}`}
       >
-        {isOwner
-          ? intl.formatMessage(messages.pendingapproval)
-          : intl.formatMessage(messages.requestfrom, {
-              username: editRequest.requestedBy.displayName,
-            })}
+        {isFailed
+          ? intl.formatMessage(messages.failedresubmit)
+          : isOwner
+            ? intl.formatMessage(messages.pendingapproval)
+            : intl.formatMessage(messages.requestfrom, {
+                username: editRequest.requestedBy.displayName,
+              })}
         {hasPermission(
           [Permission.REQUEST_ADVANCED, Permission.MANAGE_REQUESTS],
           { type: 'or' }
