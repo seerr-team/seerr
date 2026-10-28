@@ -22,7 +22,7 @@ export default defineConfig({
       });
     },
   },
-  env: {
+  expose: {
     ADMIN_EMAIL: 'admin@seerr.dev',
     ADMIN_PASSWORD: 'test1234',
     USER_EMAIL: 'demo@seerr.dev',

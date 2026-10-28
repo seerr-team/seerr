@@ -1,6 +1,6 @@
 describe('Pull To Refresh', () => {
   beforeEach(() => {
-    cy.login(Cypress.env('ADMIN_EMAIL'), Cypress.env('ADMIN_PASSWORD'));
+    cy.login(Cypress.expose('ADMIN_EMAIL'), Cypress.expose('ADMIN_PASSWORD'));
     cy.viewport(390, 844);
     cy.visitMobile('/');
   });
