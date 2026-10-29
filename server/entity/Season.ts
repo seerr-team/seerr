@@ -18,6 +18,10 @@ class Season {
   @Column()
   public seasonNumber: number;
 
+  // the number this season carries outside TMDB, set only by a manual override
+  @Column({ type: 'int', nullable: true })
+  public dispatchedSeasonNumber?: number | null;
+
   @Column({ type: 'int', default: MediaStatus.UNKNOWN })
   public status: MediaStatus;
 
