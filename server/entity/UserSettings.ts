@@ -43,6 +43,9 @@ export class UserSettings {
   @Column({ default: '' })
   public locale?: string;
 
+  @Column({ type: 'varchar', nullable: true })
+  public mediaLocale?: string | null;
+
   @Column({ nullable: true })
   public discoverRegion?: string;
 
