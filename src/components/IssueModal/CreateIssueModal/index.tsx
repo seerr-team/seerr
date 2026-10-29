@@ -70,17 +70,19 @@ const CreateIssueModal = ({
     return null;
   }
 
-  const availableSeasons = (data?.mediaInfo?.seasons ?? [])
+  const reportableSeasons = (data?.mediaInfo?.seasons ?? [])
     .filter(
       (season) =>
         season.status === MediaStatus.AVAILABLE ||
         season.status === MediaStatus.PARTIALLY_AVAILABLE ||
+        season.status === MediaStatus.PROCESSING ||
         (settings.currentSettings.series4kEnabled &&
           hasPermission([Permission.REQUEST_4K, Permission.REQUEST_4K_TV], {
             type: 'or',
           }) &&
           (season.status4k === MediaStatus.AVAILABLE ||
-            season.status4k === MediaStatus.PARTIALLY_AVAILABLE))
+            season.status4k === MediaStatus.PARTIALLY_AVAILABLE ||
+            season.status4k === MediaStatus.PROCESSING))
     )
     .map((season) => season.seasonNumber);
 
@@ -95,7 +97,8 @@ const CreateIssueModal = ({
       initialValues={{
         selectedIssue: issueOptions[0],
         message: '',
-        problemSeason: availableSeasons.length === 1 ? availableSeasons[0] : 0,
+        problemSeason:
+          reportableSeasons.length === 1 ? reportableSeasons[0] : 0,
         problemEpisode: 0,
       }}
       validationSchema={CreateIssueModalSchema}
@@ -172,14 +175,14 @@ const CreateIssueModal = ({
                         as="select"
                         id="problemSeason"
                         name="problemSeason"
-                        disabled={availableSeasons.length === 1}
+                        disabled={reportableSeasons.length === 1}
                       >
-                        {availableSeasons.length > 1 && (
+                        {reportableSeasons.length > 1 && (
                           <option value={0}>
                             {intl.formatMessage(messages.allseasons)}
                           </option>
                         )}
-                        {availableSeasons.map((season) => (
+                        {reportableSeasons.map((season) => (
                           <option
                             value={season}
                             key={`problem-season-${season}`}
