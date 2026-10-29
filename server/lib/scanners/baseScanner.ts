@@ -168,7 +168,14 @@ class BaseScanner<T> {
           ratingKey &&
           existing[is4k ? 'ratingKey4k' : 'ratingKey'] !== ratingKey
         ) {
+          existing.addPlexRatingKey(
+            existing[is4k ? 'ratingKey4k' : 'ratingKey']
+          );
           existing[is4k ? 'ratingKey4k' : 'ratingKey'] = ratingKey;
+          changedExisting = true;
+        }
+
+        if (existing.addPlexRatingKey(ratingKey)) {
           changedExisting = true;
         }
 
@@ -264,6 +271,7 @@ class BaseScanner<T> {
           newMedia.ratingKey = !is4k ? ratingKey : undefined;
           newMedia.ratingKey4k =
             is4k && this.enable4kMovie ? ratingKey : undefined;
+          newMedia.addPlexRatingKey(ratingKey);
         }
 
         if (jellyfinMediaId) {
@@ -336,6 +344,7 @@ class BaseScanner<T> {
 
         // We update the rating keys and jellyfinMediaId in the seasons loop because we need episode counts
         if (media && season.episodes > 0 && media.ratingKey !== ratingKey) {
+          media.addPlexRatingKey(media.ratingKey);
           media.ratingKey = ratingKey;
         }
 
@@ -345,6 +354,7 @@ class BaseScanner<T> {
           this.enable4kShow &&
           media.ratingKey4k !== ratingKey
         ) {
+          media.addPlexRatingKey(media.ratingKey4k);
           media.ratingKey4k = ratingKey;
         }
 
@@ -433,6 +443,7 @@ class BaseScanner<T> {
       }
 
       if (media) {
+        media.addPlexRatingKey(ratingKey);
         media.seasons = [...media.seasons, ...newSeasons];
 
         const newStandardSeasonsAvailable = (
@@ -676,6 +687,7 @@ class BaseScanner<T> {
                   ? MediaStatus.PROCESSING
                   : MediaStatus.UNKNOWN,
         });
+        newMedia.addPlexRatingKey(ratingKey);
         await mediaRepository.save(newMedia);
         this.log(`Saved ${title}`);
       }
