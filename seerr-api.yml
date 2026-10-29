@@ -4372,6 +4372,8 @@ paths:
                   type: string
                 permissions:
                   type: number
+                phoneNumber:
+                  type: string
       responses:
         '201':
           description: The created user
