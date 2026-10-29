@@ -1,6 +1,7 @@
 import { IssueStatus, IssueTypeName } from '@server/constants/issue';
 import { getIntl } from '@server/i18n';
 import globalMessages from '@server/i18n/globalMessages';
+import { resolveNotificationEvent } from '@server/lib/notifications/eventMessages';
 import type { NotificationAgentNtfy } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
@@ -41,9 +42,12 @@ class NtfyAgent
       .filter((tag) => tag.length > 0);
     const priority = settings.options.priority ?? 3;
 
-    const title = payload.event
-      ? `${payload.event} - ${payload.subject}`
-      : payload.subject;
+    const event = resolveNotificationEvent(
+      type,
+      payload,
+      settings.options.locale as AvailableLocale
+    );
+    const title = event ? `${event} - ${payload.subject}` : payload.subject;
     let message = payload.message ?? '';
 
     if (payload.request) {

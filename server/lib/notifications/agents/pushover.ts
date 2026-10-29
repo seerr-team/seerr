@@ -4,6 +4,7 @@ import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
 import { getIntl } from '@server/i18n';
 import globalMessages from '@server/i18n/globalMessages';
+import { resolveNotificationEvent } from '@server/lib/notifications/eventMessages';
 import type { NotificationAgentPushover } from '@server/lib/settings';
 import { NotificationAgentKey, getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
@@ -97,8 +98,9 @@ class PushoverAgent
     const { applicationUrl, applicationTitle } = settings.main;
     const { embedPoster } = settings.notifications.agents.pushover;
 
-    const title = payload.event ?? payload.subject;
-    let message = payload.event ? `<b>${payload.subject}</b>` : '';
+    const event = resolveNotificationEvent(type, payload, locale);
+    const title = event ?? payload.subject;
+    let message = event ? `<b>${payload.subject}</b>` : '';
     let priority = 0;
 
     if (payload.message) {
