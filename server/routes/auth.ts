@@ -1,4 +1,4 @@
-import JellyfinAPI from '@server/api/jellyfin';
+import JellyfinMainAPI from '@server/api/jellyfinMain';
 import PlexTvAPI from '@server/api/plextv';
 import { ApiErrorCode } from '@server/constants/error';
 import { MediaServerType, ServerType } from '@server/constants/server';
@@ -316,7 +316,11 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
     }
 
     // First we need to attempt to log the user in to jellyfin
-    const jellyfinserver = new JellyfinAPI(hostname ?? '', undefined, deviceId);
+    const jellyfinserver = new JellyfinMainAPI(
+      hostname ?? '',
+      undefined,
+      deviceId
+    );
 
     const ip = req.ip;
     let clientIp;
@@ -421,7 +425,7 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
       }
 
       // Create an API key on Jellyfin from this admin user
-      const jellyfinClient = new JellyfinAPI(
+      const jellyfinClient = new JellyfinMainAPI(
         hostname,
         account.AccessToken,
         deviceId
@@ -658,7 +662,7 @@ authRoutes.post('/jellyfin/quickconnect/initiate', async (req, res, next) => {
 
   try {
     const hostname = getHostname();
-    const jellyfinServer = new JellyfinAPI(
+    const jellyfinServer = new JellyfinMainAPI(
       hostname ?? '',
       undefined,
       undefined
@@ -704,7 +708,7 @@ authRoutes.get('/jellyfin/quickconnect/check', async (req, res, next) => {
 
   try {
     const hostname = getHostname();
-    const jellyfinServer = new JellyfinAPI(
+    const jellyfinServer = new JellyfinMainAPI(
       hostname ?? '',
       undefined,
       undefined
@@ -755,7 +759,7 @@ authRoutes.post(
 
     try {
       const hostname = getHostname();
-      const jellyfinServer = new JellyfinAPI(
+      const jellyfinServer = new JellyfinMainAPI(
         hostname ?? '',
         undefined,
         undefined
