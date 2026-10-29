@@ -82,7 +82,9 @@ const messages = defineMessages('components.Settings.SonarrModal', {
   selecttags: 'Select tags',
   monitorNewItems: 'Monitor New Seasons',
   monitorNewItemsHelp:
-    'Whether Sonarr should monitor (All) or not (None) new seasons when a series is added.',
+    'Choose when Sonarr should monitor new seasons after a series is added.',
+  monitorNewItemsNone: 'None',
+  monitorNewItemsLatest: 'Latest Season Requested',
   apiKeyHelp: 'Find it in Sonarr: Settings > General > Security > API Key',
   baseUrlHelp:
     'If you set a URL Base in Sonarr (Settings > General > Host), enter it here (e.g. /sonarr). Leave blank otherwise.',
@@ -1026,8 +1028,15 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
                         name="monitorNewItems"
                         disabled={!isValidated || isTesting}
                       >
-                        <option value="all">All</option>
-                        <option value="none">None</option>
+                        <option value="all">
+                          {intl.formatMessage(globalMessages.all)}
+                        </option>
+                        <option value="none">
+                          {intl.formatMessage(messages.monitorNewItemsNone)}
+                        </option>
+                        <option value="latest">
+                          {intl.formatMessage(messages.monitorNewItemsLatest)}
+                        </option>
                       </Field>
                     </div>
                   </div>
