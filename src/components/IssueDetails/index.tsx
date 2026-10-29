@@ -24,7 +24,7 @@ import {
 import { ArrowPathIcon } from '@heroicons/react/24/solid';
 import { IssueStatus } from '@server/constants/issue';
 import { MediaType } from '@server/constants/media';
-import { MediaServerType } from '@server/constants/server';
+import { MediaServerType, ServerType } from '@server/constants/server';
 import type Issue from '@server/entity/Issue';
 import type { MovieDetails } from '@server/models/Movie';
 import type { TvDetails } from '@server/models/Tv';
@@ -385,15 +385,15 @@ const IssueDetails = () => {
                     {settings.currentSettings.mediaServerType ===
                     MediaServerType.EMBY
                       ? intl.formatMessage(messages.playonplex, {
-                          mediaServerName: 'Emby',
+                          mediaServerName: ServerType.EMBY,
                         })
                       : settings.currentSettings.mediaServerType ===
                           MediaServerType.PLEX
                         ? intl.formatMessage(messages.playonplex, {
-                            mediaServerName: 'Plex',
+                            mediaServerName: ServerType.PLEX,
                           })
                         : intl.formatMessage(messages.playonplex, {
-                            mediaServerName: 'Jellyfin',
+                            mediaServerName: ServerType.JELLYFIN,
                           })}
                   </span>
                 </Button>
@@ -433,15 +433,15 @@ const IssueDetails = () => {
                     {settings.currentSettings.mediaServerType ===
                     MediaServerType.EMBY
                       ? intl.formatMessage(messages.play4konplex, {
-                          mediaServerName: 'Emby',
+                          mediaServerName: ServerType.EMBY,
                         })
                       : settings.currentSettings.mediaServerType ===
                           MediaServerType.PLEX
                         ? intl.formatMessage(messages.play4konplex, {
-                            mediaServerName: 'Plex',
+                            mediaServerName: ServerType.PLEX,
                           })
                         : intl.formatMessage(messages.play4konplex, {
-                            mediaServerName: 'Jellyfin',
+                            mediaServerName: ServerType.JELLYFIN,
                           })}
                   </span>
                 </Button>
@@ -651,15 +651,15 @@ const IssueDetails = () => {
                   {settings.currentSettings.mediaServerType ===
                   MediaServerType.EMBY
                     ? intl.formatMessage(messages.playonplex, {
-                        mediaServerName: 'Emby',
+                        mediaServerName: ServerType.EMBY,
                       })
                     : settings.currentSettings.mediaServerType ===
                         MediaServerType.PLEX
                       ? intl.formatMessage(messages.playonplex, {
-                          mediaServerName: 'Plex',
+                          mediaServerName: ServerType.PLEX,
                         })
                       : intl.formatMessage(messages.playonplex, {
-                          mediaServerName: 'Jellyfin',
+                          mediaServerName: ServerType.JELLYFIN,
                         })}
                 </span>
               </Button>
@@ -698,15 +698,15 @@ const IssueDetails = () => {
                   {settings.currentSettings.mediaServerType ===
                   MediaServerType.EMBY
                     ? intl.formatMessage(messages.play4konplex, {
-                        mediaServerName: 'Emby',
+                        mediaServerName: ServerType.EMBY,
                       })
                     : settings.currentSettings.mediaServerType ===
                         MediaServerType.PLEX
                       ? intl.formatMessage(messages.play4konplex, {
-                          mediaServerName: 'Plex',
+                          mediaServerName: ServerType.PLEX,
                         })
                       : intl.formatMessage(messages.play4konplex, {
-                          mediaServerName: 'Jellyfin',
+                          mediaServerName: ServerType.JELLYFIN,
                         })}
                 </span>
               </Button>

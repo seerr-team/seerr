@@ -4,7 +4,7 @@ import SettingsTabs from '@app/components/Common/SettingsTabs';
 import useSettings from '@app/hooks/useSettings';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
-import { MediaServerType } from '@server/constants/server';
+import { MediaServerType, ServerType } from '@server/constants/server';
 import { useIntl } from 'react-intl';
 
 const messages = defineMessages('components.Settings', {
@@ -100,9 +100,9 @@ const SettingsLayout = ({ children }: SettingsLayoutProps) => {
     return intl.formatMessage(messages.menuJellyfinSettings, {
       mediaServerName:
         settings.currentSettings.mediaServerType === MediaServerType.JELLYFIN
-          ? 'Jellyfin'
+          ? ServerType.JELLYFIN
           : settings.currentSettings.mediaServerType === MediaServerType.EMBY
-            ? 'Emby'
+            ? ServerType.EMBY
             : undefined,
     });
   }
