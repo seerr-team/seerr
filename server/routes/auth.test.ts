@@ -74,6 +74,23 @@ const authenticateQCMock = mock.method(
   'authenticateQuickConnect',
   async () => ({ ...defaultAuthenticateResponse })
 );
+const embyConnectLoginResponse = {
+  User: {
+    Id: 'emby-user-001',
+    Name: 'embyuser',
+    Email: 'Connect.User@Seerr.dev',
+    ServerId: 'server-1',
+    ServerName: 'Emby',
+    Configuration: { GroupedFolders: [] },
+    Policy: { IsAdministrator: false },
+  },
+  AccessToken: 'emby-connect-token',
+};
+
+const loginMock = mock.method(JellyfinAPI.prototype, 'login', async () =>
+  structuredClone(embyConnectLoginResponse)
+);
+
 const fakeAvatarBuffer = Buffer.from('fake-quickconnect-avatar-bytes');
 
 const axiosHeadMock = mock.method(axios, 'head', async () => ({
@@ -163,6 +180,12 @@ function configureJellyfin() {
   settings.jellyfin.port = 8096;
   settings.jellyfin.useSsl = false;
   settings.jellyfin.urlBase = '';
+}
+
+/** Configure Emby settings for testing Emby Connect sign-in */
+function configureEmby() {
+  configureJellyfin();
+  getSettings().main.mediaServerType = MediaServerType.EMBY;
 }
 
 describe('POST /auth/jellyfin/quickconnect/initiate', () => {
@@ -572,6 +595,159 @@ describe('POST /auth/jellyfin/quickconnect/authenticate', () => {
       .send({ secret: 'abc123def456abc123def456' });
 
     assert.strictEqual(res.status, 500);
+  });
+});
+
+describe('POST /auth/jellyfin (Emby Connect)', () => {
+  const connectLogin = () =>
+    request(app).post('/auth/jellyfin').send({
+      username: 'connect.user@seerr.dev',
+      password: 'test1234',
+      email: 'connect.user@seerr.dev',
+    });
+
+  beforeEach(() => {
+    loginMock.mock.resetCalls();
+    loginMock.mock.mockImplementation(async () =>
+      structuredClone(embyConnectLoginResponse)
+    );
+    configureEmby();
+  });
+
+  it('creates a new user with the Emby Connect email', async () => {
+    const res = await request(app).post('/auth/jellyfin').send({
+      username: 'typed-name',
+      password: 'test1234',
+      email: 'typed-name',
+    });
+
+    assert.strictEqual(res.status, 200);
+
+    const user = await getRepository(User).findOneOrFail({
+      where: { jellyfinUserId: 'emby-user-001' },
+    });
+    assert.strictEqual(user.email, 'connect.user@seerr.dev');
+    assert.strictEqual(user.jellyfinUsername, 'embyuser');
+    assert.strictEqual(user.userType, UserType.EMBY);
+  });
+
+  it('links an existing user by email and keeps their display name', async () => {
+    const userRepo = getRepository(User);
+    const existingUser = await userRepo.save(
+      new User({
+        email: 'connect.user@seerr.dev',
+        username: 'Custom Name',
+        permissions: 0,
+        avatar: '',
+        userType: UserType.LOCAL,
+      })
+    );
+
+    const res = await connectLogin();
+
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.body.id, existingUser.id);
+
+    const user = await userRepo.findOneOrFail({
+      where: { id: existingUser.id },
+    });
+    assert.strictEqual(user.jellyfinUserId, 'emby-user-001');
+    assert.strictEqual(user.jellyfinUsername, 'embyuser');
+    assert.strictEqual(user.username, 'Custom Name');
+    assert.strictEqual(user.userType, UserType.EMBY);
+    assert.strictEqual(
+      await userRepo.count({ where: { email: 'connect.user@seerr.dev' } }),
+      1
+    );
+  });
+
+  it('links an existing user by email when new sign-ins are disabled', async () => {
+    getSettings().main.newPlexLogin = false;
+
+    const userRepo = getRepository(User);
+    const existingUser = await userRepo.save(
+      new User({
+        email: 'connect.user@seerr.dev',
+        permissions: 0,
+        avatar: '',
+        userType: UserType.LOCAL,
+      })
+    );
+
+    const res = await connectLogin();
+
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.body.id, existingUser.id);
+
+    const user = await userRepo.findOneOrFail({
+      where: { id: existingUser.id },
+    });
+    assert.strictEqual(user.jellyfinUserId, 'emby-user-001');
+  });
+
+  it('returns 409 when the email belongs to a user linked to another Emby account', async () => {
+    const userRepo = getRepository(User);
+    const existingUser = await userRepo.save(
+      new User({
+        email: 'connect.user@seerr.dev',
+        jellyfinUserId: 'other-emby-user',
+        jellyfinUsername: 'otheruser',
+        permissions: 0,
+        avatar: '',
+        userType: UserType.EMBY,
+      })
+    );
+
+    const res = await connectLogin();
+
+    assert.strictEqual(res.status, 409);
+
+    const user = await userRepo.findOneOrFail({
+      where: { id: existingUser.id },
+    });
+    assert.strictEqual(user.jellyfinUserId, 'other-emby-user');
+    assert.strictEqual(
+      await userRepo.count({ where: { jellyfinUserId: 'emby-user-001' } }),
+      0
+    );
+  });
+
+  it('keeps the current email when another user already owns the Emby Connect email', async () => {
+    const userRepo = getRepository(User);
+    const embyUser = await userRepo.save(
+      new User({
+        email: 'old@seerr.dev',
+        jellyfinUserId: 'emby-user-001',
+        jellyfinUsername: 'embyuser',
+        permissions: 0,
+        avatar: '',
+        userType: UserType.EMBY,
+      })
+    );
+    const otherUser = await userRepo.save(
+      new User({
+        email: 'connect.user@seerr.dev',
+        permissions: 0,
+        avatar: '',
+        userType: UserType.LOCAL,
+      })
+    );
+
+    const res = await connectLogin();
+
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.body.id, embyUser.id);
+
+    const updatedEmbyUser = await userRepo.findOneOrFail({
+      where: { id: embyUser.id },
+    });
+    assert.strictEqual(updatedEmbyUser.email, 'old@seerr.dev');
+
+    const updatedOtherUser = await userRepo.findOneOrFail({
+      where: { id: otherUser.id },
+    });
+    assert.strictEqual(updatedOtherUser.email, 'connect.user@seerr.dev');
+    assert.strictEqual(updatedOtherUser.jellyfinUserId ?? null, null);
   });
 });
 
