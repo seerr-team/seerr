@@ -1,5 +1,6 @@
 import type { User } from '@app/hooks/useUser';
 import { useUser } from '@app/hooks/useUser';
+import { getLoginUrl } from '@app/utils/urlValidationHelper';
 import { useRouter } from 'next/dist/client/router';
 import { useEffect, useRef } from 'react';
 
@@ -29,7 +30,9 @@ export const UserContext = ({ initialUser, children }: UserContextProps) => {
       !routing.current
     ) {
       routing.current = true;
-      location.href = '/login';
+      location.href = getLoginUrl(
+        location.pathname + location.search + location.hash
+      );
     }
   }, [router, user, error]);
 
