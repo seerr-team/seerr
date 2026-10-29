@@ -1,6 +1,11 @@
 import TheMovieDb from '@server/api/themoviedb';
-import type { TmdbSearchMultiResponse } from '@server/api/themoviedb/interfaces';
+import type {
+  TmdbCollectionResult,
+  TmdbSearchCollectionResponse,
+  TmdbSearchMultiResponse,
+} from '@server/api/themoviedb/interfaces';
 import Media from '@server/entity/Media';
+import cacheManager from '@server/lib/cache';
 import { findSearchProvider } from '@server/lib/search';
 import logger from '@server/logger';
 import { mapSearchResults } from '@server/models/Search';
@@ -25,12 +30,77 @@ searchRoutes.get('/', async (req, res, next) => {
       });
     } else {
       const tmdb = new TheMovieDb();
+      const page = Number(req.query.page) || 1;
+      const language = (req.query.language as string) ?? req.locale;
 
-      results = await tmdb.searchMulti({
-        query: queryString,
-        page: Number(req.query.page),
-        language: (req.query.language as string) ?? req.locale,
-      });
+      const tmdbCache = cacheManager.getCache('tmdb').data;
+      const pagesKey = `search-collections-pages:${language}:${queryString}`;
+      const knownCollections = tmdbCache.get<{
+        total_pages: number;
+        total_results: number;
+      }>(pagesKey);
+
+      const fetchCollections =
+        async (): Promise<TmdbSearchCollectionResponse> => {
+          if (knownCollections && page > knownCollections.total_pages) {
+            return {
+              page,
+              results: [],
+              total_pages: knownCollections.total_pages,
+              total_results: knownCollections.total_results,
+            };
+          }
+
+          const collections = await tmdb.searchCollections({
+            query: queryString,
+            page,
+            language,
+          });
+
+          tmdbCache.set(
+            pagesKey,
+            {
+              total_pages: collections.total_pages,
+              total_results: collections.total_results,
+            },
+            300
+          );
+          return collections;
+        };
+
+      const [multi, collections] = await Promise.all([
+        tmdb.searchMulti({
+          query: queryString,
+          page,
+          language,
+        }),
+        fetchCollections(),
+      ]);
+
+      const collectionResults: TmdbCollectionResult[] = collections.results.map(
+        (collection) => ({
+          id: collection.id,
+          media_type: 'collection',
+          adult: collection.adult,
+          title: collection.name,
+          original_title: collection.original_name,
+          overview: collection.overview,
+          original_language: collection.original_language,
+          poster_path: collection.poster_path,
+          backdrop_path: collection.backdrop_path,
+        })
+      );
+
+      const multiWithoutCollections = multi.results.filter(
+        (result) => result.media_type !== 'collection'
+      );
+
+      results = {
+        page,
+        total_pages: Math.max(multi.total_pages, collections.total_pages),
+        total_results: multi.total_results + collections.total_results,
+        results: [...collectionResults, ...multiWithoutCollections],
+      };
     }
 
     const media = await Media.getRelatedMedia(
