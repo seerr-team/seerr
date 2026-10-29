@@ -99,7 +99,7 @@
     "swagger-ui-express": "5.0.1",
     "swr": "2.4.1",
     "tailwind-merge": "^2.6.1",
-    "typeorm": "0.3.31",
+    "typeorm": "1.1.2",
     "ua-parser-js": "^2.0.10",
     "undici": "^8.12.3",
     "validator": "^13.15.35",
