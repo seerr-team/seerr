@@ -598,7 +598,7 @@ export class MediaRequest {
       },
     },
   })
-  public tags?: number[];
+  public tags?: number[] | null;
 
   @Column({ default: false })
   public isAutoRequest: boolean;

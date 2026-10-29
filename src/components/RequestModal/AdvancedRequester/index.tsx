@@ -58,7 +58,7 @@ export type RequestOverrides = {
   server?: number;
   profile?: number;
   folder?: string;
-  tags?: number[];
+  tags?: number[] | null;
   language?: number;
   user?: User;
   ignoreQuota?: boolean;
