@@ -4103,6 +4103,8 @@ paths:
                   type: string
                 serverType:
                   type: number
+                accessToken:
+                  type: string
               required:
                 - username
                 - password
