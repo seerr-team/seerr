@@ -1,6 +1,7 @@
 import useToasts from '@app/hooks/useToasts';
 import globalMessages from '@app/i18n/globalMessages';
 import { MediaStatus } from '@server/constants/media';
+import axios from 'axios';
 import { useEffect } from 'react';
 import { useIntl } from 'react-intl';
 import useSWRInfinite from 'swr/infinite';
@@ -13,6 +14,8 @@ export interface BaseSearchResult<T> {
   totalPages: number;
   results: T[];
 }
+
+type DiscoverPage<T, S> = BaseSearchResult<T> & S & { skipped?: boolean };
 
 interface BaseMedia {
   id: number;
@@ -66,7 +69,7 @@ const useDiscover = <
   const { addToast } = useToasts();
   const intl = useIntl();
   const { data, error, size, setSize, isValidating, mutate } = useSWRInfinite<
-    BaseSearchResult<T> & S
+    DiscoverPage<T, S>
   >(
     (pageIndex: number, previousPageData) => {
       if (previousPageData && pageIndex + 1 > previousPageData.totalPages) {
@@ -85,7 +88,39 @@ const useDiscover = <
         )
         .join('&');
 
-      return `${endpoint}?${finalQueryString}`;
+      return [
+        `${endpoint}?${finalQueryString}`,
+        pageIndex + 1,
+        previousPageData?.totalPages,
+        previousPageData?.totalResults,
+        !!previousPageData?.skipped,
+      ] as const;
+    },
+    async ([url, page, totalPages, totalResults, previousSkipped]) => {
+      const fetchPage = () =>
+        axios.get<DiscoverPage<T, S>>(url).then((res) => res.data);
+      try {
+        return await fetchPage();
+      } catch (e) {
+        // TMDB can fail a single page so we skip it once, surface repeated failures
+        if (
+          totalPages === undefined ||
+          totalResults === undefined ||
+          previousSkipped
+        ) {
+          throw e;
+        }
+        return fetchPage().catch(
+          () =>
+            ({
+              page,
+              totalPages,
+              totalResults,
+              results: [],
+              skipped: true,
+            }) as DiscoverPage<T, S>
+        );
+      }
     },
     {
       initialSize: 3,
@@ -156,7 +191,9 @@ const useDiscover = <
   const isEmpty = !isLoadingInitialData && titles?.length === 0;
   const isReachingEnd =
     isEmpty ||
-    (!!data && (data[data?.length - 1]?.results.length ?? 0) < 20) ||
+    (!!data &&
+      (data[data.length - 1]?.page ?? 0) >=
+        (data[data.length - 1]?.totalPages ?? 0)) ||
     (!!data && (data[data?.length - 1]?.totalResults ?? 0) <= size * 20) ||
     (!!data && (data[data?.length - 1]?.totalResults ?? 0) < 41);
 
