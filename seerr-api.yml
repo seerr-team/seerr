@@ -5199,6 +5199,63 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserSettings'
+  /user/{userId}/settings/api-key:
+    get:
+      summary: Check for a personal API key
+      description: Returns whether the user has a personal API key. Only available for your own account.
+      tags:
+        - users
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: number
+      responses:
+        '200':
+          description: API key status returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  hasApiKey:
+                    type: boolean
+    post:
+      summary: Generate a personal API key
+      description: Generates a key that authenticates as this user, replacing any existing key. The key is only returned once. Only available for your own account.
+      tags:
+        - users
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: number
+      responses:
+        '200':
+          description: API key generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  apiKey:
+                    type: string
+    delete:
+      summary: Revoke a personal API key
+      description: Only available for your own account.
+      tags:
+        - users
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: number
+      responses:
+        '204':
+          description: API key revoked
   /user/{userId}/settings/password:
     get:
       summary: Get password page informatiom
