@@ -1,5 +1,6 @@
 import TitleCard from '@app/components/TitleCard';
 import { Permission, useUser } from '@app/hooks/useUser';
+import { MediaRequestStatus } from '@server/constants/media';
 import type { MovieDetails } from '@server/models/Movie';
 import type { TvDetails } from '@server/models/Tv';
 import { useInView } from 'react-intersection-observer';
@@ -28,7 +29,7 @@ const TmdbTitleCard = ({
   isAddedToWatchlist = false,
   mutateParent,
 }: TmdbTitleCardProps) => {
-  const { hasPermission } = useUser();
+  const { user, hasPermission } = useUser();
 
   const { ref, inView } = useInView({
     triggerOnce: true,
@@ -58,6 +59,14 @@ const TmdbTitleCard = ({
     ) : null;
   }
 
+  const requestedByUser = (title.mediaInfo?.requests ?? []).some(
+    (request) =>
+      request.requestedBy.id === user?.id &&
+      !request.is4k &&
+      (request.status === MediaRequestStatus.APPROVED ||
+        request.status === MediaRequestStatus.COMPLETED)
+  );
+
   return isMovie(title) ? (
     <TitleCard
       key={title.id}
@@ -67,6 +76,7 @@ const TmdbTitleCard = ({
       }
       image={title.posterPath}
       status={title.mediaInfo?.status}
+      requestedByUser={requestedByUser}
       summary={title.overview}
       title={title.title}
       userScore={title.voteAverage}
@@ -84,6 +94,7 @@ const TmdbTitleCard = ({
       }
       image={title.posterPath}
       status={title.mediaInfo?.status}
+      requestedByUser={requestedByUser}
       summary={title.overview}
       title={title.name}
       userScore={title.voteAverage}
