@@ -10,7 +10,7 @@ import type {
   Language,
   RadarrSettings,
   SonarrSettings,
-} from '@server/lib/settings';
+} from '@server/interfaces/settings';
 import type { Keyword } from '@server/models/common';
 import axios from 'axios';
 import { useCallback, useEffect, useState } from 'react';

@@ -20,7 +20,7 @@ import type {
   CacheItem,
   CacheResponse,
 } from '@server/interfaces/api/settingsInterfaces';
-import type { JobId } from '@server/lib/settings';
+import type { JobId } from '@server/interfaces/settings';
 import axios from 'axios';
 import cronstrue from 'cronstrue/i18n';
 import humanizeDuration from 'humanize-duration';
