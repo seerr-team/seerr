@@ -182,7 +182,7 @@ const Sidebar = ({
                       aria-label="Close sidebar"
                       onClick={() => setClosed()}
                     >
-                      <XMarkIcon className="h-6 w-6 text-white" />
+                      <XMarkIcon className="h-6 w-6 text-gray-100" />
                     </button>
                   </div>
                   <div
@@ -217,10 +217,10 @@ const Sidebar = ({
                             }}
                             role="button"
                             tabIndex={0}
-                            className={`flex items-center rounded-md px-2 py-2 text-base font-medium leading-6 text-white transition duration-150 ease-in-out focus:outline-none ${
+                            className={`flex items-center rounded-md px-2 py-2 text-base font-medium leading-6 transition duration-150 ease-in-out focus:outline-none ${
                               router.pathname.match(sidebarLink.activeRegExp)
-                                ? 'bg-gradient-to-br from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500'
-                                : 'hover:bg-gray-700 focus:bg-gray-700'
+                                ? 'bg-gradient-to-br from-indigo-600 to-purple-600 text-white hover:from-indigo-500 hover:to-purple-500'
+                                : 'text-gray-100 hover:bg-gray-700 focus:bg-gray-700'
                             } `}
                             data-testid={`${sidebarLink.dataTestId}-mobile`}
                           >
@@ -277,10 +277,10 @@ const Sidebar = ({
                       key={`desktop-${sidebarLink.messagesKey}`}
                       href={sidebarLink.href}
                       as={sidebarLink.as}
-                      className={`group flex items-center rounded-md px-2 py-2 text-lg font-medium leading-6 text-white transition duration-150 ease-in-out focus:outline-none ${
+                      className={`group flex items-center rounded-md px-2 py-2 text-lg font-medium leading-6 transition duration-150 ease-in-out focus:outline-none ${
                         router.pathname.match(sidebarLink.activeRegExp)
-                          ? 'bg-gradient-to-br from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500'
-                          : 'hover:bg-gray-700 focus:bg-gray-700'
+                          ? 'bg-gradient-to-br from-indigo-600 to-purple-600 text-white hover:from-indigo-500 hover:to-purple-500'
+                          : 'text-gray-100 hover:bg-gray-700 focus:bg-gray-700'
                       } `}
                       data-testid={sidebarLink.dataTestId}
                     >
