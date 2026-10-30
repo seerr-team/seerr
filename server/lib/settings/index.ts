@@ -142,6 +142,7 @@ export interface MainSettings {
   hideAvailable: boolean;
   hideBlocklisted: boolean;
   hideRequested: boolean;
+  releaseDateRestrictionEnabled: boolean;
   localLogin: boolean;
   mediaServerLogin: boolean;
   newPlexLogin: boolean;
@@ -196,6 +197,7 @@ interface FullPublicSettings extends PublicSettings {
   hideAvailable: boolean;
   hideBlocklisted: boolean;
   hideRequested: boolean;
+  releaseDateRestrictionEnabled: boolean;
   localLogin: boolean;
   mediaServerLogin: boolean;
   movie4kEnabled: boolean;
@@ -420,6 +422,7 @@ class Settings {
         hideAvailable: false,
         hideBlocklisted: false,
         hideRequested: false,
+        releaseDateRestrictionEnabled: false,
         localLogin: true,
         mediaServerLogin: true,
         newPlexLogin: true,
@@ -718,6 +721,8 @@ class Settings {
       hideAvailable: this.data.main.hideAvailable,
       hideBlocklisted: this.data.main.hideBlocklisted,
       hideRequested: this.data.main.hideRequested,
+      releaseDateRestrictionEnabled:
+        this.data.main.releaseDateRestrictionEnabled,
       localLogin: this.data.main.localLogin,
       mediaServerLogin: this.data.main.mediaServerLogin,
       jellyfinExternalHost: this.data.jellyfin.externalHostname,

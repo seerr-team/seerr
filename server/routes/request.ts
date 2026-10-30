@@ -1,5 +1,7 @@
 import RadarrAPI from '@server/api/servarr/radarr';
 import SonarrAPI from '@server/api/servarr/sonarr';
+import TheMovieDb from '@server/api/themoviedb';
+import { ApiErrorCode } from '@server/constants/error';
 import {
   MediaRequestStatus,
   MediaStatus,
@@ -13,7 +15,9 @@ import {
   MediaRequest,
   NoSeasonsAvailableError,
   QuotaRestrictedError,
+  ReleaseDateRestrictedError,
   RequestPermissionError,
+  assertReleaseRestriction,
 } from '@server/entity/MediaRequest';
 import SeasonRequest from '@server/entity/SeasonRequest';
 import { User } from '@server/entity/User';
@@ -25,6 +29,7 @@ import { Permission } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { isAuthenticated } from '@server/middleware/auth';
+import { getTvSeasonReleaseEligibility } from '@server/utils/releaseEligibility';
 import requestLock, {
   mediaKey,
   mediaLock,
@@ -326,6 +331,13 @@ requestRoutes.post<never, MediaRequest, MediaRequestBody>(
     } catch (error) {
       if (!(error instanceof Error)) {
         return;
+      }
+
+      if (error instanceof ReleaseDateRestrictedError) {
+        return next({
+          status: 403,
+          message: ApiErrorCode.MediaNotReleased,
+        });
       }
 
       switch (error.constructor) {
@@ -638,6 +650,22 @@ requestRoutes.put<{ requestId: string }>(
                   });
                 }
 
+                if (newSeasons.length > 0 && req.user) {
+                  const tmdb = new TheMovieDb();
+                  const tv = await tmdb.getTvShow({ tvId: media.tmdbId });
+
+                  assertReleaseRestriction(
+                    newSeasons.map((seasonNumber) =>
+                      getTvSeasonReleaseEligibility(
+                        tv.seasons.find(
+                          (season) => season.season_number === seasonNumber
+                        )?.air_date
+                      )
+                    ),
+                    req.user
+                  );
+                }
+
                 if (!request.ignoreQuota) {
                   const quotas = await requestUser.getQuota();
 
@@ -702,6 +730,13 @@ requestRoutes.put<{ requestId: string }>(
         });
       });
     } catch (e) {
+      if (e instanceof ReleaseDateRestrictedError) {
+        return next({
+          status: 403,
+          message: ApiErrorCode.MediaNotReleased,
+        });
+      }
+
       next({ status: 500, message: e.message });
     }
   }
