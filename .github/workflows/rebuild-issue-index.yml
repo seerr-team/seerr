@@ -22,10 +22,10 @@ jobs:
 
       - parallel:
           - name: Pnpm Setup
-            uses: pnpm/action-setup@v6.0.10
+            uses: pnpm/action-setup@v6.1.0
 
           - name: Set up Node.js
-            uses: actions/setup-node@v7.0.0
+            uses: actions/setup-node@v7.1.0
             with:
               node-version-file: 'package.json'
 
@@ -56,7 +56,7 @@ jobs:
         run: node build-index.mjs
 
       - name: Upload index artifact
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: issue-index
           path: bin/duplicate-detector/issue_index.json
