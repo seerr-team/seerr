@@ -79,6 +79,10 @@ export const availableLanguages: AvailableLanguageObject = {
     code: 'hu',
     display: 'Magyar',
   },
+  id: {
+    code: 'id',
+    display: 'Bahasa Indonesia',
+  },
   nl: {
     code: 'nl',
     display: 'Nederlands',
