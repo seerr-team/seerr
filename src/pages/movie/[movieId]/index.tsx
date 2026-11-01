@@ -9,7 +9,7 @@ interface MoviePageProps {
 }
 
 const MoviePage: NextPage<MoviePageProps> = ({ movie }) => {
-  return <MovieDetails movie={movie} />;
+  return <MovieDetails key={movie?.id} movie={movie} />;
 };
 
 export const getServerSideProps: GetServerSideProps<MoviePageProps> = async (

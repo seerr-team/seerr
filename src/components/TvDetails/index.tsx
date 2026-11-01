@@ -34,7 +34,7 @@ import globalMessages from '@app/i18n/globalMessages';
 import ErrorPage from '@app/pages/_error';
 import { sortCrewPriority } from '@app/utils/creditHelpers';
 import defineMessages from '@app/utils/defineMessages';
-import { refreshIntervalHelper } from '@app/utils/refreshIntervalHelper';
+import { mediaRefreshInterval } from '@app/utils/refreshIntervalHelper';
 import {
   Disclosure,
   DisclosureButton,
@@ -68,7 +68,14 @@ import { countries } from 'country-flag-icons';
 import 'country-flag-icons/3x2/flags.css';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useIntl } from 'react-intl';
 import useSWR from 'swr';
 
@@ -133,6 +140,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
     useState<boolean>(false);
   const [showBlocklistModal, setShowBlocklistModal] = useState(false);
   const { addToast } = useToasts();
+  const sawDownload = useRef(false);
 
   const {
     data,
@@ -140,13 +148,8 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
     mutate: revalidate,
   } = useSWR<TvDetailsType>(`/api/v1/tv/${router.query.tvId}`, {
     fallbackData: tv,
-    refreshInterval: refreshIntervalHelper(
-      {
-        downloadStatus: tv?.mediaInfo?.downloadStatus,
-        downloadStatus4k: tv?.mediaInfo?.downloadStatus4k,
-      },
-      15000
-    ),
+    refreshInterval: (latest) =>
+      mediaRefreshInterval(latest?.mediaInfo, sawDownload, 15000),
   });
 
   const { data: ratingData } = useSWR<RTRating>(
@@ -161,10 +164,14 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
   useEffect(() => {
     if (router.query.manage === '1') {
       setShowManager(true);
-      router.replace({
-        pathname: router.pathname,
-        query: { tvId: router.query.tvId },
-      });
+      router.replace(
+        {
+          pathname: router.pathname,
+          query: { tvId: router.query.tvId },
+        },
+        undefined,
+        { shallow: true }
+      );
     }
   }, [router, router.query.manage]);
 
@@ -537,10 +544,14 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
         mediaType="tv"
         onClose={() => {
           setShowManager(false);
-          router.replace({
-            pathname: router.pathname,
-            query: { tvId: router.query.tvId },
-          });
+          router.replace(
+            {
+              pathname: router.pathname,
+              query: { tvId: router.query.tvId },
+            },
+            undefined,
+            { shallow: true }
+          );
         }}
         revalidate={() => revalidate()}
         show={showManager}
