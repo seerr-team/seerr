@@ -107,7 +107,11 @@ tvRoutes.get('/:id/season/:seasonNumber', async (req, res, next) => {
       });
 
       if (dbSeason) {
-        const trackedEpisodes = dbSeason.episodes ?? [];
+        const trackedEpisodes = (dbSeason.episodes ?? []).filter(
+          (episode) =>
+            episode.status === MediaStatus.AVAILABLE ||
+            episode.status4k === MediaStatus.AVAILABLE
+        );
         const metadataEpisodeNumbers = new Set(
           season.episodes.map((episode) => episode.episode_number)
         );
