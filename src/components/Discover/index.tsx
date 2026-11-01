@@ -50,6 +50,7 @@ const messages = defineMessages('components.Discover', {
   customizediscover: 'Customize Discover',
   stopediting: 'Stop Editing',
   createnewslider: 'Create New Slider',
+  foryou: 'Recommended for You',
 });
 
 const Discover = () => {
@@ -207,6 +208,14 @@ const Discover = () => {
             </Button>
           </Transition>
         </>
+      )}
+      {!isEditing && (
+        <MediaSlider
+          sliderKey="personalized-recommendations"
+          title={intl.formatMessage(messages.foryou)}
+          url="/api/v1/discover/recommendations"
+          hideWhenEmpty
+        />
       )}
       {(isEditing ? sliders : discoverData)?.map((slider, index) => {
         let sliderComponent: React.ReactNode;

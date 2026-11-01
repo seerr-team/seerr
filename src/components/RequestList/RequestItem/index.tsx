@@ -45,6 +45,12 @@ const messages = defineMessages('components.RequestList.RequestItem', {
   mediaerror: '{mediaType} Not Found',
   editrequest: 'Edit Request',
   deleterequest: 'Delete Request',
+  deletecontent: 'Delete Media',
+  deletecontentconfirm: 'Delete files and data?',
+  deleteseriesconfirm: 'Delete the entire series and all its requests?',
+  deletecontenterror: 'Something went wrong while deleting the media.',
+  deletionqueued:
+    'Deletion has been queued for administrator review under Issues because another user also requested this series.',
   cancelRequest: 'Cancel Request',
   tmdbid: 'TMDB ID',
   tvdbid: 'TheTVDB ID',
@@ -370,6 +376,35 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
         }
       }
       revalidateList();
+    }
+  };
+
+  const deleteRequestedMedia = async () => {
+    try {
+      const response = await axios.delete<{ queued?: boolean }>(
+        `/api/v1/request/${request.id}/media`
+      );
+
+      if (response.data.queued) {
+        addToast(intl.formatMessage(messages.deletionqueued), {
+          autoDismiss: true,
+          appearance: 'success',
+        });
+        mutate('/api/v1/issue/count');
+        return;
+      }
+
+      revalidateList();
+      mutate('/api/v1/request/count');
+      mutate('/api/v1/media?filter=allavailable&take=20&sort=mediaAdded');
+    } catch (e) {
+      const message = axios.isAxiosError<{ message?: string }>(e)
+        ? e.response?.data?.message
+        : undefined;
+      addToast(message ?? intl.formatMessage(messages.deletecontenterror), {
+        autoDismiss: true,
+        appearance: 'error',
+      });
     }
   };
 
@@ -781,6 +816,24 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
               >
                 <XMarkIcon />
                 <span>{intl.formatMessage(messages.cancelRequest)}</span>
+              </ConfirmButton>
+            )}
+          {(requestData.status === MediaRequestStatus.APPROVED ||
+            requestData.status === MediaRequestStatus.COMPLETED) &&
+            !hasPermission(Permission.MANAGE_REQUESTS) &&
+            requestData.requestedBy.id === user?.id &&
+            request.canDelete && (
+              <ConfirmButton
+                onClick={() => deleteRequestedMedia()}
+                confirmText={intl.formatMessage(
+                  requestData.type === 'tv'
+                    ? messages.deleteseriesconfirm
+                    : messages.deletecontentconfirm
+                )}
+                className="w-full"
+              >
+                <TrashIcon />
+                <span>{intl.formatMessage(messages.deletecontent)}</span>
               </ConfirmButton>
             )}
         </div>

@@ -1,11 +1,14 @@
 import RadarrAPI from '@server/api/servarr/radarr';
 import SonarrAPI from '@server/api/servarr/sonarr';
+import { IssueStatus, IssueType } from '@server/constants/issue';
 import {
   MediaRequestStatus,
   MediaStatus,
   MediaType,
 } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
+import Issue from '@server/entity/Issue';
+import IssueComment from '@server/entity/IssueComment';
 import Media from '@server/entity/Media';
 import {
   BlocklistedMediaError,
@@ -22,6 +25,11 @@ import type {
   RequestResultsResponse,
 } from '@server/interfaces/api/requestInterfaces';
 import { Permission } from '@server/lib/permissions';
+import {
+  MediaServiceNotConfiguredError,
+  isMediaServiceConfigured,
+  removeMediaFromService,
+} from '@server/lib/removeMedia';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { isAuthenticated } from '@server/middleware/auth';
@@ -32,8 +40,11 @@ import requestLock, {
   userKey,
 } from '@server/utils/requestLock';
 import { Router } from 'express';
+import { EntityNotFoundError } from 'typeorm';
 
 const requestRoutes = Router();
+
+const SERIES_DELETION_REQUEST_MARKER = '[Series deletion request]';
 
 requestRoutes.get<Record<string, unknown>, RequestResultsResponse>(
   '/',
@@ -243,33 +254,24 @@ requestRoutes.get<Record<string, unknown>, RequestResultsResponse>(
         }
       });
 
-      // add canRemove prop if user has permission
-      if (req.user?.hasPermission(Permission.MANAGE_REQUESTS)) {
+      // Add canRemove for managers and for the owner of a request. Authorization
+      // and shared-title safeguards are enforced again by the delete endpoint.
+      if (req.user) {
         mappedRequests = mappedRequests.map((r) => {
-          switch (r.type) {
-            case MediaType.MOVIE: {
-              return {
-                ...r,
-                // check if the radarr server for this request is configured
-                canRemove: radarrServers.some(
-                  (server) =>
-                    server.id ===
-                    (r.is4k ? r.media.serviceId4k : r.media.serviceId)
-                ),
-              };
-            }
-            case MediaType.TV: {
-              return {
-                ...r,
-                // check if the sonarr server for this request is configured
-                canRemove: sonarrServers.some(
-                  (server) =>
-                    server.id ===
-                    (r.is4k ? r.media.serviceId4k : r.media.serviceId)
-                ),
-              };
-            }
-          }
+          const canControlRequest =
+            req.user?.hasPermission(Permission.MANAGE_REQUESTS) ||
+            r.requestedBy.id === req.user?.id;
+          const isDeleted =
+            r.media[r.is4k ? 'status4k' : 'status'] === MediaStatus.DELETED;
+          const hasMediaService = isMediaServiceConfigured(r.media, r.is4k);
+
+          return {
+            ...r,
+            canRemove:
+              req.user?.hasPermission(Permission.MANAGE_REQUESTS) &&
+              hasMediaService,
+            canDelete: canControlRequest && (hasMediaService || isDeleted),
+          };
         });
       }
 
@@ -453,7 +455,18 @@ requestRoutes.get('/:requestId', async (req, res, next) => {
       });
     }
 
-    return res.status(200).json(request);
+    return res.status(200).json({
+      ...request,
+      canRemove:
+        req.user?.hasPermission(Permission.MANAGE_REQUESTS) &&
+        isMediaServiceConfigured(request.media, request.is4k),
+      canDelete:
+        (request.requestedBy.id === req.user?.id ||
+          req.user?.hasPermission(Permission.MANAGE_REQUESTS)) &&
+        (isMediaServiceConfigured(request.media, request.is4k) ||
+          request.media[request.is4k ? 'status4k' : 'status'] ===
+            MediaStatus.DELETED),
+    });
   } catch (e) {
     logger.debug('Failed to retrieve request.', {
       label: 'API',
@@ -735,6 +748,161 @@ requestRoutes.delete('/:requestId', async (req, res, next) => {
       errorMessage: e.message,
     });
     next({ status: 404, message: 'Request not found.' });
+  }
+});
+
+requestRoutes.delete('/:requestId/media', async (req, res, next) => {
+  const requestRepository = getRepository(MediaRequest);
+  const mediaRepository = getRepository(Media);
+  const issueRepository = getRepository(Issue);
+  const requestId = Number(req.params.requestId);
+
+  try {
+    return await requestLock.dispatch(requestKey(requestId), async () => {
+      const initialRequest = await requestRepository.findOneOrFail({
+        where: { id: requestId },
+      });
+
+      return mediaLock.dispatch(
+        mediaKey(initialRequest.type, initialRequest.media.tmdbId),
+        async () => {
+          const request = await requestRepository.findOneOrFail({
+            where: { id: requestId },
+            relations: { requestedBy: true },
+          });
+          if (!req.user) {
+            return next({ status: 401, message: 'Authentication required.' });
+          }
+          const canManageRequests =
+            req.user.hasPermission(Permission.MANAGE_REQUESTS) ?? false;
+
+          if (!canManageRequests && request.requestedBy.id !== req.user?.id) {
+            return next({
+              status: 403,
+              message: 'You do not have permission to delete this media.',
+            });
+          }
+
+          if (
+            !canManageRequests &&
+            ![
+              MediaRequestStatus.APPROVED,
+              MediaRequestStatus.COMPLETED,
+            ].includes(request.status)
+          ) {
+            return next({
+              status: 409,
+              message:
+                'Only approved or completed requests can delete media files.',
+            });
+          }
+
+          const relatedRequests = await requestRepository.find({
+            where: { media: { id: request.media.id } },
+            relations: { requestedBy: true },
+          });
+
+          if (!canManageRequests) {
+            const affectsAnotherUser = relatedRequests.some(
+              (relatedRequest) => relatedRequest.requestedBy.id !== req.user?.id
+            );
+            const affectsAnotherEdition = relatedRequests.some(
+              (relatedRequest) => relatedRequest.is4k !== request.is4k
+            );
+
+            if (request.type === MediaType.TV && affectsAnotherUser) {
+              const existingIssues = await issueRepository.find({
+                where: {
+                  media: { id: request.media.id },
+                  createdBy: { id: req.user.id },
+                  issueType: IssueType.OTHER,
+                  status: IssueStatus.OPEN,
+                },
+              });
+              const matchingIssue = existingIssues.find((issue) =>
+                issue.comments.some((comment) =>
+                  comment.message.startsWith(SERIES_DELETION_REQUEST_MARKER)
+                )
+              );
+
+              const issue =
+                matchingIssue ??
+                (await issueRepository.save(
+                  new Issue({
+                    issueType: IssueType.OTHER,
+                    status: IssueStatus.OPEN,
+                    media: request.media,
+                    createdBy: req.user,
+                    comments: [
+                      new IssueComment({
+                        user: req.user,
+                        message: `${SERIES_DELETION_REQUEST_MARKER} The user requested deletion of the entire series. Another user also has a request for this series, so administrator review is required.`,
+                      }),
+                    ],
+                  })
+                ));
+
+              return res.status(202).json({ queued: true, issueId: issue.id });
+            }
+
+            if (
+              request.type !== MediaType.TV &&
+              (affectsAnotherUser || affectsAnotherEdition)
+            ) {
+              return next({
+                status: 409,
+                message:
+                  'This title has other requests and can only be deleted by an administrator.',
+              });
+            }
+          }
+
+          const editions =
+            request.type === MediaType.TV
+              ? [...new Set(relatedRequests.map(({ is4k }) => is4k))]
+              : [request.is4k];
+          const editionWithoutService = editions.find(
+            (is4k) =>
+              request.media[is4k ? 'status4k' : 'status'] !==
+                MediaStatus.DELETED &&
+              !isMediaServiceConfigured(request.media, is4k)
+          );
+
+          if (editionWithoutService !== undefined) {
+            throw new MediaServiceNotConfiguredError(
+              `No ${editionWithoutService ? '4K ' : ''}${
+                request.type === MediaType.MOVIE ? 'Radarr' : 'Sonarr'
+              } server configured to delete media files`
+            );
+          }
+
+          for (const is4k of editions) {
+            if (
+              request.media[is4k ? 'status4k' : 'status'] !==
+              MediaStatus.DELETED
+            ) {
+              await removeMediaFromService(request.media, is4k);
+            }
+          }
+          await mediaRepository.remove(request.media);
+
+          return res.status(204).send();
+        }
+      );
+    });
+  } catch (e) {
+    if (e instanceof EntityNotFoundError) {
+      return next({ status: 404, message: 'Request not found.' });
+    }
+    if (e instanceof MediaServiceNotConfiguredError) {
+      return next({ status: 409, message: e.message });
+    }
+    logger.error('Something went wrong deleting requested media.', {
+      label: 'Media Request',
+      requestId,
+      errorMessage: e.message,
+    });
+    return next({ status: 500, message: 'Failed to delete requested media.' });
   }
 });
 
