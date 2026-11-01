@@ -21,17 +21,9 @@ provider and updates the two status badges (`TheMovieDB`, `TheTVDB`). Each badge
 
 ## Metadata Provider Selection
 
-This section controls which provider is used for which media type.
-
-### TV series Metadata Provider
-
-Choose between **TheMovieDB** and **TheTVDB** as the source of metadata for TV
-series. TheMovieDB is the default and matches the source used for movies, which
-keeps IDs and artwork consistent across the UI.
-
-### Anime Metadata Provider
-
-Choose between **TheMovieDB** and **TheTVDB** for anime entries.
+This section controls which provider is used for which media type. For each
+one, choose between **TheMovieDB** and **TheTVDB**. TheMovieDB is the default,
+which keeps IDs and artwork consistent across the UI.
 
 ## Metadata Provider Testing
 
