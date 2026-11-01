@@ -286,7 +286,7 @@ class RadarrAPI extends ServarrBase<{ movieId: number }> {
       );
     }
   }
-  public removeMovie = async (tmdbId: number): Promise<void> => {
+  public async removeMovie(tmdbId: number): Promise<void> {
     const { id, title } = await this.getMovieByTmdbId(tmdbId);
 
     if (!id) {
@@ -313,7 +313,7 @@ class RadarrAPI extends ServarrBase<{ movieId: number }> {
       }
       throw e;
     }
-  };
+  }
 
   public clearCache = ({
     tmdbId,

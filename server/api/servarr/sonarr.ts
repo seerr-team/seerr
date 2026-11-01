@@ -429,7 +429,7 @@ class SonarrAPI extends ServarrBase<{
 
     return newSeasons;
   }
-  public removeSeries = async (tvdbId: number): Promise<void> => {
+  public async removeSeries(tvdbId: number): Promise<void> {
     const { id, title } = await this.getSeriesByTvdbId(tvdbId);
 
     if (!id) {
@@ -456,7 +456,7 @@ class SonarrAPI extends ServarrBase<{
       }
       throw e;
     }
-  };
+  }
 
   public clearCache = ({
     tvdbId,

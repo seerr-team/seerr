@@ -5620,6 +5620,42 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Company'
+  /discover/recommendations:
+    get:
+      summary: Get personalized recommendations
+      description: Returns a randomized mix of recent and lesser-known movies and series based on the current user's request history. Titles already requested by the user are excluded.
+      tags:
+        - search
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: number
+            example: 1
+            default: 1
+      responses:
+        '200':
+          description: Personalized recommendations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  page:
+                    type: number
+                    example: 1
+                  totalPages:
+                    type: number
+                    example: 1
+                  totalResults:
+                    type: number
+                    example: 20
+                  results:
+                    type: array
+                    items:
+                      anyOf:
+                        - $ref: '#/components/schemas/MovieResult'
+                        - $ref: '#/components/schemas/TvResult'
   /discover/movies:
     get:
       summary: Discover movies
@@ -6774,6 +6810,40 @@ paths:
                 $ref: '#/components/schemas/MediaRequest'
         '409':
           description: Only failed requests can be retried
+  /request/{requestId}/media:
+    delete:
+      summary: Delete requested media
+      description: Removes a title from Radarr or Sonarr, including its files, and clears its Seerr data. A sole series requester removes every edition and all requests for the series. If another user requested the series, an Issue is queued for administrator review instead. Users with the `MANAGE_REQUESTS` permission can remove any title.
+      tags:
+        - request
+      parameters:
+        - in: path
+          name: requestId
+          description: Request ID
+          required: true
+          example: '1'
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Successfully removed the title and its Seerr data
+        '202':
+          description: Series deletion was queued as an Issue for administrator review
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  queued:
+                    type: boolean
+                    example: true
+                  issueId:
+                    type: number
+                    example: 1
+        '403':
+          description: The user does not own the request
+        '409':
+          description: The title has related requests or no configured Radarr/Sonarr server
   /request/{requestId}/{status}:
     post:
       summary: Update a request's status

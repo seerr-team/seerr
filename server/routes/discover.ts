@@ -3,16 +3,26 @@ import TheMovieDb, {
   MovieSortOptionsIterable,
   TvSortOptionsIterable,
 } from '@server/api/themoviedb';
-import type { TmdbKeyword } from '@server/api/themoviedb/interfaces';
-import { MediaType } from '@server/constants/media';
+import type {
+  TmdbKeyword,
+  TmdbMovieResult,
+  TmdbTvResult,
+} from '@server/api/themoviedb/interfaces';
+import { MediaRequestStatus, MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
+import { MediaRequest } from '@server/entity/MediaRequest';
 import { User } from '@server/entity/User';
 import { Watchlist } from '@server/entity/Watchlist';
 import type {
   GenreSliderItem,
   WatchlistResponse,
 } from '@server/interfaces/api/discoverInterfaces';
+import {
+  recommendationKey,
+  selectPersonalizedRecommendations,
+  shuffleRecommendations,
+} from '@server/lib/personalizedRecommendations';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { mapProductionCompany } from '@server/models/Movie';
@@ -100,6 +110,134 @@ const TvApiQuerySchema = QueryFilterOptions.omit({
   certificationMode: true,
 }).extend({
   sortBy: z.enum(TvSortOptionsIterable).optional().catch(undefined),
+});
+
+discoverRoutes.get('/recommendations', async (req, res, next) => {
+  const requestRepository = getRepository(MediaRequest);
+  const tmdb = createTmdbWithRegionLanguage(req.user);
+
+  try {
+    const requests = await requestRepository.find({
+      where: { requestedBy: { id: req.user?.id } },
+      order: { createdAt: 'DESC' },
+      take: 100,
+    });
+    const relevantRequests = requests.filter(
+      (request) =>
+        request.status !== MediaRequestStatus.DECLINED &&
+        request.status !== MediaRequestStatus.FAILED &&
+        request.media?.tmdbId
+    );
+    const uniqueSeeds = new Map<string, MediaRequest>();
+
+    for (const request of shuffleRecommendations(relevantRequests)) {
+      const key = `${request.type}:${request.media.tmdbId}`;
+      if (!uniqueSeeds.has(key)) {
+        uniqueSeeds.set(key, request);
+      }
+    }
+
+    const seeds = [...uniqueSeeds.values()].slice(0, 6);
+    if (seeds.length === 0) {
+      return res.status(200).json({
+        page: 1,
+        totalPages: 1,
+        totalResults: 0,
+        results: [],
+      });
+    }
+
+    const recommendationResponses = await Promise.allSettled(
+      seeds.map((request) =>
+        request.type === MediaType.MOVIE
+          ? tmdb.getMovieRecommendations({
+              movieId: request.media.tmdbId,
+              language: req.locale,
+            })
+          : tmdb.getTvRecommendations({
+              tvId: request.media.tmdbId,
+              language: req.locale,
+            })
+      )
+    );
+    const candidates: (TmdbMovieResult | TmdbTvResult)[] = [];
+
+    recommendationResponses.forEach((response, index) => {
+      if (response.status !== 'fulfilled') {
+        logger.debug('Unable to retrieve one personalized recommendation set', {
+          label: 'API',
+          errorMessage: response.reason?.message,
+        });
+        return;
+      }
+
+      const mediaType = seeds[index].type;
+      if (mediaType === MediaType.MOVIE) {
+        candidates.push(
+          ...(response.value.results as TmdbMovieResult[]).map((result) => ({
+            ...result,
+            media_type: 'movie' as const,
+          }))
+        );
+      } else {
+        candidates.push(
+          ...(response.value.results as TmdbTvResult[]).map((result) => ({
+            ...result,
+            media_type: 'tv' as const,
+          }))
+        );
+      }
+    });
+
+    const excludedKeys = new Set(
+      requests.map((request) =>
+        recommendationKey({
+          id: request.media.tmdbId,
+          media_type: request.type,
+        })
+      )
+    );
+    const recommendations = selectPersonalizedRecommendations(
+      candidates,
+      excludedKeys
+    );
+    const media = await Media.getRelatedMedia(
+      req.user,
+      recommendations.map((result) => ({
+        tmdbId: result.id,
+        mediaType: result.media_type,
+      })),
+      { includeActiveRequest: true }
+    );
+
+    return res.status(200).json({
+      page: 1,
+      totalPages: 1,
+      totalResults: recommendations.length,
+      results: recommendations.map((result) => {
+        const mediaInfo = media.find(
+          (item) =>
+            item.tmdbId === result.id && item.mediaType === result.media_type
+        );
+
+        return result.media_type === MediaType.MOVIE
+          ? mapMovieResult(result, mediaInfo)
+          : mapTvResult(result, mediaInfo);
+      }),
+    });
+  } catch (e) {
+    logger.debug(
+      'Something went wrong retrieving personalized recommendations',
+      {
+        label: 'API',
+        errorMessage: e.message,
+      }
+    );
+    return next({
+      status: 500,
+      message: 'Unable to retrieve personalized recommendations.',
+    });
+  }
 });
 
 discoverRoutes.get('/movies', async (req, res, next) => {

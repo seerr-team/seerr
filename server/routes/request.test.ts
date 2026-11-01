@@ -1,17 +1,21 @@
 import assert from 'node:assert/strict';
-import { before, beforeEach, describe, it, mock } from 'node:test';
+import { afterEach, before, beforeEach, describe, it, mock } from 'node:test';
 
+import RadarrAPI from '@server/api/servarr/radarr';
+import SonarrAPI from '@server/api/servarr/sonarr';
 import TheMovieDb from '@server/api/themoviedb';
 import type {
   TmdbMovieDetails,
   TmdbTvDetails,
 } from '@server/api/themoviedb/interfaces';
+import { IssueStatus, IssueType } from '@server/constants/issue';
 import {
   MediaRequestStatus,
   MediaStatus,
   MediaType,
 } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
+import Issue from '@server/entity/Issue';
 import Media from '@server/entity/Media';
 import { MediaRequest } from '@server/entity/MediaRequest';
 import OverrideRule from '@server/entity/OverrideRule';
@@ -193,13 +197,16 @@ async function loginAs(email: string, password: string) {
   }
 }
 
-async function seedRequest(status = MediaRequestStatus.PENDING) {
+async function seedRequest(
+  status = MediaRequestStatus.PENDING,
+  ownerEmail = 'demo@seerr.dev'
+) {
   const userRepo = getRepository(User);
   const mediaRepo = getRepository(Media);
   const requestRepo = getRepository(MediaRequest);
 
   const requestedBy = await userRepo.findOneOrFail({
-    where: { email: 'demo@seerr.dev' },
+    where: { email: ownerEmail },
   });
 
   const media = await mediaRepo.save(
@@ -310,6 +317,237 @@ describe('DELETE /request/:requestId', () => {
 
     assert.deepStrictEqual(results.map((r) => r.status).sort(), [204, 404]);
     assert.strictEqual(await repo.count({ where: { id: mediaRequest.id } }), 0);
+  });
+});
+
+describe('DELETE /request/:requestId/media', () => {
+  afterEach(() => {
+    const settings = getSettings();
+    settings.radarr = [];
+    settings.sonarr = [];
+  });
+
+  it('lets an owner remove their requested movie and all local media data', async (t) => {
+    const mediaRepo = getRepository(Media);
+    const requestRepo = getRepository(MediaRequest);
+    configureRadarr([{ id: 31, isDefault: true }]);
+    const mediaRequest = await seedRequest(MediaRequestStatus.COMPLETED);
+    mediaRequest.media.serviceId = 31;
+    await mediaRepo.save(mediaRequest.media);
+    const removeMovie = t.mock.method(
+      RadarrAPI.prototype,
+      'removeMovie',
+      async () => undefined
+    );
+
+    const agent = await loginAs('demo@seerr.dev', 'test1234');
+    const res = await agent.delete(`/request/${mediaRequest.id}/media`);
+
+    assert.strictEqual(res.status, 204);
+    assert.strictEqual(removeMovie.mock.callCount(), 1);
+    assert.strictEqual(
+      removeMovie.mock.calls[0].arguments[0],
+      mediaRequest.media.tmdbId
+    );
+    assert.strictEqual(
+      await mediaRepo.count({ where: { id: mediaRequest.media.id } }),
+      0
+    );
+    assert.strictEqual(
+      await requestRepo.count({ where: { id: mediaRequest.id } }),
+      0
+    );
+  });
+
+  it('does not let a user remove another users requested media', async (t) => {
+    configureRadarr([{ id: 32, isDefault: true }]);
+    const mediaRequest = await seedRequest(
+      MediaRequestStatus.COMPLETED,
+      'admin@seerr.dev'
+    );
+    const removeMovie = t.mock.method(
+      RadarrAPI.prototype,
+      'removeMovie',
+      async () => undefined
+    );
+
+    const agent = await loginAs('demo@seerr.dev', 'test1234');
+    const res = await agent.delete(`/request/${mediaRequest.id}/media`);
+
+    assert.strictEqual(res.status, 403);
+    assert.strictEqual(removeMovie.mock.callCount(), 0);
+  });
+
+  it('keeps Seerr data when Radarr deletion fails', async (t) => {
+    const mediaRepo = getRepository(Media);
+    const requestRepo = getRepository(MediaRequest);
+    configureRadarr([{ id: 33, isDefault: true }]);
+    const mediaRequest = await seedRequest(MediaRequestStatus.COMPLETED);
+    mediaRequest.media.serviceId = 33;
+    await mediaRepo.save(mediaRequest.media);
+    t.mock.method(RadarrAPI.prototype, 'removeMovie', async () => {
+      throw new Error('Radarr unavailable');
+    });
+
+    const agent = await loginAs('demo@seerr.dev', 'test1234');
+    const res = await agent.delete(`/request/${mediaRequest.id}/media`);
+
+    assert.strictEqual(res.status, 500);
+    assert.strictEqual(
+      await mediaRepo.count({ where: { id: mediaRequest.media.id } }),
+      1
+    );
+    assert.strictEqual(
+      await requestRepo.count({ where: { id: mediaRequest.id } }),
+      1
+    );
+  });
+
+  it('clears local data when the title was already removed from Radarr', async (t) => {
+    const mediaRepo = getRepository(Media);
+    const mediaRequest = await seedRequest(MediaRequestStatus.COMPLETED);
+    mediaRequest.media.status = MediaStatus.DELETED;
+    await mediaRepo.save(mediaRequest.media);
+    const removeMovie = t.mock.method(
+      RadarrAPI.prototype,
+      'removeMovie',
+      async () => undefined
+    );
+
+    const agent = await loginAs('demo@seerr.dev', 'test1234');
+    const res = await agent.delete(`/request/${mediaRequest.id}/media`);
+
+    assert.strictEqual(res.status, 204);
+    assert.strictEqual(removeMovie.mock.callCount(), 0);
+    assert.strictEqual(
+      await mediaRepo.count({ where: { id: mediaRequest.media.id } }),
+      0
+    );
+  });
+
+  it('lets an owner remove their requested series from Sonarr', async (t) => {
+    const mediaRepo = getRepository(Media);
+    const requestRepo = getRepository(MediaRequest);
+    configureSonarr([{ id: 42, isDefault: true }]);
+    const mediaRequest = await seedRequest(MediaRequestStatus.COMPLETED);
+    mediaRequest.type = MediaType.TV;
+    mediaRequest.media.mediaType = MediaType.TV;
+    mediaRequest.media.tvdbId = 778;
+    mediaRequest.media.serviceId = 42;
+    await mediaRepo.save(mediaRequest.media);
+    await requestRepo.save(mediaRequest);
+    const removeSeries = t.mock.method(
+      SonarrAPI.prototype,
+      'removeSeries',
+      async () => undefined
+    );
+
+    const agent = await loginAs('demo@seerr.dev', 'test1234');
+    const res = await agent.delete(`/request/${mediaRequest.id}/media`);
+
+    assert.strictEqual(res.status, 204);
+    assert.strictEqual(removeSeries.mock.callCount(), 1);
+    assert.strictEqual(removeSeries.mock.calls[0].arguments[0], 778);
+    assert.strictEqual(
+      await mediaRepo.count({ where: { id: mediaRequest.media.id } }),
+      0
+    );
+  });
+
+  it('removes every series edition when the same user owns all requests', async (t) => {
+    const mediaRepo = getRepository(Media);
+    const requestRepo = getRepository(MediaRequest);
+    configureSonarr([
+      { id: 43, isDefault: true, is4k: false },
+      { id: 44, isDefault: false, is4k: true },
+    ]);
+    const standardRequest = await seedRequest(MediaRequestStatus.COMPLETED);
+    standardRequest.type = MediaType.TV;
+    standardRequest.media.mediaType = MediaType.TV;
+    standardRequest.media.tvdbId = 779;
+    standardRequest.media.serviceId = 43;
+    standardRequest.media.serviceId4k = 44;
+    standardRequest.media.status = MediaStatus.AVAILABLE;
+    standardRequest.media.status4k = MediaStatus.AVAILABLE;
+    await mediaRepo.save(standardRequest.media);
+    await requestRepo.save(standardRequest);
+    await requestRepo.save(
+      new MediaRequest({
+        type: MediaType.TV,
+        status: MediaRequestStatus.COMPLETED,
+        media: standardRequest.media,
+        requestedBy: standardRequest.requestedBy,
+        is4k: true,
+      })
+    );
+    const removeSeries = t.mock.method(
+      SonarrAPI.prototype,
+      'removeSeries',
+      async () => undefined
+    );
+
+    const agent = await loginAs('demo@seerr.dev', 'test1234');
+    const res = await agent.delete(`/request/${standardRequest.id}/media`);
+
+    assert.strictEqual(res.status, 204);
+    assert.strictEqual(removeSeries.mock.callCount(), 2);
+    assert.strictEqual(
+      await mediaRepo.count({ where: { id: standardRequest.media.id } }),
+      0
+    );
+  });
+
+  it('queues one issue when another user also requested the series', async (t) => {
+    const userRepo = getRepository(User);
+    const requestRepo = getRepository(MediaRequest);
+    const issueRepo = getRepository(Issue);
+    configureSonarr([{ id: 41, isDefault: true }]);
+    const ownerRequest = await seedRequest(MediaRequestStatus.COMPLETED);
+    ownerRequest.type = MediaType.TV;
+    ownerRequest.media.mediaType = MediaType.TV;
+    ownerRequest.media.tvdbId = 777;
+    await getRepository(Media).save(ownerRequest.media);
+    await requestRepo.save(ownerRequest);
+    const otherOwner = await userRepo.findOneOrFail({
+      where: { email: 'admin@seerr.dev' },
+    });
+    await requestRepo.save(
+      new MediaRequest({
+        type: MediaType.TV,
+        status: MediaRequestStatus.COMPLETED,
+        media: ownerRequest.media,
+        requestedBy: otherOwner,
+        is4k: false,
+      })
+    );
+    const removeSeries = t.mock.method(
+      SonarrAPI.prototype,
+      'removeSeries',
+      async () => undefined
+    );
+
+    const agent = await loginAs('demo@seerr.dev', 'test1234');
+    const res = await agent.delete(`/request/${ownerRequest.id}/media`);
+    const duplicateRes = await agent.delete(
+      `/request/${ownerRequest.id}/media`
+    );
+
+    assert.strictEqual(res.status, 202);
+    assert.strictEqual(res.body.queued, true);
+    assert.strictEqual(duplicateRes.status, 202);
+    assert.strictEqual(duplicateRes.body.issueId, res.body.issueId);
+    assert.strictEqual(removeSeries.mock.callCount(), 0);
+    assert.strictEqual(
+      await issueRepo.count({
+        where: {
+          media: { id: ownerRequest.media.id },
+          createdBy: { id: ownerRequest.requestedBy.id },
+          issueType: IssueType.OTHER,
+          status: IssueStatus.OPEN,
+        },
+      }),
+      1
+    );
   });
 });
 
