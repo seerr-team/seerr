@@ -17,13 +17,14 @@ import {
 } from '@server/constants/media';
 import { MediaServerType } from '@server/constants/server';
 import { getRepository } from '@server/datasource';
+import Episode from '@server/entity/Episode';
 import Media from '@server/entity/Media';
 import MediaRequest from '@server/entity/MediaRequest';
 import Season from '@server/entity/Season';
 import SeasonRequest from '@server/entity/SeasonRequest';
 import { User } from '@server/entity/User';
 import { plexFullScanner } from '@server/lib/scanners/plex';
-import type { Library } from '@server/lib/settings';
+import type { Library, SonarrSettings } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import { setupTestDb } from '@server/test/db';
 import { runWithMockTimers } from '@server/test/runWithMockTimers';
@@ -207,6 +208,41 @@ function fakePlexSeasonMetadata(
   };
 }
 
+function fakePlexMedia(videoResolution: string) {
+  return {
+    id: 1,
+    duration: 0,
+    bitrate: 0,
+    width: videoResolution === '4k' ? 3840 : 1920,
+    height: videoResolution === '4k' ? 2160 : 1080,
+    aspectRatio: 1.78,
+    audioChannels: 2,
+    audioCodec: 'aac',
+    videoCodec: 'h264',
+    videoResolution,
+    container: 'mkv',
+    videoFrameRate: '24p',
+    videoProfile: 'high',
+  };
+}
+
+function fakePlexMetadata(
+  overrides: Partial<PlexMetadata> & Pick<PlexMetadata, 'ratingKey' | 'index'>
+): PlexMetadata {
+  return {
+    guid: '',
+    type: 'season',
+    title: 'Item',
+    Guid: [],
+    leafCount: 0,
+    viewedLeafCount: 0,
+    addedAt: 1700000000,
+    updatedAt: 1700000000,
+    Media: [],
+    ...overrides,
+  };
+}
+
 function configurePlexWithLibrary(
   libraries: Library[] = [
     { id: 'test-library-id', name: 'TV Shows', enabled: true, type: 'show' },
@@ -222,8 +258,103 @@ function configurePlexWithLibrary(
   };
 }
 
+function mockPlexShow(
+  tmdbId: number,
+  episodeCount: number,
+  episodeResolutions?: (string | string[])[]
+): void {
+  const settings = getSettings();
+  settings.main.mediaServerType = MediaServerType.PLEX;
+  settings.plex = {
+    ...settings.plex,
+    ip: '127.0.0.1',
+    libraries: [
+      { id: 'test-library-id', name: 'TV Shows', enabled: true, type: 'show' },
+    ],
+  };
+
+  getTvShowImpl = async () =>
+    fakeTmdbShow(tmdbId, [
+      {
+        id: 1,
+        air_date: '2024-01-01',
+        episode_count: episodeCount,
+        name: 'Season 1',
+        overview: '',
+        season_number: 1,
+      },
+    ]);
+
+  getLibraryContentsImpl = async (id: string) => {
+    if (id !== 'test-library-id') {
+      return { totalSize: 0, items: [] };
+    }
+    return {
+      totalSize: 1,
+      items: [
+        {
+          ratingKey: 'show-1',
+          title: 'Test Show',
+          guid: `themoviedb://${tmdbId}`,
+          addedAt: 1700000000,
+          updatedAt: 1700000000,
+          type: 'show',
+          Media: [],
+        },
+      ],
+    };
+  };
+
+  getMetadataImpl = async () =>
+    fakePlexMetadata({
+      ratingKey: 'show-1',
+      guid: `themoviedb://${tmdbId}`,
+      type: 'show',
+      title: 'Test Show',
+      index: 1,
+      Children: {
+        size: 12,
+        Metadata: [
+          fakePlexMetadata({
+            ratingKey: 'season-1',
+            type: 'season',
+            title: 'Season 1',
+            index: 1,
+          }),
+        ],
+      },
+    });
+
+  getChildrenMetadataImpl = async (key: string) => {
+    if (key !== 'season-1') {
+      return [];
+    }
+    return Array.from({ length: episodeCount }, (_, i) => {
+      const resolution =
+        episodeResolutions?.[i] ??
+        (episodeResolutions === undefined ? '1080' : undefined);
+      const resolutions = resolution
+        ? Array.isArray(resolution)
+          ? resolution
+          : [resolution]
+        : [];
+
+      return fakePlexMetadata({
+        ratingKey: `ep-${i + 1}`,
+        title: `Episode ${i + 1}`,
+        index: i + 1,
+        Media: resolutions.map((value) => fakePlexMedia(value)),
+      });
+    });
+  };
+}
+
+function enable4kShowDetection(): void {
+  getSettings().sonarr = [{ is4k: true } as SonarrSettings];
+}
+
 describe('Plex Scanner', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     getLibrariesImpl = async () => [
       {
         key: 'test-library-id',
@@ -236,6 +367,23 @@ describe('Plex Scanner', () => {
     getMetadataImpl = async () => undefined;
     getChildrenMetadataImpl = async () => [];
     getTvShowImpl = async () => fakeTmdbShow(1);
+    getSettings().main.enableEpisodeAvailability = false;
+    getSettings().sonarr = [];
+
+    const userRepository = getRepository(User);
+    const existingAdmin = await userRepository.findOne({ where: { id: 1 } });
+    if (!existingAdmin) {
+      const admin = new User();
+      admin.id = 1;
+      admin.plexToken = 'test-plex-token';
+      admin.email = 'admin@test.com';
+      admin.permissions = 2;
+      admin.username = 'admin';
+      await userRepository.save(admin);
+    } else if (!existingAdmin.plexToken) {
+      existingAdmin.plexToken = 'test-plex-token';
+      await userRepository.save(existingAdmin);
+    }
   });
 
   describe('in-flight request handling', () => {
@@ -319,6 +467,125 @@ describe('Plex Scanner', () => {
         MediaRequestStatus.APPROVED,
         'A media server scan must not cancel a request Sonarr is still working on'
       );
+    });
+  });
+
+  describe('episode availability tracking', () => {
+    it('persists AVAILABLE episodes when tracking is enabled with TMDB', async () => {
+      getSettings().main.enableEpisodeAvailability = true;
+      mockPlexShow(7000, 2);
+
+      await plexFullScanner.run();
+
+      const media = await getRepository(Media).findOneOrFail({
+        where: { tmdbId: 7000 },
+        relations: ['seasons'],
+      });
+      const season = media.seasons.find((s) => s.seasonNumber === 1);
+      assert.ok(season);
+
+      const episodes = await getRepository(Episode).find({
+        where: { season: { id: season.id } },
+        order: { episodeNumber: 'ASC' },
+      });
+
+      assert.strictEqual(episodes.length, 2);
+      assert.strictEqual(episodes[0].status, MediaStatus.AVAILABLE);
+      assert.strictEqual(episodes[0].status4k, MediaStatus.UNKNOWN);
+      assert.strictEqual(episodes[1].status, MediaStatus.AVAILABLE);
+      assert.strictEqual(episodes[1].status4k, MediaStatus.UNKNOWN);
+    });
+
+    it('treats 4K files as standard when 4K detection is disabled', async () => {
+      getSettings().main.enableEpisodeAvailability = true;
+      mockPlexShow(7002, 1, ['4k']);
+
+      await plexFullScanner.run();
+
+      const media = await getRepository(Media).findOneOrFail({
+        where: { tmdbId: 7002 },
+        relations: ['seasons'],
+      });
+      const season = media.seasons.find((s) => s.seasonNumber === 1);
+      assert.ok(season);
+
+      const episodes = await getRepository(Episode).find({
+        where: { season: { id: season.id } },
+        order: { episodeNumber: 'ASC' },
+      });
+
+      assert.strictEqual(episodes.length, 1);
+      assert.strictEqual(episodes[0].status, MediaStatus.AVAILABLE);
+      assert.strictEqual(episodes[0].status4k, MediaStatus.UNKNOWN);
+    });
+
+    it('splits standard and 4K episode availability when 4K detection is enabled', async () => {
+      getSettings().main.enableEpisodeAvailability = true;
+      enable4kShowDetection();
+      mockPlexShow(7003, 3, ['1080', '4k', ['1080', '4k']]);
+
+      await plexFullScanner.run();
+
+      const media = await getRepository(Media).findOneOrFail({
+        where: { tmdbId: 7003 },
+        relations: ['seasons'],
+      });
+      const season = media.seasons.find((s) => s.seasonNumber === 1);
+      assert.ok(season);
+
+      const episodes = await getRepository(Episode).find({
+        where: { season: { id: season.id } },
+        order: { episodeNumber: 'ASC' },
+      });
+
+      assert.strictEqual(episodes.length, 3);
+      assert.strictEqual(episodes[0].status, MediaStatus.AVAILABLE);
+      assert.strictEqual(episodes[0].status4k, MediaStatus.UNKNOWN);
+      assert.strictEqual(episodes[1].status, MediaStatus.UNKNOWN);
+      assert.strictEqual(episodes[1].status4k, MediaStatus.AVAILABLE);
+      assert.strictEqual(episodes[2].status, MediaStatus.AVAILABLE);
+      assert.strictEqual(episodes[2].status4k, MediaStatus.AVAILABLE);
+    });
+
+    it('does not persist episodes when tracking is disabled', async () => {
+      mockPlexShow(7001, 2);
+
+      await plexFullScanner.run();
+
+      const episodeCount = await getRepository(Episode).count();
+      assert.strictEqual(episodeCount, 0);
+    });
+
+    it('does not persist episodes with empty or missing Media', async () => {
+      getSettings().main.enableEpisodeAvailability = true;
+      mockPlexShow(7004, 2, []);
+
+      const originalGetChildrenMetadata = getChildrenMetadataImpl;
+      getChildrenMetadataImpl = async (key: string) => {
+        const episodes = await originalGetChildrenMetadata(key);
+        if (key !== 'season-1' || episodes.length < 2) {
+          return episodes;
+        }
+
+        const missingMedia = { ...episodes[1] };
+        delete (missingMedia as { Media?: unknown }).Media;
+        return [episodes[0], missingMedia];
+      };
+
+      await plexFullScanner.run();
+
+      const media = await getRepository(Media).findOneOrFail({
+        where: { tmdbId: 7004 },
+        relations: ['seasons'],
+      });
+      const season = media.seasons.find((s) => s.seasonNumber === 1);
+      assert.ok(season);
+      assert.strictEqual(media.seasons.length, 1);
+
+      const episodeCount = await getRepository(Episode).count({
+        where: { season: { id: season.id } },
+      });
+      assert.strictEqual(episodeCount, 0);
     });
   });
 });
