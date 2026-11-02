@@ -13,7 +13,7 @@ import type {
 import { Permission } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
-import { isAuthenticated } from '@server/middleware/auth';
+import { isAuthenticated, setLoggedInSession } from '@server/middleware/auth';
 import { quickConnectSecret } from '@server/routes/auth';
 import { ApiError } from '@server/types/error';
 import { getHostname } from '@server/utils/getHostname';
@@ -187,7 +187,7 @@ userSettingsRoutes.get<{ id: string }, { hasPassword: boolean }>(
 userSettingsRoutes.post<
   { id: string },
   null,
-  { currentPassword?: string; newPassword: string }
+  { currentPassword?: string; newPassword: string; endOtherSessions?: boolean }
 >('/password', isOwnProfileOrAdmin(), async (req, res, next) => {
   const userRepository = getRepository(User);
 
@@ -224,14 +224,20 @@ userSettingsRoutes.post<
       });
     }
 
+    const endSessions = req.body.endOtherSessions !== false;
+
     // If the user has the permission to manage users and they are not
     // editing themselves, we will just set the new password
     if (
       req.user?.hasPermission(Permission.MANAGE_USERS) &&
       req.user?.id !== user.id
     ) {
-      await user.setPassword(req.body.newPassword);
-      await userRepository.save(user);
+      if (!(await user.savePassword(req.body.newPassword, { endSessions }))) {
+        return next({
+          status: 409,
+          message: 'Password was changed by another request.',
+        });
+      }
       logger.debug('Password overriden by user.', {
         label: 'User Settings',
         userEmail: user.email,
@@ -253,8 +259,28 @@ userSettingsRoutes.post<
       return next({ status: 403, message: 'Current password is invalid.' });
     }
 
-    await user.setPassword(req.body.newPassword);
-    await userRepository.save(user);
+    const isOwnSession = req.session.userId === user.id;
+
+    // Pin to the version checkUser accepted so a change landing meanwhile wins
+    const expectedVersion = isOwnSession
+      ? (req.session.sessionVersion ?? 0)
+      : undefined;
+
+    if (
+      !(await user.savePassword(req.body.newPassword, {
+        expectedVersion,
+        endSessions,
+      }))
+    ) {
+      return next({
+        status: 409,
+        message: 'Password was changed by another request.',
+      });
+    }
+
+    if (isOwnSession) {
+      await setLoggedInSession(req, user);
+    }
 
     return res.status(204).send();
   } catch (e) {

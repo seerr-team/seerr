@@ -9,7 +9,7 @@ import { startJobs } from '@server/job/schedule';
 import { Permission } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
-import { isAuthenticated } from '@server/middleware/auth';
+import { isAuthenticated, setLoggedInSession } from '@server/middleware/auth';
 import { checkAvatarChanged } from '@server/routes/avatarproxy';
 import { ApiError } from '@server/types/error';
 import { getAppVersion } from '@server/utils/appVersion';
@@ -229,9 +229,8 @@ authRoutes.post('/plex', async (req, res, next) => {
       }
     }
 
-    // Set logged in session
     if (req.session) {
-      req.session.userId = user.id;
+      await setLoggedInSession(req, user);
     }
 
     return res.status(200).json(user?.filter() ?? {});
@@ -531,9 +530,8 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
       }
     }
 
-    // Set logged in session
-    if (req.session) {
-      req.session.userId = user?.id;
+    if (req.session && user) {
+      await setLoggedInSession(req, user);
     }
 
     return res.status(200).json(user?.filter() ?? {});
@@ -839,9 +837,8 @@ authRoutes.post(
         }
       }
 
-      // Set session
       if (req.session) {
-        req.session.userId = user.id;
+        await setLoggedInSession(req, user);
       }
 
       return res.status(200).json(user?.filter() ?? {});
@@ -874,7 +871,13 @@ authRoutes.post('/local', async (req, res, next) => {
   try {
     const user = await userRepository
       .createQueryBuilder('user')
-      .select(['user.id', 'user.email', 'user.password', 'user.plexId'])
+      .select([
+        'user.id',
+        'user.email',
+        'user.password',
+        'user.plexId',
+        'user.sessionVersion',
+      ])
       .where('user.email = :email', { email: body.email.toLowerCase() })
       .getOne();
 
@@ -891,9 +894,8 @@ authRoutes.post('/local', async (req, res, next) => {
       });
     }
 
-    // Set logged in session
     if (user && req.session) {
-      req.session.userId = user.id;
+      await setLoggedInSession(req, user);
     }
 
     return res.status(200).json(user?.filter() ?? {});
@@ -923,7 +925,7 @@ authRoutes.post('/logout', async (req, res, next) => {
       settings.main.mediaServerType === MediaServerType.JELLYFIN ||
       settings.main.mediaServerType === MediaServerType.EMBY;
 
-    if (isJellyfinOrEmby) {
+    if (isJellyfinOrEmby && req.user?.id === userId) {
       const user = await getRepository(User)
         .createQueryBuilder('user')
         .addSelect(['user.jellyfinUserId', 'user.jellyfinDeviceId'])
@@ -1038,9 +1040,11 @@ authRoutes.post('/reset-password/:guid', async (req, res, next) => {
     });
   }
 
-  const user = await userRepository.findOne({
-    where: { resetPasswordGuid: req.params.guid },
-  });
+  const user = await userRepository
+    .createQueryBuilder('user')
+    .addSelect('user.sessionVersion')
+    .where('user.resetPasswordGuid = :guid', { guid: req.params.guid })
+    .getOne();
 
   if (!user) {
     logger.warn('Failed password reset attempt using invalid recovery link', {
@@ -1069,9 +1073,16 @@ authRoutes.post('/reset-password/:guid', async (req, res, next) => {
       message: 'Invalid password reset link.',
     });
   }
-  user.recoveryLinkExpirationDate = null;
-  await user.setPassword(req.body.password);
-  await userRepository.save(user);
+  if (
+    !(await user.savePassword(req.body.password, {
+      expectedVersion: user.sessionVersion,
+    }))
+  ) {
+    return next({
+      status: 409,
+      message: 'Password was changed by another request.',
+    });
+  }
   logger.info('Successfully reset password', {
     label: 'API',
     ip: req.ip,

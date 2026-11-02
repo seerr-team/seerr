@@ -5245,6 +5245,9 @@ paths:
                   nullable: true
                 newPassword:
                   type: string
+                endOtherSessions:
+                  type: boolean
+                  default: true
               required:
                 - newPassword
       responses:

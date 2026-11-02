@@ -10,7 +10,7 @@ import { User } from '@server/entity/User';
 import PreparedEmail from '@server/lib/email';
 import ImageProxy from '@server/lib/imageproxy';
 import { getSettings } from '@server/lib/settings';
-import { checkUser } from '@server/middleware/auth';
+import { checkUser, isAuthenticated } from '@server/middleware/auth';
 import { setupTestDb } from '@server/test/db';
 import {
   allowlistedSettings,
@@ -24,6 +24,7 @@ import express from 'express';
 import session from 'express-session';
 import request from 'supertest';
 import authRoutes from './auth';
+import userRoutes from './user';
 
 const emailMock = mock.method(PreparedEmail.prototype, 'send', async () => {
   return undefined;
@@ -118,6 +119,7 @@ function createApp() {
   );
   app.use(checkUser);
   app.use('/auth', authRoutes);
+  app.use('/user', isAuthenticated(), userRoutes);
   // Error handler matching how next({ status, message }) calls are handled
   app.use(
     (
@@ -738,6 +740,22 @@ describe('POST /auth/local', () => {
     const meRes = await agent.get('/auth/me');
     assert.strictEqual(meRes.status, 200);
   });
+
+  it('replaces the session on sign-in', async () => {
+    const agent = request.agent(app);
+    const first = await agent
+      .post('/auth/local')
+      .send({ email: 'admin@seerr.dev', password: 'test1234' });
+
+    await agent
+      .post('/auth/local')
+      .send({ email: 'demo@seerr.dev', password: 'test1234' });
+
+    const res = await request(app)
+      .get('/auth/me')
+      .set('Cookie', first.headers['set-cookie']);
+    assert.strictEqual(res.status, 403);
+  });
 });
 
 describe('POST /auth/logout', () => {
@@ -762,6 +780,54 @@ describe('POST /auth/logout', () => {
     // Session should be invalidated — /me should fail
     const meAfterRes = await agent.get('/auth/me');
     assert.strictEqual(meAfterRes.status, 403);
+  });
+
+  it('leaves the Jellyfin device alone for a session ended by a password change', async (t) => {
+    configureJellyfin();
+    const deleteDevice = t.mock.method(axios, 'delete', async () => ({
+      status: 204,
+    }));
+    const userRepository = getRepository(User);
+    const demo = await userRepository.findOneOrFail({
+      where: { email: 'demo@seerr.dev' },
+    });
+    await userRepository.update(demo.id, {
+      jellyfinUserId: 'jf-demo',
+      jellyfinDeviceId: 'demo-device',
+    });
+
+    const stale = await authenticatedAgent('demo@seerr.dev', 'test1234');
+    const admin = await authenticatedAgent('admin@seerr.dev', 'test1234');
+    const override = await admin
+      .post(`/user/${demo.id}/settings/password`)
+      .send({ newPassword: 'newpassword123' });
+    assert.strictEqual(override.status, 204);
+
+    const res = await stale.post('/auth/logout');
+
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(deleteDevice.mock.callCount(), 0);
+  });
+
+  it('deletes the Jellyfin device on logout', async (t) => {
+    configureJellyfin();
+    const deleteDevice = t.mock.method(axios, 'delete', async () => ({
+      status: 204,
+    }));
+    const userRepository = getRepository(User);
+    const demo = await userRepository.findOneOrFail({
+      where: { email: 'demo@seerr.dev' },
+    });
+    await userRepository.update(demo.id, {
+      jellyfinUserId: 'jf-demo',
+      jellyfinDeviceId: 'demo-device',
+    });
+
+    const agent = await authenticatedAgent('demo@seerr.dev', 'test1234');
+    const res = await agent.post('/auth/logout');
+
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(deleteDevice.mock.callCount(), 1);
   });
 });
 
@@ -925,5 +991,151 @@ describe('POST /auth/reset-password/:guid', () => {
       .post(`/auth/reset-password/${guid}`)
       .send({ password: 'anotherpassword' });
     assert.strictEqual(second.status, 500);
+  });
+
+  it('ends existing sessions', async () => {
+    const stale = await authenticatedAgent('demo@seerr.dev', 'test1234');
+    const guid = await getResetGuid('demo@seerr.dev');
+
+    const res = await request(app)
+      .post(`/auth/reset-password/${guid}`)
+      .send({ password: 'newpassword123' });
+    assert.strictEqual(res.status, 200);
+
+    assert.strictEqual((await stale.get('/auth/me')).status, 403);
+
+    const fresh = await authenticatedAgent('demo@seerr.dev', 'newpassword123');
+    assert.strictEqual((await fresh.get('/auth/me')).status, 200);
+  });
+});
+
+describe('POST /user/:id/settings/password', () => {
+  it('ends other sessions and keeps the current one', async () => {
+    const stale = await authenticatedAgent('demo@seerr.dev', 'test1234');
+    const current = await authenticatedAgent('demo@seerr.dev', 'test1234');
+    const demo = await getRepository(User).findOneOrFail({
+      where: { email: 'demo@seerr.dev' },
+    });
+
+    const res = await current
+      .post(`/user/${demo.id}/settings/password`)
+      .send({ currentPassword: 'test1234', newPassword: 'newpassword123' });
+    assert.strictEqual(res.status, 204);
+
+    assert.strictEqual((await stale.get('/auth/me')).status, 403);
+    assert.strictEqual((await current.get('/auth/me')).status, 200);
+  });
+
+  it('replaces the session that made the change', async () => {
+    getSettings().main.localLogin = true;
+    const agent = request.agent(app);
+    const login = await agent
+      .post('/auth/local')
+      .send({ email: 'demo@seerr.dev', password: 'test1234' });
+
+    const res = await agent
+      .post(`/user/${login.body.id}/settings/password`)
+      .send({ currentPassword: 'test1234', newPassword: 'newpassword123' });
+    assert.strictEqual(res.status, 204);
+
+    const oldSession = await request(app)
+      .get('/auth/me')
+      .set('Cookie', login.headers['set-cookie']);
+    assert.strictEqual(oldSession.status, 403);
+    assert.strictEqual((await agent.get('/auth/me')).status, 200);
+  });
+
+  it('keeps other sessions when the user opts out', async () => {
+    const other = await authenticatedAgent('demo@seerr.dev', 'test1234');
+    const current = await authenticatedAgent('demo@seerr.dev', 'test1234');
+    const demo = await getRepository(User).findOneOrFail({
+      where: { email: 'demo@seerr.dev' },
+    });
+
+    const res = await current.post(`/user/${demo.id}/settings/password`).send({
+      currentPassword: 'test1234',
+      newPassword: 'newpassword123',
+      endOtherSessions: false,
+    });
+    assert.strictEqual(res.status, 204);
+
+    assert.strictEqual((await other.get('/auth/me')).status, 200);
+    assert.strictEqual((await current.get('/auth/me')).status, 200);
+  });
+
+  it('lets only one of two overlapping changes through', async () => {
+    const agents = [
+      await authenticatedAgent('demo@seerr.dev', 'test1234'),
+      await authenticatedAgent('demo@seerr.dev', 'test1234'),
+    ];
+    const demo = await getRepository(User).findOneOrFail({
+      where: { email: 'demo@seerr.dev' },
+    });
+
+    const changes = await Promise.all(
+      agents.map((agent) =>
+        agent
+          .post(`/user/${demo.id}/settings/password`)
+          .send({ currentPassword: 'test1234', newPassword: 'newpassword123' })
+      )
+    );
+    assert.strictEqual(changes.filter((res) => res.status === 204).length, 1);
+
+    const sessions = await Promise.all(
+      agents.map((agent) => agent.get('/auth/me'))
+    );
+    assert.deepStrictEqual(
+      sessions.map((res) => res.status).sort(),
+      [200, 403]
+    );
+  });
+
+  it("ends the user's sessions when an admin overrides their password", async () => {
+    const stale = await authenticatedAgent('demo@seerr.dev', 'test1234');
+    const admin = await authenticatedAgent('admin@seerr.dev', 'test1234');
+    const demo = await getRepository(User).findOneOrFail({
+      where: { email: 'demo@seerr.dev' },
+    });
+
+    const res = await admin
+      .post(`/user/${demo.id}/settings/password`)
+      .send({ newPassword: 'newpassword123' });
+    assert.strictEqual(res.status, 204);
+
+    assert.strictEqual((await stale.get('/auth/me')).status, 403);
+  });
+
+  it("keeps the user's sessions when an admin opts out", async () => {
+    const userSession = await authenticatedAgent('demo@seerr.dev', 'test1234');
+    const admin = await authenticatedAgent('admin@seerr.dev', 'test1234');
+    const demo = await getRepository(User).findOneOrFail({
+      where: { email: 'demo@seerr.dev' },
+    });
+
+    const res = await admin
+      .post(`/user/${demo.id}/settings/password`)
+      .send({ newPassword: 'newpassword123', endOtherSessions: false });
+    assert.strictEqual(res.status, 204);
+
+    assert.strictEqual((await userSession.get('/auth/me')).status, 200);
+  });
+
+  it('keeps sessions ended when an older copy of the user is saved', async () => {
+    const stale = await authenticatedAgent('demo@seerr.dev', 'test1234');
+    const admin = await authenticatedAgent('admin@seerr.dev', 'test1234');
+    const userRepository = getRepository(User);
+    const olderCopy = await userRepository.findOneOrFail({
+      where: { email: 'demo@seerr.dev' },
+    });
+
+    const res = await admin
+      .post(`/user/${olderCopy.id}/settings/password`)
+      .send({ newPassword: 'newpassword123' });
+    assert.strictEqual(res.status, 204);
+
+    olderCopy.username = 'renamed';
+    await userRepository.save(olderCopy);
+
+    assert.strictEqual((await stale.get('/auth/me')).status, 403);
   });
 });
