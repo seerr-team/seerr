@@ -1,4 +1,5 @@
 import { MediaServerType } from '@server/constants/server';
+import type { OtherUserAvailabilityDisplay } from '@server/interfaces/api/settingsInterfaces';
 import { Permission } from '@server/lib/permissions';
 import { runMigrations } from '@server/lib/settings/migrator';
 import type { AvailableLocale } from '@server/types/languages';
@@ -142,6 +143,7 @@ export interface MainSettings {
   hideAvailable: boolean;
   hideBlocklisted: boolean;
   hideRequested: boolean;
+  otherUserAvailability: OtherUserAvailabilityDisplay;
   localLogin: boolean;
   mediaServerLogin: boolean;
   newPlexLogin: boolean;
@@ -196,6 +198,7 @@ interface FullPublicSettings extends PublicSettings {
   hideAvailable: boolean;
   hideBlocklisted: boolean;
   hideRequested: boolean;
+  otherUserAvailability: OtherUserAvailabilityDisplay;
   localLogin: boolean;
   mediaServerLogin: boolean;
   movie4kEnabled: boolean;
@@ -420,6 +423,7 @@ class Settings {
         hideAvailable: false,
         hideBlocklisted: false,
         hideRequested: false,
+        otherUserAvailability: 'show',
         localLogin: true,
         mediaServerLogin: true,
         newPlexLogin: true,
@@ -718,6 +722,7 @@ class Settings {
       hideAvailable: this.data.main.hideAvailable,
       hideBlocklisted: this.data.main.hideBlocklisted,
       hideRequested: this.data.main.hideRequested,
+      otherUserAvailability: this.data.main.otherUserAvailability,
       localLogin: this.data.main.localLogin,
       mediaServerLogin: this.data.main.mediaServerLogin,
       jellyfinExternalHost: this.data.jellyfin.externalHostname,

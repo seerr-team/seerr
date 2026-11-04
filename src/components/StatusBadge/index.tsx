@@ -32,6 +32,8 @@ interface StatusBadgeProps {
   mediaType?: 'movie' | 'tv';
   title?: string | string[];
   statusLabelOverride?: string;
+  // false = available on the shared server, but not requested by the viewer
+  requestedByUser?: boolean;
 }
 
 const StatusBadge = ({
@@ -45,10 +47,21 @@ const StatusBadge = ({
   mediaType,
   title,
   statusLabelOverride,
+  requestedByUser,
 }: StatusBadgeProps) => {
   const intl = useIntl();
   const { hasPermission } = useUser();
   const settings = useSettings();
+
+  const availableByOtherUser =
+    requestedByUser === false &&
+    settings.currentSettings.otherUserAvailability === 'distinguish';
+  const hiddenForOtherUser =
+    requestedByUser === false &&
+    settings.currentSettings.otherUserAvailability === 'hide';
+  const availableBadgeClassName = availableByOtherUser
+    ? '!bg-purple-500/80 !border-purple-500 !text-purple-100'
+    : undefined;
 
   let mediaLink: string | undefined;
   let mediaLinkDescription: string | undefined;
@@ -156,6 +169,9 @@ const StatusBadge = ({
 
   switch (status) {
     case MediaStatus.AVAILABLE:
+      if (hiddenForOtherUser) {
+        return null;
+      }
       return (
         <Tooltip
           content={inProgress ? tooltipContent : mediaLinkDescription}
@@ -171,7 +187,7 @@ const StatusBadge = ({
             href={mediaLink}
             className={`${
               inProgress && 'relative !bg-gray-700/80 !px-0 hover:!bg-gray-700'
-            } overflow-hidden`}
+            } ${availableBadgeClassName ?? ''} overflow-hidden`}
           >
             {inProgress && badgeDownloadProgress}
             <div
@@ -221,6 +237,9 @@ const StatusBadge = ({
       );
 
     case MediaStatus.PARTIALLY_AVAILABLE:
+      if (hiddenForOtherUser) {
+        return null;
+      }
       return (
         <Tooltip
           content={inProgress ? tooltipContent : mediaLinkDescription}
@@ -236,7 +255,7 @@ const StatusBadge = ({
             href={mediaLink}
             className={`${
               inProgress && 'relative !bg-gray-700/80 !px-0 hover:!bg-gray-700'
-            } overflow-hidden`}
+            } ${availableBadgeClassName ?? ''} overflow-hidden`}
           >
             {inProgress && badgeDownloadProgress}
             <div
@@ -286,6 +305,9 @@ const StatusBadge = ({
       );
 
     case MediaStatus.PROCESSING:
+      if (hiddenForOtherUser) {
+        return null;
+      }
       return (
         <Tooltip
           content={inProgress ? tooltipContent : mediaLinkDescription}
@@ -301,7 +323,7 @@ const StatusBadge = ({
             href={mediaLink}
             className={`${
               inProgress && 'relative !bg-gray-700/80 !px-0 hover:!bg-gray-700'
-            } overflow-hidden`}
+            } ${availableBadgeClassName ?? ''} overflow-hidden`}
           >
             {inProgress && badgeDownloadProgress}
             <div

@@ -190,8 +190,22 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
 
   const mediaLinks: PlayButtonLink[] = [];
 
+  const hasOwnRequest = (is4k: boolean): boolean =>
+    (data.mediaInfo?.requests ?? []).some(
+      (request) =>
+        request.requestedBy.id === user?.id &&
+        request.is4k === is4k &&
+        (request.status === MediaRequestStatus.APPROVED ||
+          request.status === MediaRequestStatus.COMPLETED)
+    );
+  const requestedByUser = hasOwnRequest(false);
+  const requestedByUser4k = hasOwnRequest(true);
+  const hiddenFromUser = (byUser: boolean): boolean =>
+    !byUser && settings.currentSettings.otherUserAvailability !== 'show';
+
   if (
     plexUrl &&
+    !hiddenFromUser(requestedByUser) &&
     hasPermission([Permission.REQUEST, Permission.REQUEST_TV], {
       type: 'or',
     })
@@ -206,6 +220,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
   if (
     settings.currentSettings.series4kEnabled &&
     plexUrl4k &&
+    !hiddenFromUser(requestedByUser4k) &&
     hasPermission([Permission.REQUEST_4K, Permission.REQUEST_4K_TV], {
       type: 'or',
     })
@@ -573,6 +588,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
               mediaType="tv"
               plexUrl={plexUrl}
               serviceUrl={data.mediaInfo?.serviceUrl}
+              requestedByUser={requestedByUser}
             />
             {settings.currentSettings.series4kEnabled &&
               hasPermission(
@@ -597,6 +613,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
                   mediaType="tv"
                   plexUrl={plexUrl4k}
                   serviceUrl={data.mediaInfo?.serviceUrl4k}
+                  requestedByUser={requestedByUser4k}
                 />
               )}
           </div>
@@ -857,6 +874,47 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
                       new Date(b.createdAt).getTime() -
                       new Date(a.createdAt).getTime()
                   )[0];
+                // Scoped to the viewer, separately from `request`/`request4k`
+                // above (which pick the most recent request from *any* user),
+                // to decide whether an available season is available to them.
+                const seasonRequestedByUser = (
+                  data.mediaInfo?.requests ?? []
+                ).some(
+                  (r) =>
+                    r.requestedBy.id === user?.id &&
+                    !r.is4k &&
+                    !!r.seasons.find(
+                      (s) => s.seasonNumber === season.seasonNumber
+                    ) &&
+                    (r.status === MediaRequestStatus.APPROVED ||
+                      r.status === MediaRequestStatus.COMPLETED)
+                );
+                const seasonRequestedByUser4k = (
+                  data.mediaInfo?.requests ?? []
+                ).some(
+                  (r) =>
+                    r.requestedBy.id === user?.id &&
+                    r.is4k &&
+                    !!r.seasons.find(
+                      (s) => s.seasonNumber === season.seasonNumber
+                    ) &&
+                    (r.status === MediaRequestStatus.APPROVED ||
+                      r.status === MediaRequestStatus.COMPLETED)
+                );
+                const showSeasonPurple =
+                  seasonRequestedByUser === false &&
+                  settings.currentSettings.otherUserAvailability ===
+                    'distinguish';
+                const showSeasonPurple4k =
+                  seasonRequestedByUser4k === false &&
+                  settings.currentSettings.otherUserAvailability ===
+                    'distinguish';
+                const hideSeasonAvailability =
+                  seasonRequestedByUser === false &&
+                  settings.currentSettings.otherUserAvailability === 'hide';
+                const hideSeasonAvailability4k =
+                  seasonRequestedByUser4k === false &&
+                  settings.currentSettings.otherUserAvailability === 'hide';
 
                 if (season.episodeCount === 0) {
                   return null;
@@ -891,20 +949,31 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
                             request?.status === MediaRequestStatus.APPROVED) ||
                             mSeason?.status === MediaStatus.PROCESSING ||
                             (request?.status === MediaRequestStatus.APPROVED &&
-                              mSeason?.status === MediaStatus.DELETED)) && (
-                            <>
-                              <div className="hidden md:flex">
-                                <Badge badgeType="primary">
-                                  {intl.formatMessage(globalMessages.requested)}
-                                </Badge>
-                              </div>
-                              <div className="flex md:hidden">
-                                <StatusBadgeMini
-                                  status={MediaStatus.PROCESSING}
-                                />
-                              </div>
-                            </>
-                          )}
+                              mSeason?.status === MediaStatus.DELETED)) &&
+                            !hideSeasonAvailability && (
+                              <>
+                                <div className="hidden md:flex">
+                                  <Badge
+                                    badgeType="primary"
+                                    className={
+                                      showSeasonPurple
+                                        ? '!border-purple-500 !bg-purple-500/80 !text-purple-100'
+                                        : undefined
+                                    }
+                                  >
+                                    {intl.formatMessage(
+                                      globalMessages.requested
+                                    )}
+                                  </Badge>
+                                </div>
+                                <div className="flex md:hidden">
+                                  <StatusBadgeMini
+                                    status={MediaStatus.PROCESSING}
+                                    requestedByUser={seasonRequestedByUser}
+                                  />
+                                </div>
+                              </>
+                            )}
                           {((!mSeason &&
                             request?.status === MediaRequestStatus.PENDING) ||
                             mSeason?.status === MediaStatus.PENDING) && (
@@ -920,36 +989,56 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
                             </>
                           )}
                           {mSeason?.status ===
-                            MediaStatus.PARTIALLY_AVAILABLE && (
-                            <>
-                              <div className="hidden md:flex">
-                                <Badge badgeType="success">
-                                  {intl.formatMessage(
-                                    globalMessages.partiallyavailable
-                                  )}
-                                </Badge>
-                              </div>
-                              <div className="flex md:hidden">
-                                <StatusBadgeMini
-                                  status={MediaStatus.PARTIALLY_AVAILABLE}
-                                />
-                              </div>
-                            </>
-                          )}
-                          {mSeason?.status === MediaStatus.AVAILABLE && (
-                            <>
-                              <div className="hidden md:flex">
-                                <Badge badgeType="success">
-                                  {intl.formatMessage(globalMessages.available)}
-                                </Badge>
-                              </div>
-                              <div className="flex md:hidden">
-                                <StatusBadgeMini
-                                  status={MediaStatus.AVAILABLE}
-                                />
-                              </div>
-                            </>
-                          )}
+                            MediaStatus.PARTIALLY_AVAILABLE &&
+                            !hideSeasonAvailability && (
+                              <>
+                                <div className="hidden md:flex">
+                                  <Badge
+                                    badgeType="success"
+                                    className={
+                                      showSeasonPurple
+                                        ? '!border-purple-500 !bg-purple-500/80 !text-purple-100'
+                                        : undefined
+                                    }
+                                  >
+                                    {intl.formatMessage(
+                                      globalMessages.partiallyavailable
+                                    )}
+                                  </Badge>
+                                </div>
+                                <div className="flex md:hidden">
+                                  <StatusBadgeMini
+                                    status={MediaStatus.PARTIALLY_AVAILABLE}
+                                    requestedByUser={seasonRequestedByUser}
+                                  />
+                                </div>
+                              </>
+                            )}
+                          {mSeason?.status === MediaStatus.AVAILABLE &&
+                            !hideSeasonAvailability && (
+                              <>
+                                <div className="hidden md:flex">
+                                  <Badge
+                                    badgeType="success"
+                                    className={
+                                      showSeasonPurple
+                                        ? '!border-purple-500 !bg-purple-500/80 !text-purple-100'
+                                        : undefined
+                                    }
+                                  >
+                                    {intl.formatMessage(
+                                      globalMessages.available
+                                    )}
+                                  </Badge>
+                                </div>
+                                <div className="flex md:hidden">
+                                  <StatusBadgeMini
+                                    status={MediaStatus.AVAILABLE}
+                                    requestedByUser={seasonRequestedByUser}
+                                  />
+                                </div>
+                              </>
+                            )}
                           {mSeason?.status === MediaStatus.DELETED &&
                             request?.status !== MediaRequestStatus.APPROVED && (
                               <>
@@ -972,10 +1061,18 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
                             (request4k?.status ===
                               MediaRequestStatus.APPROVED &&
                               mSeason4k?.status4k === MediaStatus.DELETED)) &&
-                            show4k && (
+                            show4k &&
+                            !hideSeasonAvailability4k && (
                               <>
                                 <div className="hidden md:flex">
-                                  <Badge badgeType="primary">
+                                  <Badge
+                                    badgeType="primary"
+                                    className={
+                                      showSeasonPurple4k
+                                        ? '!border-purple-500 !bg-purple-500/80 !text-purple-100'
+                                        : undefined
+                                    }
+                                  >
                                     {intl.formatMessage(messages.status4k, {
                                       status: intl.formatMessage(
                                         globalMessages.requested
@@ -987,6 +1084,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
                                   <StatusBadgeMini
                                     status={MediaStatus.PROCESSING}
                                     is4k={true}
+                                    requestedByUser={seasonRequestedByUser4k}
                                   />
                                 </div>
                               </>
@@ -1015,10 +1113,18 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
                             )}
                           {mSeason4k?.status4k ===
                             MediaStatus.PARTIALLY_AVAILABLE &&
-                            show4k && (
+                            show4k &&
+                            !hideSeasonAvailability4k && (
                               <>
                                 <div className="hidden md:flex">
-                                  <Badge badgeType="success">
+                                  <Badge
+                                    badgeType="success"
+                                    className={
+                                      showSeasonPurple4k
+                                        ? '!border-purple-500 !bg-purple-500/80 !text-purple-100'
+                                        : undefined
+                                    }
+                                  >
                                     {intl.formatMessage(messages.status4k, {
                                       status: intl.formatMessage(
                                         globalMessages.partiallyavailable
@@ -1030,15 +1136,24 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
                                   <StatusBadgeMini
                                     status={MediaStatus.PARTIALLY_AVAILABLE}
                                     is4k={true}
+                                    requestedByUser={seasonRequestedByUser4k}
                                   />
                                 </div>
                               </>
                             )}
                           {mSeason4k?.status4k === MediaStatus.AVAILABLE &&
-                            show4k && (
+                            show4k &&
+                            !hideSeasonAvailability4k && (
                               <>
                                 <div className="hidden md:flex">
-                                  <Badge badgeType="success">
+                                  <Badge
+                                    badgeType="success"
+                                    className={
+                                      showSeasonPurple4k
+                                        ? '!border-purple-500 !bg-purple-500/80 !text-purple-100'
+                                        : undefined
+                                    }
+                                  >
                                     {intl.formatMessage(messages.status4k, {
                                       status: intl.formatMessage(
                                         globalMessages.available
@@ -1050,6 +1165,7 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
                                   <StatusBadgeMini
                                     status={MediaStatus.AVAILABLE}
                                     is4k={true}
+                                    requestedByUser={seasonRequestedByUser4k}
                                   />
                                 </div>
                               </>

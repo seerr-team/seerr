@@ -12,7 +12,7 @@ interface RequestModalProps {
   tmdbId: number;
   is4k?: boolean;
   editRequest?: NonFunctionProperties<MediaRequest>;
-  onComplete?: (newStatus: MediaStatus) => void;
+  onComplete?: (newStatus: MediaStatus, requestedByUser?: boolean) => void;
   onCancel?: () => void;
   onUpdating?: (isUpdating: boolean) => void;
 }
