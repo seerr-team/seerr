@@ -219,17 +219,17 @@ searchProviders.push({
 });
 
 searchProviders.push({
-  pattern: new RegExp(/(?<=year:)\d{4}/),
+  pattern: /(?<=(?<!\w)(?:year|y):)\d{4}(?!\d)/,
   search: async ({ id: year, query, language }) => {
     const tmdb = new TheMovieDb();
 
     const moviesPromise = tmdb.searchMovies({
-      query: query?.replace(new RegExp(/year:\d{4}/), '') ?? '',
+      query: query?.replace(/\b(?:year|y):\d{4}(?!\d)/i, '').trim() ?? '',
       year: parseInt(year),
       language,
     });
     const tvShowsPromise = tmdb.searchTvShows({
-      query: query?.replace(new RegExp(/year:\d{4}/), '') ?? '',
+      query: query?.replace(/\b(?:year|y):\d{4}(?!\d)/i, '').trim() ?? '',
       year: parseInt(year),
       language,
     });

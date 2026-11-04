@@ -40,6 +40,8 @@ describe('parseTrailingYear', () => {
     }
     assert.ok(findSearchProvider('tmdb:123 2020'));
     assert.ok(findSearchProvider('the thing year:1982'));
+    assert.ok(findSearchProvider('avatar y:2009'));
+    assert.equal(findSearchProvider('comedy:2009'), undefined);
   });
 });
 
@@ -57,6 +59,37 @@ const page = (results: object[]) => ({
 
 describe('searchTitleWithYear', () => {
   afterEach(() => mock.restoreAll());
+
+  it('treats y: as the same explicit year filter and preserves provider priority', async () => {
+    const get = mock.method(api, 'get', async () => page([]));
+    const provider = findSearchProvider('avatar y:2009');
+    assert.ok(provider);
+    assert.equal('avatar y:2009'.match(provider.pattern)?.[0], '2009');
+    await provider.search({
+      id: '2009',
+      query: 'Avatar Y:2009',
+      language: 'en',
+    });
+    assert.equal(get.mock.calls.length, 2);
+    for (const call of get.mock.calls) {
+      assert.equal(call.arguments[1]?.params?.query, 'Avatar');
+      assert.equal(call.arguments[1]?.params?.language, 'en');
+    }
+    assert.equal(
+      get.mock.calls.find((call) => call.arguments[0] === '/search/movie')
+        ?.arguments[1]?.params?.primary_release_year,
+      2009
+    );
+    assert.equal(
+      get.mock.calls.find((call) => call.arguments[0] === '/search/tv')
+        ?.arguments[1]?.params?.first_air_date_year,
+      2009
+    );
+    assert.equal(
+      findSearchProvider('tmdb:123 y:2009'),
+      findSearchProvider('tmdb:123')
+    );
+  });
 
   it('uses filtered movie and TV results and forwards the language', async () => {
     const get = mock.method(api, 'get', async (endpoint: string) => {
