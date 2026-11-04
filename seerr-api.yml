@@ -253,6 +253,9 @@ components:
         hideRequested:
           type: boolean
           example: false
+        warnNonReleased:
+          type: boolean
+          example: false
         partialRequestsEnabled:
           type: boolean
           example: false
