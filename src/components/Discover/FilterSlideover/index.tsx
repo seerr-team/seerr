@@ -12,14 +12,16 @@ import {
   USCertificationSelector,
   WatchProviderSelector,
 } from '@app/components/Selector';
+import useSavedFilters from '@app/hooks/useSavedFilters';
 import useSettings from '@app/hooks/useSettings';
 import {
   useBatchUpdateQueryParams,
   useUpdateQueryParams,
 } from '@app/hooks/useUpdateQueryParams';
 import defineMessages from '@app/utils/defineMessages';
-import { XCircleIcon } from '@heroicons/react/24/outline';
+import { BookmarkSquareIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import Datepicker from '@seerr-team/react-tailwindcss-datepicker';
+import { useEffect } from 'react';
 import { useIntl } from 'react-intl';
 
 const messages = defineMessages('components.Discover.FilterSlideover', {
@@ -45,6 +47,7 @@ const messages = defineMessages('components.Discover.FilterSlideover', {
   voteCount: 'Number of votes between {minValue} and {maxValue}',
   status: 'Status',
   certification: 'Content Rating',
+  saveActiveFilters: 'Save Active Filters',
 });
 
 type FilterSlideoverProps = {
@@ -64,6 +67,16 @@ const FilterSlideover = ({
   const { currentSettings } = useSettings();
   const updateQueryParams = useUpdateQueryParams({});
   const batchUpdateQueryParams = useBatchUpdateQueryParams({});
+  const { saveFilters, getSavedFilters, removeSavedFilters } =
+    useSavedFilters(type);
+
+  useEffect(() => {
+    const savedFilters = getSavedFilters();
+    if (savedFilters && Object.keys(currentFilters).length === 0) {
+      batchUpdateQueryParams(savedFilters);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const dateGte =
     type === 'movie' ? 'primaryReleaseDateGte' : 'firstAirDateGte';
@@ -357,7 +370,19 @@ const FilterSlideover = ({
             }
           }}
         />
-        <div className="pt-4">
+        <div className="flex flex-col gap-2 pt-4">
+          <Button
+            className="w-full"
+            buttonType="primary"
+            disabled={Object.keys(currentFilters).length === 0}
+            onClick={() => {
+              saveFilters(currentFilters);
+              onClose();
+            }}
+          >
+            <BookmarkSquareIcon />
+            <span>{intl.formatMessage(messages.saveActiveFilters)}</span>
+          </Button>
           <Button
             className="w-full"
             disabled={Object.keys(currentFilters).length === 0}
@@ -369,6 +394,7 @@ const FilterSlideover = ({
                 copyCurrent[k] = undefined;
               });
               batchUpdateQueryParams(copyCurrent);
+              removeSavedFilters();
               onClose();
             }}
           >
