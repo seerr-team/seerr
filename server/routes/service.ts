@@ -1,6 +1,7 @@
 import RadarrAPI from '@server/api/servarr/radarr';
 import SonarrAPI from '@server/api/servarr/sonarr';
 import TheMovieDb from '@server/api/themoviedb';
+import Tvdb from '@server/api/tvdb';
 import type {
   ServiceCommonServer,
   ServiceCommonServerWithDetails,
@@ -208,6 +209,35 @@ serviceRoutes.get<{ tmdbId: string }>(
       return next({
         status: 500,
         message: 'Something went wrong trying to fetch series information',
+      });
+    }
+  }
+);
+
+serviceRoutes.get<{ tvdbId: string }>(
+  '/tvdb/:tvdbId/seasons',
+  async (req, res, next) => {
+    try {
+      const tvdb = await Tvdb.getInstance();
+      const seasons = await tvdb.getOfficialSeasons(Number(req.params.tvdbId));
+
+      if (!seasons) {
+        return next({
+          status: 404,
+          message: 'Could not retrieve seasons for this series',
+        });
+      }
+
+      return res.status(200).json(seasons);
+    } catch (e) {
+      logger.error('Failed to fetch TVDB seasons', {
+        label: 'Media Request',
+        message: e.message,
+      });
+
+      return next({
+        status: 500,
+        message: 'Something went wrong trying to fetch season information',
       });
     }
   }

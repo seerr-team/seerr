@@ -21,6 +21,7 @@ import type { RadarrSettings, SonarrSettings } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { getHostname } from '@server/utils/getHostname';
+import { externalSeasonNumber } from '@server/utils/seasonHelpers';
 
 class AvailabilitySync {
   public running = false;
@@ -854,7 +855,7 @@ class AvailabilitySync {
 
       const seasonIsAvailable = sonarrSeasons?.find(
         ({ seasonNumber, statistics }) =>
-          season.seasonNumber === seasonNumber &&
+          externalSeasonNumber(season) === seasonNumber &&
           statistics?.episodeFileCount &&
           statistics?.episodeFileCount > 0
       );
@@ -1026,7 +1027,7 @@ class AvailabilitySync {
     }
 
     const seasonMeta = plexSeasons?.find(
-      (plexSeason) => plexSeason.index === season.seasonNumber
+      (plexSeason) => plexSeason.index === externalSeasonNumber(season)
     );
 
     if (seasonMeta) {
@@ -1175,7 +1176,8 @@ class AvailabilitySync {
     }
 
     const seasonMeta = jellyfinSeasons?.find(
-      (jellyfinSeason) => jellyfinSeason.IndexNumber === season.seasonNumber
+      (jellyfinSeason) =>
+        jellyfinSeason.IndexNumber === externalSeasonNumber(season)
     );
 
     if (seasonMeta) {
