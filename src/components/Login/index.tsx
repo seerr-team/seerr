@@ -11,6 +11,7 @@ import PlexLoginButton from '@app/components/Login/PlexLoginButton';
 import useSettings from '@app/hooks/useSettings';
 import { useUser } from '@app/hooks/useUser';
 import defineMessages from '@app/utils/defineMessages';
+import { getSafeRedirect } from '@app/utils/urlValidationHelper';
 import { Transition } from '@headlessui/react';
 import { XCircleIcon } from '@heroicons/react/24/solid';
 import { MediaServerType } from '@server/constants/server';
@@ -68,10 +69,10 @@ const Login = () => {
   }, [authToken, revalidate]);
 
   // Effect that is triggered whenever `useUser`'s user changes. If we get a new
-  // valid user, we redirect the user to the home page as the login was successful.
+  // valid user, we redirect them to the page they requested.
   useEffect(() => {
     if (user) {
-      router.push('/');
+      router.push(getSafeRedirect(router.query.redirect));
     }
   }, [user, router]);
 
