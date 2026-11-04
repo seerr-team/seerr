@@ -89,12 +89,19 @@ components:
         tmdbId:
           type: number
           example: 1
+          readOnly: true
         ratingKey:
           type: string
-        type:
+          readOnly: true
+        mediaType:
           type: string
+          enum:
+            - movie
+            - tv
+          readOnly: true
         title:
           type: string
+          readOnly: true
         media:
           $ref: '#/components/schemas/MediaInfo'
         createdAt:
@@ -107,6 +114,34 @@ components:
           readOnly: true
         requestedBy:
           $ref: '#/components/schemas/User'
+      required:
+        - id
+        - tmdbId
+        - ratingKey
+        - mediaType
+        - title
+        - media
+        - createdAt
+        - updatedAt
+        - requestedBy
+    WatchlistCreate:
+      type: object
+      properties:
+        tmdbId:
+          type: number
+          example: 1
+        mediaType:
+          type: string
+          enum:
+            - movie
+            - tv
+        ratingKey:
+          type: string
+        title:
+          type: string
+      required:
+        - tmdbId
+        - mediaType
     User:
       type: object
       properties:
@@ -153,7 +188,6 @@ components:
           readOnly: true
       required:
         - id
-        - email
         - createdAt
         - updatedAt
     UserSettings:
@@ -5075,7 +5109,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/WatchlistRequest'
+              $ref: '#/components/schemas/WatchlistCreate'
       responses:
         '201':
           description: Watchlist data returned
