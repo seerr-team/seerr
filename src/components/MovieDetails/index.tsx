@@ -51,7 +51,7 @@ import {
 import { type RatingResponse } from '@server/api/ratings';
 import { IssueStatus } from '@server/constants/issue';
 import { MediaStatus, MediaType } from '@server/constants/media';
-import { MediaServerType } from '@server/constants/server';
+import { MediaServerType, ServerType } from '@server/constants/server';
 import type { MovieDetails as MovieDetailsType } from '@server/models/Movie';
 import axios from 'axios';
 import { countries } from 'country-flag-icons';
@@ -305,26 +305,38 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
 
   function getAvailableMediaServerName() {
     if (settings.currentSettings.mediaServerType === MediaServerType.EMBY) {
-      return intl.formatMessage(messages.play, { mediaServerName: 'Emby' });
+      return intl.formatMessage(messages.play, {
+        mediaServerName: ServerType.EMBY,
+      });
     }
 
     if (settings.currentSettings.mediaServerType === MediaServerType.PLEX) {
-      return intl.formatMessage(messages.play, { mediaServerName: 'Plex' });
+      return intl.formatMessage(messages.play, {
+        mediaServerName: ServerType.PLEX,
+      });
     }
 
-    return intl.formatMessage(messages.play, { mediaServerName: 'Jellyfin' });
+    return intl.formatMessage(messages.play, {
+      mediaServerName: ServerType.JELLYFIN,
+    });
   }
 
   function getAvailable4kMediaServerName() {
     if (settings.currentSettings.mediaServerType === MediaServerType.EMBY) {
-      return intl.formatMessage(messages.play, { mediaServerName: 'Emby' });
+      return intl.formatMessage(messages.play, {
+        mediaServerName: ServerType.EMBY,
+      });
     }
 
     if (settings.currentSettings.mediaServerType === MediaServerType.PLEX) {
-      return intl.formatMessage(messages.play4k, { mediaServerName: 'Plex' });
+      return intl.formatMessage(messages.play4k, {
+        mediaServerName: ServerType.PLEX,
+      });
     }
 
-    return intl.formatMessage(messages.play4k, { mediaServerName: 'Jellyfin' });
+    return intl.formatMessage(messages.play4k, {
+      mediaServerName: ServerType.JELLYFIN,
+    });
   }
 
   const onClickWatchlistBtn = async (): Promise<void> => {
