@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { before, beforeEach, describe, it, mock } from 'node:test';
 
-import JellyfinAPI from '@server/api/jellyfin';
+import JellyfinMainAPI from '@server/api/jellyfinMain';
 import { ApiErrorCode } from '@server/constants/error';
 import { MediaServerType } from '@server/constants/server';
 import { UserType } from '@server/constants/user';
@@ -58,19 +58,19 @@ const defaultAuthenticateResponse = {
 };
 
 const initiateQCMock = mock.method(
-  JellyfinAPI.prototype,
+  JellyfinMainAPI.prototype,
   'initiateQuickConnect',
   async () => ({ ...defaultInitiateResponse })
 );
 
 const checkQCMock = mock.method(
-  JellyfinAPI.prototype,
+  JellyfinMainAPI.prototype,
   'checkQuickConnect',
   async () => ({ ...defaultCheckResponse })
 );
 
 const authenticateQCMock = mock.method(
-  JellyfinAPI.prototype,
+  JellyfinMainAPI.prototype,
   'authenticateQuickConnect',
   async () => ({ ...defaultAuthenticateResponse })
 );

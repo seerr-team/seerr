@@ -1,4 +1,4 @@
-import JellyfinAPI from '@server/api/jellyfin';
+import JellyfinMainAPI from '@server/api/jellyfinMain';
 import PlexTvAPI from '@server/api/plextv';
 import { ApiErrorCode } from '@server/constants/error';
 import { MediaServerType } from '@server/constants/server';
@@ -396,7 +396,7 @@ userSettingsRoutes.post<{ username: string; password: string }>(
       req.user?.id === 1 ? 'BOT_seerr' : `BOT_seerr_${req.user.username ?? ''}`
     ).toString('base64');
 
-    const jellyfinserver = new JellyfinAPI(hostname, undefined, deviceId);
+    const jellyfinserver = new JellyfinMainAPI(hostname, undefined, deviceId);
 
     const ip = req.ip;
     let clientIp: string | undefined;
@@ -549,7 +549,7 @@ userSettingsRoutes.post<{ secret: string }>(
     }
 
     const hostname = getHostname();
-    const jellyfinServer = new JellyfinAPI(hostname);
+    const jellyfinServer = new JellyfinMainAPI(hostname);
 
     try {
       const account = await jellyfinServer.authenticateQuickConnect(secret);

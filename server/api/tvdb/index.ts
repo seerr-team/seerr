@@ -525,6 +525,7 @@ class Tvdb extends ExternalAPI implements TvShowProvider {
       overview: episode.overview || '',
       season_number: episode.seasonNumber,
       production_code: '',
+      runtime: episode.runtime,
       show_id: tvId,
       still_path:
         episode.image && !episode.image.startsWith('https://')

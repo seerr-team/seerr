@@ -216,6 +216,7 @@ export interface TmdbTvEpisodeResult {
   name: string;
   overview: string;
   production_code: string;
+  runtime: number;
   season_number: number;
   show_id: number;
   still_path: string;

@@ -1,4 +1,4 @@
-import JellyfinAPI from '@server/api/jellyfin';
+import JellyfinMainAPI from '@server/api/jellyfinMain';
 import PlexTvAPI from '@server/api/plextv';
 import TautulliAPI from '@server/api/tautulli';
 import { MediaType } from '@server/constants/media';
@@ -22,6 +22,7 @@ import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { isAuthenticated } from '@server/middleware/auth';
 import { getHostname } from '@server/utils/getHostname';
+import { getMediaServerAdmin } from '@server/utils/getMediaServerAdmin';
 import { normalizeJellyfinGuid } from '@server/utils/jellyfin';
 import { isOwnProfileOrAdmin } from '@server/utils/profileMiddleware';
 import { Router } from 'express';
@@ -661,12 +662,11 @@ router.post(
       const userRepository = getRepository(User);
       const body = req.body as { plexIds: string[] } | undefined;
 
-      // taken from auth.ts
-      const mainUser = await userRepository.findOneOrFail({
-        select: { id: true, plexToken: true },
-        where: { id: 1 },
-      });
-      const mainPlexTv = new PlexTvAPI(mainUser.plexToken ?? '');
+      const admin = await getMediaServerAdmin(MediaServerType.PLEX);
+      if (!admin) {
+        throw new Error('Admin user not found');
+      }
+      const mainPlexTv = new PlexTvAPI(admin.plexToken ?? '');
 
       const plexUsersResponse = await mainPlexTv.getUsers();
       const createdUsers: User[] = [];
@@ -733,15 +733,13 @@ router.post(
       const userRepository = getRepository(User);
       const body = req.body as { jellyfinUserIds: string[] };
 
-      // taken from auth.ts
-      const admin = await userRepository.findOneOrFail({
-        where: { id: 1 },
-        select: ['id', 'jellyfinDeviceId', 'jellyfinUserId'],
-        order: { id: 'ASC' },
-      });
+      const admin = await getMediaServerAdmin(MediaServerType.JELLYFIN);
+      if (!admin) {
+        throw new Error('Admin user not found');
+      }
 
       const hostname = getHostname();
-      const jellyfinClient = new JellyfinAPI(
+      const jellyfinClient = new JellyfinMainAPI(
         hostname,
         settings.jellyfin.apiKey,
         admin.jellyfinDeviceId ?? ''

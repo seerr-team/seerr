@@ -1,5 +1,6 @@
 import csurf from '@dr.pogodin/csurf';
 import PlexAPI from '@server/api/plexapi';
+import { MediaServerType } from '@server/constants/server';
 import dataSource, { getRepository } from '@server/datasource';
 import DiscoverSlider from '@server/entity/DiscoverSlider';
 import { Session } from '@server/entity/Session';
@@ -32,6 +33,7 @@ import createCustomProxyAgent, {
 import { isPgsql } from '@server/utils/dbType';
 import { initDemoData } from '@server/utils/demoMode';
 import { initializeDnsCache } from '@server/utils/dnsCache';
+import { getMediaServerAdmin } from '@server/utils/getMediaServerAdmin';
 import restartFlag from '@server/utils/restartFlag';
 import '@server/utils/userAgent';
 import { getClientIp } from '@supercharge/request-ip';
@@ -111,11 +113,7 @@ app
       settings.plex.libraries.length > 1 &&
       !settings.plex.libraries[0].type
     ) {
-      const userRepository = getRepository(User);
-      const admin = await userRepository.findOne({
-        select: { id: true, plexToken: true },
-        where: { id: 1 },
-      });
+      const admin = await getMediaServerAdmin(MediaServerType.PLEX);
 
       if (admin) {
         logger.info('Migrating Plex libraries to include media type', {
