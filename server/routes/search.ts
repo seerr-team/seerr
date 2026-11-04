@@ -1,15 +1,55 @@
 import TheMovieDb from '@server/api/themoviedb';
-import type { TmdbSearchMultiResponse } from '@server/api/themoviedb/interfaces';
+import type {
+  TmdbCollectionResult,
+  TmdbMovieResult,
+  TmdbPersonResult,
+  TmdbSearchMultiResponse,
+  TmdbTvResult,
+} from '@server/api/themoviedb/interfaces';
 import Media from '@server/entity/Media';
 import { findSearchProvider } from '@server/lib/search';
 import logger from '@server/logger';
 import { mapSearchResults } from '@server/models/Search';
 import { Router } from 'express';
 
+type SearchResponse<T> = {
+  page: number;
+  total_pages: number;
+  total_results: number;
+  results: T[];
+};
+
+function tagResults(
+  response: SearchResponse<
+    TmdbMovieResult | TmdbTvResult | TmdbPersonResult | TmdbCollectionResult
+  >,
+  mediaType: 'movie' | 'tv' | 'person' | 'collection'
+): TmdbSearchMultiResponse {
+  return {
+    ...response,
+    results: response.results.map((r) => ({
+      ...r,
+      media_type: mediaType,
+    })) as TmdbSearchMultiResponse['results'],
+  };
+}
+
 const searchRoutes = Router();
 
 searchRoutes.get('/', async (req, res, next) => {
   const queryString = req.query.query as string;
+
+  if (!queryString) {
+    return next({ status: 400, message: 'query is required.' });
+  }
+
+  const searchType =
+    (req.query.searchType as
+      | 'all'
+      | 'movie'
+      | 'tv'
+      | 'person'
+      | 'collection') ?? 'all';
   const searchProvider = findSearchProvider(queryString.toLowerCase());
   let results: TmdbSearchMultiResponse;
 
@@ -25,12 +65,26 @@ searchRoutes.get('/', async (req, res, next) => {
       });
     } else {
       const tmdb = new TheMovieDb();
-
-      results = await tmdb.searchMulti({
+      const searchParams = {
         query: queryString,
         page: Number(req.query.page),
         language: (req.query.language as string) ?? req.locale,
-      });
+      };
+
+      if (searchType === 'movie') {
+        results = tagResults(await tmdb.searchMovies(searchParams), 'movie');
+      } else if (searchType === 'tv') {
+        results = tagResults(await tmdb.searchTvShows(searchParams), 'tv');
+      } else if (searchType === 'person') {
+        results = tagResults(await tmdb.searchPerson(searchParams), 'person');
+      } else if (searchType === 'collection') {
+        results = tagResults(
+          await tmdb.searchCollections(searchParams),
+          'collection'
+        );
+      } else {
+        results = await tmdb.searchMulti(searchParams);
+      }
     }
 
     const media = await Media.getRelatedMedia(
