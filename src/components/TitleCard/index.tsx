@@ -5,9 +5,12 @@ import CachedImage from '@app/components/Common/CachedImage';
 import StatusBadgeMini from '@app/components/Common/StatusBadgeMini';
 import Tooltip from '@app/components/Common/Tooltip';
 import RequestModal from '@app/components/RequestModal';
+import AvailabilityPopover from '@app/components/TitleCard/AvailabilityPopover';
 import ErrorCard from '@app/components/TitleCard/ErrorCard';
 import Placeholder from '@app/components/TitleCard/Placeholder';
+import QualitySelect from '@app/components/TitleCard/QualitySelect';
 import { useIsTouch } from '@app/hooks/useIsTouch';
+import useSettings from '@app/hooks/useSettings';
 import useToasts from '@app/hooks/useToasts';
 import { Permission, UserType, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
@@ -39,8 +42,10 @@ interface TitleCardProps {
   userScore?: number;
   mediaType: MediaType;
   status?: MediaStatus;
+  status4k?: MediaStatus;
   canExpand?: boolean;
   inProgress?: boolean;
+  inProgress4k?: boolean;
   isAddedToWatchlist?: number | boolean;
   mutateParent?: () => void;
 }
@@ -62,19 +67,26 @@ const TitleCard = ({
   year,
   title,
   status,
+  status4k,
   mediaType,
   isAddedToWatchlist = false,
   inProgress = false,
+  inProgress4k = false,
   canExpand = false,
   mutateParent,
 }: TitleCardProps) => {
   const isTouch = useIsTouch();
   const intl = useIntl();
+  const settings = useSettings();
   const { user, hasPermission } = useUser();
   const [isUpdating, setIsUpdating] = useState(false);
   const [currentStatus, setCurrentStatus] = useState(status);
+  const [currentStatus4k, setCurrentStatus4k] = useState(status4k);
   const [showDetail, setShowDetail] = useState(false);
   const [showRequestModal, setShowRequestModal] = useState(false);
+  const [showQualityBackdrop, setShowQualityBackdrop] = useState(false);
+  const [requestIs4k, setRequestIs4k] = useState(false);
+  const [requestBoth, setRequestBoth] = useState(false);
   const { addToast } = useToasts();
   const [toggleWatchlist, setToggleWatchlist] =
     useState<boolean>(!isAddedToWatchlist);
@@ -90,10 +102,28 @@ const TitleCard = ({
     setCurrentStatus(status);
   }, [status]);
 
-  const requestComplete = useCallback((newStatus: MediaStatus) => {
-    setCurrentStatus(newStatus);
-    setShowRequestModal(false);
-  }, []);
+  useEffect(() => {
+    setCurrentStatus4k(status4k);
+  }, [status4k]);
+
+  const requestComplete = useCallback(
+    (newStatus: MediaStatus) => {
+      if (requestIs4k) {
+        setCurrentStatus4k(newStatus);
+      } else {
+        setCurrentStatus(newStatus);
+      }
+
+      if (requestBoth && !requestIs4k) {
+        setRequestBoth(false);
+        setRequestIs4k(true);
+        return;
+      }
+
+      setShowRequestModal(false);
+    },
+    [requestIs4k, requestBoth]
+  );
 
   const requestUpdating = useCallback(
     (status: boolean) => setIsUpdating(status),
@@ -298,21 +328,99 @@ const TitleCard = ({
     setIsUpdating(false);
   };
 
-  const closeModal = useCallback(() => setShowRequestModal(false), []);
+  const closeModal = useCallback(() => {
+    setShowRequestModal(false);
+    setRequestBoth(false);
+  }, []);
+
+  const isMovieLike = mediaType === 'movie' || mediaType === 'collection';
 
   const showRequestButton = hasPermission(
     [
       Permission.REQUEST,
-      mediaType === 'movie' || mediaType === 'collection'
-        ? Permission.REQUEST_MOVIE
-        : Permission.REQUEST_TV,
+      isMovieLike ? Permission.REQUEST_MOVIE : Permission.REQUEST_TV,
     ],
     { type: 'or' }
   );
 
+  const is4kEnabled = isMovieLike
+    ? settings.currentSettings.movie4kEnabled
+    : settings.currentSettings.series4kEnabled;
+
+  const canRequest4kQuality =
+    hasPermission(
+      [
+        Permission.REQUEST_4K,
+        isMovieLike ? Permission.REQUEST_4K_MOVIE : Permission.REQUEST_4K_TV,
+      ],
+      { type: 'or' }
+    ) && is4kEnabled;
+
+  const canView4kStatus =
+    hasPermission(
+      [
+        Permission.MANAGE_REQUESTS,
+        Permission.REQUEST_4K,
+        isMovieLike ? Permission.REQUEST_4K_MOVIE : Permission.REQUEST_4K_TV,
+      ],
+      { type: 'or' }
+    ) && is4kEnabled;
+
   const showHideButton = hasPermission([Permission.MANAGE_BLOCKLIST], {
     type: 'or',
   });
+
+  const isBlocklisted = currentStatus === MediaStatus.BLOCKLISTED;
+  const isBlocklisted4k = currentStatus4k === MediaStatus.BLOCKLISTED;
+
+  // RequestButton decides "more" from the season data behind isShowComplete,
+  // which discover results don't carry, so an unfinished status stands in.
+  const gapKind = (gapStatus?: MediaStatus): 'new' | 'more' | null => {
+    if (
+      !gapStatus ||
+      gapStatus === MediaStatus.UNKNOWN ||
+      gapStatus === MediaStatus.DELETED
+    ) {
+      return 'new';
+    }
+
+    if (
+      mediaType === 'tv' &&
+      gapStatus !== MediaStatus.AVAILABLE &&
+      gapStatus !== MediaStatus.BLOCKLISTED
+    ) {
+      return 'more';
+    }
+
+    return null;
+  };
+
+  const hdGap =
+    showRequestButton && !isBlocklisted ? gapKind(currentStatus) : null;
+  const gap4k =
+    canRequest4kQuality && !isBlocklisted4k ? gapKind(currentStatus4k) : null;
+
+  const canRequest = hdGap !== null;
+  const canRequest4k = gap4k !== null;
+
+  const has4kState =
+    canView4kStatus &&
+    !!currentStatus4k &&
+    [
+      MediaStatus.PENDING,
+      MediaStatus.PROCESSING,
+      MediaStatus.PARTIALLY_AVAILABLE,
+      MediaStatus.AVAILABLE,
+    ].includes(currentStatus4k);
+
+  const showStatusBadge =
+    (!!currentStatus && currentStatus !== MediaStatus.UNKNOWN) || has4kState;
+
+  const openRequestModal = (is4k: boolean, both = false) => {
+    setRequestBoth(both);
+    setRequestIs4k(is4k);
+    setShowRequestModal(true);
+  };
 
   return (
     <div
@@ -321,8 +429,10 @@ const TitleCard = ({
       ref={cardRef}
     >
       <RequestModal
+        key={requestIs4k ? 'request-4k' : 'request-hd'}
         tmdbId={id}
         show={showRequestModal}
+        is4k={requestIs4k}
         type={
           mediaType === 'movie'
             ? 'movie'
@@ -385,7 +495,7 @@ const TitleCard = ({
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             fill
           />
-          <div className="absolute left-0 right-0 flex items-center justify-between p-2">
+          <div className="absolute left-0 right-0 flex items-start justify-between p-2">
             <div
               className={`pointer-events-none z-40 self-start rounded-full border shadow-md ${
                 mediaType === 'movie' || mediaType === 'collection'
@@ -401,46 +511,92 @@ const TitleCard = ({
                     : intl.formatMessage(globalMessages.tvshow)}
               </div>
             </div>
-            {showDetail && currentStatus !== MediaStatus.BLOCKLISTED && (
-              <div className="flex flex-col gap-1">
-                {user?.userType !== UserType.PLEX &&
-                  (toggleWatchlist ? (
-                    <Button
-                      buttonType={'ghost'}
-                      className="z-40"
-                      buttonSize={'sm'}
-                      onClick={onClickWatchlistBtn}
+            <div className="flex flex-col items-end gap-1">
+              {showStatusBadge &&
+                (canView4kStatus ? (
+                  <Tooltip
+                    content={
+                      <AvailabilityPopover
+                        status={currentStatus}
+                        status4k={currentStatus4k}
+                        show4k
+                        inProgress={inProgress}
+                        inProgress4k={inProgress4k}
+                      />
+                    }
+                    tooltipConfig={{
+                      followCursor: false,
+                      trigger: ['hover', 'click'],
+                      placement: 'bottom-end',
+                      delayShow: 250,
+                      offset: [0, 8],
+                    }}
+                    className="!px-3 !py-2"
+                  >
+                    <div
+                      className={`z-40 flex origin-top-right cursor-help transition duration-300 ${
+                        showDetail ? 'scale-[0.952]' : 'scale-100'
+                      }`}
                     >
-                      <StarIcon className={'h-3 text-amber-300'} />
-                    </Button>
-                  ) : (
-                    <Button
-                      className="z-40"
-                      buttonSize={'sm'}
-                      onClick={onClickDeleteWatchlistBtn}
-                    >
-                      <MinusCircleIcon className={'h-3'} />
-                    </Button>
-                  ))}
-                {showHideButton &&
-                  currentStatus !== MediaStatus.PROCESSING &&
-                  currentStatus !== MediaStatus.AVAILABLE &&
-                  currentStatus !== MediaStatus.PARTIALLY_AVAILABLE &&
-                  currentStatus !== MediaStatus.PENDING && (
-                    <Button
-                      buttonType={'ghost'}
-                      className="z-40"
-                      buttonSize={'sm'}
-                      onClick={() => setShowBlocklistModal(true)}
-                    >
-                      <EyeSlashIcon className={'h-3'} />
-                    </Button>
-                  )}
-              </div>
-            )}
-            {showDetail &&
-              showHideButton &&
-              currentStatus == MediaStatus.BLOCKLISTED && (
+                      <StatusBadgeMini
+                        status={currentStatus ?? MediaStatus.UNKNOWN}
+                        ringStatus4k={currentStatus4k}
+                        inProgress={inProgress}
+                        shrink
+                      />
+                    </div>
+                  </Tooltip>
+                ) : (
+                  <div
+                    className={`pointer-events-none z-40 flex origin-top-right transition duration-300 ${
+                      showDetail ? 'scale-[0.952]' : 'scale-100'
+                    }`}
+                  >
+                    <StatusBadgeMini
+                      status={currentStatus ?? MediaStatus.UNKNOWN}
+                      inProgress={inProgress}
+                      shrink
+                    />
+                  </div>
+                ))}
+              {showDetail && !isBlocklisted && (
+                <>
+                  {user?.userType !== UserType.PLEX &&
+                    (toggleWatchlist ? (
+                      <Button
+                        buttonType={'ghost'}
+                        className="z-40"
+                        buttonSize={'sm'}
+                        onClick={onClickWatchlistBtn}
+                      >
+                        <StarIcon className={'h-3 text-amber-300'} />
+                      </Button>
+                    ) : (
+                      <Button
+                        className="z-40"
+                        buttonSize={'sm'}
+                        onClick={onClickDeleteWatchlistBtn}
+                      >
+                        <MinusCircleIcon className={'h-3'} />
+                      </Button>
+                    ))}
+                  {showHideButton &&
+                    currentStatus !== MediaStatus.PROCESSING &&
+                    currentStatus !== MediaStatus.AVAILABLE &&
+                    currentStatus !== MediaStatus.PARTIALLY_AVAILABLE &&
+                    currentStatus !== MediaStatus.PENDING && (
+                      <Button
+                        buttonType={'ghost'}
+                        className="z-40"
+                        buttonSize={'sm'}
+                        onClick={() => setShowBlocklistModal(true)}
+                      >
+                        <EyeSlashIcon className={'h-3'} />
+                      </Button>
+                    )}
+                </>
+              )}
+              {showDetail && showHideButton && isBlocklisted && (
                 <Tooltip
                   content={intl.formatMessage(
                     globalMessages.removefromBlocklist
@@ -456,17 +612,7 @@ const TitleCard = ({
                   </Button>
                 </Tooltip>
               )}
-            {currentStatus && currentStatus !== MediaStatus.UNKNOWN && (
-              <div className="flex flex-col items-center gap-1">
-                <div className="pointer-events-none z-40 flex">
-                  <StatusBadgeMini
-                    status={currentStatus}
-                    inProgress={inProgress}
-                    shrink
-                  />
-                </div>
-              </div>
-            )}
+            </div>
           </div>
           <Transition
             as={Fragment}
@@ -511,12 +657,7 @@ const TitleCard = ({
                 <div className="flex h-full w-full items-end">
                   <div
                     className={`px-2 text-white ${
-                      !showRequestButton ||
-                      (currentStatus &&
-                        currentStatus !== MediaStatus.UNKNOWN &&
-                        currentStatus !== MediaStatus.DELETED)
-                        ? 'pb-2'
-                        : 'pb-11'
+                      canRequest || canRequest4k ? 'pb-11' : 'pb-2'
                     }`}
                   >
                     {year && <div className="text-sm font-medium">{year}</div>}
@@ -537,13 +678,7 @@ const TitleCard = ({
                     <div
                       className="whitespace-normal text-xs"
                       style={{
-                        WebkitLineClamp:
-                          !showRequestButton ||
-                          (currentStatus &&
-                            currentStatus !== MediaStatus.UNKNOWN &&
-                            currentStatus !== MediaStatus.DELETED)
-                            ? 5
-                            : 3,
+                        WebkitLineClamp: canRequest || canRequest4k ? 3 : 5,
                         display: '-webkit-box',
                         overflow: 'hidden',
                         WebkitBoxOrient: 'vertical',
@@ -556,24 +691,97 @@ const TitleCard = ({
                 </div>
               </Link>
 
+              {showQualityBackdrop && (
+                <div className="absolute inset-0 z-40 bg-gray-900/75 backdrop-blur-sm md:hidden" />
+              )}
+
               <div className="absolute bottom-0 left-0 right-0 flex justify-between px-2 py-2">
-                {showRequestButton &&
-                  (!currentStatus ||
-                    currentStatus === MediaStatus.UNKNOWN ||
-                    currentStatus === MediaStatus.DELETED) && (
-                    <Button
-                      buttonType="primary"
-                      buttonSize="sm"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setShowRequestModal(true);
-                      }}
-                      className="h-7 w-full"
-                    >
-                      <ArrowDownTrayIcon />
-                      <span>{intl.formatMessage(globalMessages.request)}</span>
-                    </Button>
-                  )}
+                {canRequest && canRequest4k ? (
+                  <>
+                    <div className="hidden h-7 w-full overflow-hidden rounded-md md:flex">
+                      <Button
+                        buttonType="primary"
+                        buttonSize="sm"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          openRequestModal(false);
+                        }}
+                        className="h-7 flex-1 rounded-none"
+                      >
+                        <ArrowDownTrayIcon />
+                        <span>
+                          {intl.formatMessage(
+                            hdGap === 'more'
+                              ? globalMessages.requestmore
+                              : globalMessages.request
+                          )}
+                        </span>
+                      </Button>
+                      <Button
+                        buttonType="primary"
+                        buttonSize="sm"
+                        aria-label={intl.formatMessage(
+                          globalMessages.request4k
+                        )}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          openRequestModal(true);
+                        }}
+                        className="-ml-px h-7 w-11 rounded-none"
+                      >
+                        <span>4K</span>
+                      </Button>
+                    </div>
+                    <QualitySelect
+                      label={intl.formatMessage(
+                        hdGap === 'more'
+                          ? globalMessages.requestmore
+                          : globalMessages.request
+                      )}
+                      onSelect={openRequestModal}
+                      onSelectBoth={() => openRequestModal(false, true)}
+                      onOpenChange={setShowQualityBackdrop}
+                    />
+                  </>
+                ) : canRequest ? (
+                  <Button
+                    buttonType="primary"
+                    buttonSize="sm"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      openRequestModal(false);
+                    }}
+                    className="h-7 w-full"
+                  >
+                    <ArrowDownTrayIcon />
+                    <span>
+                      {intl.formatMessage(
+                        hdGap === 'more'
+                          ? globalMessages.requestmore
+                          : globalMessages.request
+                      )}
+                    </span>
+                  </Button>
+                ) : canRequest4k ? (
+                  <Button
+                    buttonType="primary"
+                    buttonSize="sm"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      openRequestModal(true);
+                    }}
+                    className="h-7 w-full"
+                  >
+                    <ArrowDownTrayIcon />
+                    <span>
+                      {intl.formatMessage(
+                        gap4k === 'more'
+                          ? globalMessages.requestmore4k
+                          : globalMessages.request4k
+                      )}
+                    </span>
+                  </Button>
+                ) : null}
               </div>
             </div>
           </Transition>
