@@ -262,21 +262,36 @@ export class MediaRequest {
       }
     }
 
-    let rootFolder = requestBody.rootFolder;
-    let profileId = requestBody.profileId;
-    let tags = requestBody.tags;
+    const isAdvanced = user.hasPermission(
+      [Permission.MANAGE_REQUESTS, Permission.REQUEST_ADVANCED],
+      { type: 'or' }
+    );
 
-    // Match rules against the server the request will be sent to; an
-    // omitted or unknown serverId falls back to the default server
+    const requestsServer =
+      isAdvanced && requestBody.serverId != null && requestBody.serverId >= 0;
+
+    // An unknown serverId, or one for the other 4K type, falls back to the default server
     const requestedServiceId =
-      requestBody.serverId !== undefined &&
-      requestBody.serverId >= 0 &&
+      requestsServer &&
       (requestBody.mediaType === MediaType.MOVIE
         ? settings.radarr
         : settings.sonarr
-      ).some((server) => server.id === requestBody.serverId)
+      ).some(
+        (server) =>
+          server.id === requestBody.serverId && server.is4k === requestBody.is4k
+      )
         ? requestBody.serverId
         : undefined;
+
+    const useRequestedOptions =
+      isAdvanced && (!requestsServer || requestedServiceId !== undefined);
+
+    let rootFolder = useRequestedOptions ? requestBody.rootFolder : undefined;
+    let profileId = useRequestedOptions ? requestBody.profileId : undefined;
+    let tags = useRequestedOptions ? requestBody.tags : undefined;
+    const languageProfileId = useRequestedOptions
+      ? requestBody.languageProfileId
+      : undefined;
 
     const ruleResult = await overrideRules({
       mediaType: requestBody.mediaType,
@@ -286,10 +301,6 @@ export class MediaRequest {
       requestUser,
       tags,
     });
-    const isAdvanced = user.hasPermission(
-      [Permission.MANAGE_REQUESTS, Permission.REQUEST_ADVANCED],
-      { type: 'or' }
-    );
     // Advanced users pick these in the modal, so we don't want to override them if they are set
     const overrideRulesResult = isAdvanced
       ? {
@@ -355,7 +366,7 @@ export class MediaRequest {
           ? user
           : undefined,
         is4k: requestBody.is4k,
-        serverId: requestBody.serverId,
+        serverId: requestedServiceId,
         profileId: profileId,
         rootFolder: rootFolder,
         tags: tags,
@@ -470,10 +481,10 @@ export class MediaRequest {
           ? user
           : undefined,
         is4k: requestBody.is4k,
-        serverId: requestBody.serverId,
+        serverId: requestedServiceId,
         profileId: profileId,
         rootFolder: rootFolder,
-        languageProfileId: requestBody.languageProfileId,
+        languageProfileId: languageProfileId,
         tags: tags,
         seasons: finalSeasons.map(
           (sn) =>
