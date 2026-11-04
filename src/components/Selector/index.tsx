@@ -6,7 +6,7 @@ import { encodeURIExtraParams } from '@app/hooks/useDiscover';
 import useSettings from '@app/hooks/useSettings';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowDownIcon, ArrowUpIcon } from '@heroicons/react/20/solid';
-import { CheckCircleIcon } from '@heroicons/react/24/solid';
+import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/solid';
 import type {
   TmdbCompanySearchResponse,
   TmdbGenre,
@@ -373,7 +373,12 @@ type WatchProviderSelectorProps = {
   type: 'movie' | 'tv';
   region?: string;
   activeProviders?: number[];
-  onChange: (region: string, value: number[]) => void;
+  excludeProviders?: number[];
+  onChange: (
+    region: string,
+    activeValue: number[],
+    excludeValue: number[]
+  ) => void;
 };
 
 export const WatchProviderSelector = ({
@@ -381,6 +386,7 @@ export const WatchProviderSelector = ({
   onChange,
   region,
   activeProviders,
+  excludeProviders,
 }: WatchProviderSelectorProps) => {
   const intl = useIntl();
   const { currentSettings } = useSettings();
@@ -395,6 +401,9 @@ export const WatchProviderSelector = ({
   const [activeProvider, setActiveProvider] = useState<number[]>(
     activeProviders ?? []
   );
+  const [excludeProvider, setExcludeProvider] = useState<number[]>(
+    excludeProviders ?? []
+  );
   const { data, isLoading } = useSWR<WatchProviderDetails[]>(
     `/api/v1/watchproviders/${
       type === 'movie' ? 'movies' : 'tv'
@@ -402,10 +411,10 @@ export const WatchProviderSelector = ({
   );
 
   useEffect(() => {
-    onChange(watchRegion, activeProvider);
+    onChange(watchRegion, activeProvider, excludeProvider);
     // removed onChange as a dependency as we only need to call it when the value(s) change
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeProvider, watchRegion]);
+  }, [activeProvider, excludeProvider, watchRegion]);
 
   const orderedData = useMemo(() => {
     if (!data) {
@@ -416,8 +425,11 @@ export const WatchProviderSelector = ({
   }, [data]);
 
   const toggleProvider = (id: number) => {
-    if (activeProvider.includes(id)) {
+    if (excludeProvider.includes(id)) {
+      setExcludeProvider(excludeProvider.filter((p) => p !== id));
+    } else if (activeProvider.includes(id)) {
       setActiveProvider(activeProvider.filter((p) => p !== id));
+      setExcludeProvider([...excludeProvider, id]);
     } else {
       setActiveProvider([...activeProvider, id]);
     }
@@ -447,6 +459,7 @@ export const WatchProviderSelector = ({
           <div className="provider-icons grid gap-2">
             {initialProviders.map((provider) => {
               const isActive = activeProvider.includes(provider.id);
+              const isExclude = excludeProvider.includes(provider.id);
               return (
                 <Tooltip
                   content={provider.name}
@@ -456,7 +469,9 @@ export const WatchProviderSelector = ({
                     className={`provider-container relative w-full cursor-pointer rounded-lg ring-1 ${
                       isActive
                         ? 'bg-gray-600 ring-indigo-500 hover:bg-gray-500'
-                        : 'bg-gray-700 ring-gray-500 hover:bg-gray-600'
+                        : isExclude
+                          ? 'bg-gray-600 ring-red-500 hover:bg-gray-500'
+                          : 'bg-gray-700 ring-gray-500 hover:bg-gray-600'
                     }`}
                     onClick={() => toggleProvider(provider.id)}
                     onKeyDown={(e) => {
@@ -481,6 +496,11 @@ export const WatchProviderSelector = ({
                         <CheckCircleIcon className="h-6 w-6" />
                       </div>
                     )}
+                    {isExclude && (
+                      <div className="pointer-events-none absolute -left-1 -top-1 flex items-center justify-center text-indigo-100 opacity-90">
+                        <XCircleIcon className="h-6 w-6" />
+                      </div>
+                    )}
                   </div>
                 </Tooltip>
               );
@@ -490,6 +510,7 @@ export const WatchProviderSelector = ({
             <div className="provider-icons relative top-2 grid gap-2">
               {otherProviders.map((provider) => {
                 const isActive = activeProvider.includes(provider.id);
+                const isExclude = excludeProvider.includes(provider.id);
                 return (
                   <Tooltip
                     content={provider.name}
@@ -499,7 +520,9 @@ export const WatchProviderSelector = ({
                       className={`provider-container relative w-full cursor-pointer rounded-lg ring-1 transition ${
                         isActive
                           ? 'bg-gray-600 ring-indigo-500 hover:bg-gray-500'
-                          : 'bg-gray-700 ring-gray-500 hover:bg-gray-600'
+                          : isExclude
+                            ? 'bg-gray-600 ring-red-500 hover:bg-gray-500'
+                            : 'bg-gray-700 ring-gray-500 hover:bg-gray-600'
                       }`}
                       onClick={() => toggleProvider(provider.id)}
                       onKeyDown={(e) => {
@@ -522,6 +545,11 @@ export const WatchProviderSelector = ({
                       {isActive && (
                         <div className="pointer-events-none absolute -left-1 -top-1 flex items-center justify-center text-indigo-100 opacity-90">
                           <CheckCircleIcon className="h-6 w-6" />
+                        </div>
+                      )}
+                      {isExclude && (
+                        <div className="pointer-events-none absolute -left-1 -top-1 flex items-center justify-center text-indigo-100 opacity-90">
+                          <XCircleIcon className="h-6 w-6" />
                         </div>
                       )}
                     </div>
