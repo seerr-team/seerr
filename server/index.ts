@@ -240,6 +240,32 @@ app
       OpenApiValidator.middleware({
         apiSpec: API_SPEC_PATH,
         validateRequests: true,
+        // Off unless asked for, because a schema that has drifted from its
+        // handler would otherwise turn a working endpoint into a 500. When it
+        // is on, a mismatch is logged and the response is still served, so the
+        // spec can be brought back in line one endpoint at a time.
+        validateResponses:
+          process.env.VALIDATE_API_RESPONSES === 'true'
+            ? {
+                onError: (error, _body, req) => {
+                  // Without its query string. The validator reports an
+                  // undocumented status code with req.originalUrl as the error
+                  // path, and a search term has no business in a log file that
+                  // the Logs page copies to the clipboard.
+                  const url = (value: string) => value.split('?')[0];
+
+                  logger.warn('Response does not match the API specification', {
+                    label: 'OpenAPI',
+                    method: req.method,
+                    path: url(req.originalUrl),
+                    errors: error.errors.map((each) => ({
+                      ...each,
+                      path: url(each.path),
+                    })),
+                  });
+                },
+              }
+            : false,
       })
     );
     /**
