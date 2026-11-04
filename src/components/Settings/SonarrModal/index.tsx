@@ -1,5 +1,7 @@
+import Badge from '@app/components/Common/Badge';
 import Modal from '@app/components/Common/Modal';
 import SensitiveInput from '@app/components/Common/SensitiveInput';
+import Tooltip from '@app/components/Common/Tooltip';
 import type { SonarrTestResponse } from '@app/components/Settings/SettingsServices';
 import useToasts from '@app/hooks/useToasts';
 import globalMessages from '@app/i18n/globalMessages';
@@ -67,6 +69,11 @@ const messages = defineMessages('components.Settings.SonarrModal', {
   loadingTags: 'Loading tags…',
   testFirstTags: 'Test connection to load tags',
   syncEnabled: 'Enable Scan',
+  downloadQueueSize: 'Download Queue Size',
+  downloadQueueSizeHelp:
+    'Maximum number of active queue items Seerr will retrieve from this server during Download Sync.',
+  downloadQueueSizeTooltip:
+    'Increasing this value may impact performance on systems with limited CPU or I/O resources, or on servers with very large download queues.',
   externalUrl: 'External URL',
   enableSearch: 'Enable Automatic Search',
   tagRequests: 'Tag Requests',
@@ -123,6 +130,7 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
     port: Yup.number()
       .nullable()
       .required(intl.formatMessage(messages.validationPortRequired)),
+    downloadQueueSize: Yup.number().integer().min(10).max(1000).required(),
     apiKey: Yup.string().required(
       intl.formatMessage(messages.validationApiKeyRequired)
     ),
@@ -259,6 +267,7 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
           enableSeasonFolders: sonarr?.enableSeasonFolders ?? false,
           externalUrl: sonarr?.externalUrl,
           syncEnabled: sonarr?.syncEnabled ?? false,
+          downloadQueueSize: sonarr?.downloadQueueSize ?? 10,
           enableSearch: !sonarr?.preventSearch,
           tagRequests: sonarr?.tagRequests ?? false,
           monitorNewItems: sonarr?.monitorNewItems ?? 'all',
@@ -303,6 +312,7 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
               enableSeasonFolders: values.enableSeasonFolders,
               externalUrl: values.externalUrl,
               syncEnabled: values.syncEnabled,
+              downloadQueueSize: Number(values.downloadQueueSize),
               preventSearch: !values.enableSearch,
               tagRequests: values.tagRequests,
               monitorNewItems: values.monitorNewItems,
@@ -1055,6 +1065,39 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
                       touched.externalUrl &&
                       typeof errors.externalUrl === 'string' && (
                         <div className="error">{errors.externalUrl}</div>
+                      )}
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label htmlFor="downloadQueueSize" className="text-label">
+                    <span className="mr-2">
+                      {intl.formatMessage(messages.downloadQueueSize)}
+                    </span>
+                    <Tooltip
+                      content={intl.formatMessage(
+                        messages.downloadQueueSizeTooltip
+                      )}
+                    >
+                      <Badge badgeType="danger">
+                        {intl.formatMessage(globalMessages.advanced)}
+                      </Badge>
+                    </Tooltip>
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.downloadQueueSizeHelp)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <Field
+                      id="downloadQueueSize"
+                      name="downloadQueueSize"
+                      type="text"
+                      inputMode="numeric"
+                      className="short"
+                    />
+                    {errors.downloadQueueSize &&
+                      touched.downloadQueueSize &&
+                      typeof errors.downloadQueueSize === 'string' && (
+                        <div className="error">{errors.downloadQueueSize}</div>
                       )}
                   </div>
                 </div>
