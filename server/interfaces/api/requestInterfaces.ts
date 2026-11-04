@@ -25,6 +25,6 @@ export type MediaRequestBody = {
   rootFolder?: string;
   languageProfileId?: number;
   userId?: number;
-  tags?: number[];
+  tags?: number[] | null;
   ignoreQuota?: boolean;
 };
