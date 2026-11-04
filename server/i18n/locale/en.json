@@ -44,6 +44,7 @@
   "notifications.common.open": "Open",
   "notifications.common.openIn": "Open in {applicationTitle}",
   "notifications.common.pendingApproval": "Pending Approval",
+  "notifications.common.playOn": "Play on {mediaServerName}",
   "notifications.common.processing": "Processing",
   "notifications.common.reportedBy": "Reported By",
   "notifications.common.requestStatus": "Request Status",
