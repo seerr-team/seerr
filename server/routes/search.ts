@@ -1,7 +1,11 @@
 import TheMovieDb from '@server/api/themoviedb';
 import type { TmdbSearchMultiResponse } from '@server/api/themoviedb/interfaces';
 import Media from '@server/entity/Media';
-import { findSearchProvider } from '@server/lib/search';
+import {
+  findSearchProvider,
+  parseTrailingYear,
+  searchTitleWithYear,
+} from '@server/lib/search';
 import logger from '@server/logger';
 import { mapSearchResults } from '@server/models/Search';
 import { Router } from 'express';
@@ -11,6 +15,7 @@ const searchRoutes = Router();
 searchRoutes.get('/', async (req, res, next) => {
   const queryString = req.query.query as string;
   const searchProvider = findSearchProvider(queryString.toLowerCase());
+  const parsedYear = parseTrailingYear(queryString);
   let results: TmdbSearchMultiResponse;
 
   try {
@@ -22,6 +27,13 @@ searchRoutes.get('/', async (req, res, next) => {
         id,
         language: (req.query.language as string) ?? req.locale,
         query: queryString,
+      });
+    } else if (parsedYear) {
+      results = await searchTitleWithYear({
+        query: queryString,
+        ...parsedYear,
+        language: (req.query.language as string) ?? req.locale,
+        page: Number(req.query.page),
       });
     } else {
       const tmdb = new TheMovieDb();

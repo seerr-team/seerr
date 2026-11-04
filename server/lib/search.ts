@@ -42,6 +42,58 @@ export const findSearchProvider = (
   return searchProviders.find((provider) => provider.pattern.test(query));
 };
 
+export const parseTrailingYear = (
+  query: string
+): { title: string; year: number } | undefined => {
+  const match = query
+    .trim()
+    .match(/^(.*?)(?:\s*\((\d{4})\)|\s*\[(\d{4})\]|\s+(\d{4}))$/);
+  if (!match) return undefined;
+
+  const title = match[1].trim();
+  const year = Number(match[2] ?? match[3] ?? match[4]);
+  if (!title || year < 1870 || year > 2099) return undefined;
+
+  return { title, year };
+};
+
+export const searchTitleWithYear = async ({
+  query,
+  title,
+  year,
+  language,
+  page,
+}: {
+  query: string;
+  title: string;
+  year: number;
+  language?: string;
+  page?: number;
+}): Promise<TmdbSearchMultiResponse> => {
+  const tmdb = new TheMovieDb();
+  const yearProvider = findSearchProvider(`year:${year}`);
+  if (!yearProvider) return tmdb.searchMulti({ query, language, page });
+
+  const [original, filtered] = await Promise.all([
+    tmdb.searchMulti({ query, language, page }),
+    yearProvider.search({
+      id: String(year),
+      query: `${title} year:${year}`,
+      language,
+    }),
+  ]);
+
+  // A trailing year can be part of the title (for example, Blade Runner 2049).
+  const normalizedQuery = query.trim().toLocaleLowerCase();
+  const hasExactTitle = original.results.some(
+    (result) =>
+      ('title' in result &&
+        result.title?.toLocaleLowerCase() === normalizedQuery) ||
+      ('name' in result && result.name?.toLocaleLowerCase() === normalizedQuery)
+  );
+  return hasExactTitle || filtered.results.length === 0 ? original : filtered;
+};
+
 searchProviders.push({
   pattern: new RegExp(/(?<=tmdb:)\d+/),
   search: async ({ id, language }) => {
@@ -168,16 +220,18 @@ searchProviders.push({
 
 searchProviders.push({
   pattern: new RegExp(/(?<=year:)\d{4}/),
-  search: async ({ id: year, query }) => {
+  search: async ({ id: year, query, language }) => {
     const tmdb = new TheMovieDb();
 
     const moviesPromise = tmdb.searchMovies({
       query: query?.replace(new RegExp(/year:\d{4}/), '') ?? '',
       year: parseInt(year),
+      language,
     });
     const tvShowsPromise = tmdb.searchTvShows({
       query: query?.replace(new RegExp(/year:\d{4}/), '') ?? '',
       year: parseInt(year),
+      language,
     });
 
     const responses = await Promise.allSettled([moviesPromise, tvShowsPromise]);
