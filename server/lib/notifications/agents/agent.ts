@@ -3,7 +3,7 @@ import type IssueComment from '@server/entity/IssueComment';
 import type Media from '@server/entity/Media';
 import type { MediaRequest } from '@server/entity/MediaRequest';
 import type { User } from '@server/entity/User';
-import type { NotificationAgentConfig } from '@server/lib/settings';
+import type { NotificationAgentConfig } from '@server/interfaces/settings';
 import type { Notification } from '..';
 
 export interface NotificationPayload {

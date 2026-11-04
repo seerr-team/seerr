@@ -1,6 +1,6 @@
 import ExternalAPI from '@server/api/externalapi';
 import { ApiErrorCode } from '@server/constants/error';
-import type { Library, PlexSettings } from '@server/lib/settings';
+import type { Library, PlexSettings } from '@server/interfaces/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { ApiError } from '@server/types/error';

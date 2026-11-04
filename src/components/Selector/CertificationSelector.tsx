@@ -1,6 +1,6 @@
 import { SmallLoadingSpinner } from '@app/components/Common/LoadingSpinner';
 import defineMessages from '@app/utils/defineMessages';
-import type { Region } from '@server/lib/settings';
+import type { Region } from '@server/interfaces/settings';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 import AsyncSelect from 'react-select/async';
