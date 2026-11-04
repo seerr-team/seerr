@@ -23,18 +23,25 @@ import Season from '@server/entity/Season';
 import SeasonRequest from '@server/entity/SeasonRequest';
 import { User } from '@server/entity/User';
 import { plexFullScanner } from '@server/lib/scanners/plex';
-import type { Library } from '@server/lib/settings';
+import type { Library, RadarrSettings } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import { setupTestDb } from '@server/test/db';
 import { runWithMockTimers } from '@server/test/runWithMockTimers';
 import assert from 'node:assert/strict';
-import { beforeEach, describe, it, mock } from 'node:test';
+import { afterEach, beforeEach, describe, it, mock } from 'node:test';
 
 Object.defineProperty(animeList, 'sync', {
   value: async () => {},
   configurable: true,
   writable: true,
 });
+
+const movieLibrary: Library = {
+  id: 'test-movie-library-id',
+  name: 'Movies',
+  enabled: true,
+  type: 'movie',
+};
 
 let getLibrariesImpl: () => Promise<PlexLibrary[]> = async () => [];
 let getLibraryContentsImpl: (
@@ -222,6 +229,26 @@ function configurePlexWithLibrary(
   };
 }
 
+function fakePlexMovieItem(
+  ratingKey: string,
+  tmdbId: number,
+  resolutions: string[]
+): PlexLibraryItem {
+  return {
+    ratingKey,
+    title: 'Test Movie',
+    guid: 'plex://movie/test-movie',
+    Guid: [{ id: `tmdb://${tmdbId}` }],
+    addedAt: 1700000000,
+    updatedAt: 1700000000,
+    type: 'movie',
+    Media: resolutions.map(
+      (videoResolution) =>
+        ({ videoResolution }) as PlexLibraryItem['Media'][number]
+    ),
+  };
+}
+
 describe('Plex Scanner', () => {
   beforeEach(() => {
     getLibrariesImpl = async () => [
@@ -236,6 +263,10 @@ describe('Plex Scanner', () => {
     getMetadataImpl = async () => undefined;
     getChildrenMetadataImpl = async () => [];
     getTvShowImpl = async () => fakeTmdbShow(1);
+  });
+
+  afterEach(() => {
+    getSettings().radarr = [];
   });
 
   describe('in-flight request handling', () => {
@@ -319,6 +350,85 @@ describe('Plex Scanner', () => {
         MediaRequestStatus.APPROVED,
         'A media server scan must not cancel a request Sonarr is still working on'
       );
+    });
+  });
+
+  describe('movie versions', () => {
+    beforeEach(() => {
+      const settings = getSettings();
+      settings.main.mediaServerType = MediaServerType.PLEX;
+      settings.plex = {
+        ...settings.plex,
+        ip: '127.0.0.1',
+        port: 32400,
+        libraries: [movieLibrary],
+      };
+
+      getLibraryContentsImpl = async () => ({ totalSize: 0, items: [] });
+    });
+
+    it('marks standard and 4K available when one item holds both versions', async () => {
+      getSettings().radarr = [{ is4k: true } as RadarrSettings];
+
+      const mediaRepository = getRepository(Media);
+      const media = await mediaRepository.save(
+        new Media({
+          tmdbId: 6200,
+          mediaType: MediaType.MOVIE,
+          status: MediaStatus.PROCESSING,
+          status4k: MediaStatus.PROCESSING,
+        })
+      );
+
+      getLibraryContentsImpl = async (id: string) =>
+        id === movieLibrary.id
+          ? {
+              totalSize: 1,
+              items: [
+                fakePlexMovieItem('plex-movie-key', 6200, ['1080', '4k']),
+              ],
+            }
+          : { totalSize: 0, items: [] };
+
+      await runWithMockTimers(() => plexFullScanner.run());
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { id: media.id },
+      });
+
+      assert.strictEqual(updated.status, MediaStatus.AVAILABLE);
+      assert.strictEqual(updated.status4k, MediaStatus.AVAILABLE);
+    });
+
+    it('marks a 4K-only item as standard when no 4K Radarr is configured', async () => {
+      getSettings().radarr = [];
+
+      const mediaRepository = getRepository(Media);
+      const media = await mediaRepository.save(
+        new Media({
+          tmdbId: 6201,
+          mediaType: MediaType.MOVIE,
+          status: MediaStatus.PROCESSING,
+          status4k: MediaStatus.UNKNOWN,
+        })
+      );
+
+      getLibraryContentsImpl = async (id: string) =>
+        id === movieLibrary.id
+          ? {
+              totalSize: 1,
+              items: [fakePlexMovieItem('plex-movie-4k-key', 6201, ['4k'])],
+            }
+          : { totalSize: 0, items: [] };
+
+      await runWithMockTimers(() => plexFullScanner.run());
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { id: media.id },
+      });
+
+      assert.strictEqual(updated.status, MediaStatus.AVAILABLE);
+      assert.strictEqual(updated.status4k, MediaStatus.UNKNOWN);
     });
   });
 });
