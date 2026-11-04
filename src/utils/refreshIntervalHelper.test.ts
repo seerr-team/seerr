@@ -1,8 +1,12 @@
-import { MediaType } from '@server/constants/media';
+import { MediaStatus, MediaType } from '@server/constants/media';
+import type Media from '@server/entity/Media';
 import type { DownloadingItem } from '@server/lib/downloadtracker';
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { getRequestDownloadStatus } from './refreshIntervalHelper';
+import {
+  getRequestDownloadStatus,
+  mediaRefreshInterval,
+} from './refreshIntervalHelper';
 
 const createDownloadItem = (
   overrides: Partial<DownloadingItem> & Pick<DownloadingItem, 'downloadId'>
@@ -123,5 +127,100 @@ describe('getRequestDownloadStatus', () => {
 
     assert.deepEqual(status.downloadItem, [seasonTwo]);
     assert.equal(status.inProgress, true);
+  });
+});
+
+const createMedia = (overrides: Partial<Media> = {}): Media =>
+  ({
+    id: 1,
+    status: MediaStatus.UNKNOWN,
+    status4k: MediaStatus.UNKNOWN,
+    seasons: [],
+    downloadStatus: [],
+    downloadStatus4k: [],
+    ...overrides,
+  }) as unknown as Media;
+
+describe('mediaRefreshInterval', () => {
+  it('keeps polling while the media is processing after its download leaves the queue', () => {
+    const sawDownload = { current: false };
+
+    mediaRefreshInterval(
+      createMedia({
+        status: MediaStatus.PROCESSING,
+        downloadStatus: [createDownloadItem({ downloadId: 'movie-1' })],
+      }),
+      sawDownload,
+      15000
+    );
+
+    assert.equal(
+      mediaRefreshInterval(
+        createMedia({ status: MediaStatus.PROCESSING }),
+        sawDownload,
+        15000
+      ),
+      15000
+    );
+  });
+
+  it('does not poll processing media when no download was seen', () => {
+    assert.equal(
+      mediaRefreshInterval(
+        createMedia({ status: MediaStatus.PROCESSING }),
+        { current: false },
+        15000
+      ),
+      0
+    );
+  });
+
+  it('stops polling once the media is available', () => {
+    assert.equal(
+      mediaRefreshInterval(
+        createMedia({ status: MediaStatus.AVAILABLE }),
+        { current: true },
+        15000
+      ),
+      0
+    );
+  });
+
+  it('keeps polling while a season is processing on a partially available show', () => {
+    assert.equal(
+      mediaRefreshInterval(
+        createMedia({
+          status: MediaStatus.PARTIALLY_AVAILABLE,
+          seasons: [
+            { seasonNumber: 1, status: MediaStatus.AVAILABLE },
+            { seasonNumber: 2, status: MediaStatus.PROCESSING },
+          ] as Media['seasons'],
+        }),
+        { current: true },
+        15000
+      ),
+      15000
+    );
+  });
+
+  it('keeps polling while a 4K season is processing', () => {
+    assert.equal(
+      mediaRefreshInterval(
+        createMedia({
+          status: MediaStatus.AVAILABLE,
+          status4k: MediaStatus.PARTIALLY_AVAILABLE,
+          seasons: [
+            {
+              seasonNumber: 1,
+              status: MediaStatus.AVAILABLE,
+              status4k: MediaStatus.PROCESSING,
+            },
+          ] as Media['seasons'],
+        }),
+        { current: true },
+        15000
+      ),
+      15000
+    );
   });
 });
