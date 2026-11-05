@@ -27,10 +27,14 @@ interface SearchProvider {
     id,
     language,
     query,
+    page,
+    strict,
   }: {
     id: string;
     language?: string;
     query?: string;
+    page?: number;
+    strict?: boolean;
   }) => Promise<TmdbSearchMultiResponse>;
 }
 
@@ -74,24 +78,40 @@ export const searchTitleWithYear = async ({
   const yearProvider = findSearchProvider(`year:${year}`);
   if (!yearProvider) return tmdb.searchMulti({ query, language, page });
 
-  const [original, filtered] = await Promise.all([
+  const currentPage =
+    Number.isInteger(page) && (page as number) > 0 ? (page as number) : 1;
+  const [original, filtered, firstPage] = await Promise.all([
     tmdb.searchMulti({ query, language, page }),
-    yearProvider.search({
-      id: String(year),
-      query: `${title} year:${year}`,
-      language,
-    }),
+    yearProvider
+      .search({
+        id: String(year),
+        query: `${title} year:${year}`,
+        language,
+        page: currentPage,
+        strict: true,
+      })
+      .catch(() => undefined),
+    currentPage > 1
+      ? tmdb.searchMulti({ query, language, page: 1 })
+      : Promise.resolve(undefined),
   ]);
 
   // A trailing year can be part of the title (for example, Blade Runner 2049).
   const normalizedQuery = query.trim().toLocaleLowerCase();
-  const hasExactTitle = original.results.some(
+  const hasExactTitle = (firstPage ?? original).results.some(
     (result) =>
       ('title' in result &&
         result.title?.toLocaleLowerCase() === normalizedQuery) ||
-      ('name' in result && result.name?.toLocaleLowerCase() === normalizedQuery)
+      ('name' in result &&
+        result.name?.toLocaleLowerCase() === normalizedQuery) ||
+      ('original_title' in result &&
+        result.original_title?.toLocaleLowerCase() === normalizedQuery) ||
+      ('original_name' in result &&
+        result.original_name?.toLocaleLowerCase() === normalizedQuery)
   );
-  return hasExactTitle || filtered.results.length === 0 ? original : filtered;
+  return hasExactTitle || !filtered || filtered.total_results === 0
+    ? original
+    : filtered;
 };
 
 searchProviders.push({
@@ -220,21 +240,32 @@ searchProviders.push({
 
 searchProviders.push({
   pattern: /(?<=(?<!\w)(?:year|y):)\d{4}(?!\d)/,
-  search: async ({ id: year, query, language }) => {
+  search: async ({ id: year, query, language, page = 1, strict = false }) => {
     const tmdb = new TheMovieDb();
 
     const moviesPromise = tmdb.searchMovies({
       query: query?.replace(/\b(?:year|y):\d{4}(?!\d)/i, '').trim() ?? '',
       year: parseInt(year),
       language,
+      page,
+      throwOnError: strict,
     });
     const tvShowsPromise = tmdb.searchTvShows({
       query: query?.replace(/\b(?:year|y):\d{4}(?!\d)/i, '').trim() ?? '',
       year: parseInt(year),
       language,
+      page,
+      throwOnError: strict,
     });
 
     const responses = await Promise.allSettled([moviesPromise, tvShowsPromise]);
+
+    if (
+      strict &&
+      responses.some((response) => response.status === 'rejected')
+    ) {
+      throw new Error('Failed to search both movies and TV shows by year');
+    }
 
     const successfulResponses = responses.filter(
       (r) => r.status === 'fulfilled'
@@ -259,9 +290,15 @@ searchProviders.push({
     }
 
     return {
-      page: 1,
-      total_pages: 1,
-      total_results: results.length,
+      page,
+      total_pages: Math.max(
+        1,
+        ...successfulResponses.map((response) => response.value.total_pages)
+      ),
+      total_results: successfulResponses.reduce(
+        (sum, response) => sum + response.value.total_results,
+        0
+      ),
       results,
     };
   },

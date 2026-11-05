@@ -39,6 +39,7 @@ interface SearchOptions {
 
 interface SingleSearchOptions extends SearchOptions {
   year?: number;
+  throwOnError?: boolean;
 }
 
 const CommonSortOptionsIterable = [
@@ -228,6 +229,7 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
     includeAdult = false,
     language = this.locale,
     year,
+    throwOnError = false,
   }: SingleSearchOptions): Promise<TmdbSearchMovieResponse> => {
     try {
       const data = await this.get<TmdbSearchMovieResponse>('/search/movie', {
@@ -241,7 +243,8 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
       });
 
       return data;
-    } catch {
+    } catch (error) {
+      if (throwOnError) throw error;
       return {
         page: 1,
         results: [],
@@ -257,6 +260,7 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
     includeAdult = false,
     language = this.locale,
     year,
+    throwOnError = false,
   }: SingleSearchOptions): Promise<TmdbSearchTvResponse> => {
     try {
       const data = await this.get<TmdbSearchTvResponse>('/search/tv', {
@@ -270,7 +274,8 @@ class TheMovieDb extends ExternalAPI implements TvShowProvider {
       });
 
       return data;
-    } catch {
+    } catch (error) {
+      if (throwOnError) throw error;
       return {
         page: 1,
         results: [],

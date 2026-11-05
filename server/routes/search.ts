@@ -27,6 +27,7 @@ searchRoutes.get('/', async (req, res, next) => {
         id,
         language: (req.query.language as string) ?? req.locale,
         query: queryString,
+        page: Number(req.query.page) || 1,
       });
     } else if (parsedYear) {
       results = await searchTitleWithYear({

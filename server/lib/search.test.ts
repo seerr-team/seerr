@@ -139,6 +139,124 @@ describe('searchTitleWithYear', () => {
     );
   });
 
+  it('preserves a match on an original title even when the displayed title is translated', async () => {
+    const original = page([
+      {
+        id: 1,
+        title: 'Localized title',
+        original_title: 'Blade Runner 2049',
+        media_type: 'movie',
+      },
+    ]);
+    mock.method(api, 'get', async (endpoint: string) => {
+      if (endpoint === '/search/multi') return original;
+      return endpoint === '/search/movie'
+        ? page([{ id: 2, title: 'Other movie' }])
+        : page([]);
+    });
+    assert.equal(
+      await searchTitleWithYear({
+        query: 'Blade Runner 2049',
+        title: 'Blade Runner',
+        year: 2049,
+        language: 'fr',
+      }),
+      original
+    );
+  });
+
+  it('keeps original-name matches on later pages', async () => {
+    const first = page([
+      {
+        id: 1,
+        name: 'Localized show',
+        original_name: 'Show 2020',
+        media_type: 'tv',
+      },
+    ]);
+    const later = {
+      page: 2,
+      total_pages: 2,
+      total_results: 21,
+      results: [{ id: 2, name: 'Other show', media_type: 'tv' }],
+    };
+    mock.method(
+      api,
+      'get',
+      async (
+        endpoint: string,
+        config?: { params?: Record<string, unknown> }
+      ) => {
+        if (endpoint === '/search/multi')
+          return config?.params?.page === 1 ? first : later;
+        return page([{ id: 3, title: 'Filtered movie' }]);
+      }
+    );
+    assert.equal(
+      await searchTitleWithYear({
+        query: 'Show 2020',
+        title: 'Show',
+        year: 2020,
+        page: 2,
+      }),
+      later
+    );
+  });
+
+  it('falls back to the original search when one filtered request fails', async () => {
+    const original = page([{ id: 1, name: 'A show', media_type: 'tv' }]);
+    mock.method(api, 'get', async (endpoint: string) => {
+      if (endpoint === '/search/multi') return original;
+      if (endpoint === '/search/tv') throw new Error('TMDB unavailable');
+      return page([{ id: 2, title: 'A movie' }]);
+    });
+    assert.equal(
+      await searchTitleWithYear({
+        query: 'Title 2020',
+        title: 'Title',
+        year: 2020,
+      }),
+      original
+    );
+  });
+
+  it('requests the selected page from both endpoints and reports their combined pagination', async () => {
+    const get = mock.method(api, 'get', async (endpoint: string) => {
+      if (endpoint === '/search/multi') return page([]);
+      if (endpoint === '/search/movie')
+        return {
+          page: 2,
+          total_pages: 3,
+          total_results: 50,
+          results: [{ id: 1, title: 'Movie' }],
+        };
+      return {
+        page: 2,
+        total_pages: 2,
+        total_results: 22,
+        results: [{ id: 2, name: 'TV' }],
+      };
+    });
+    const result = await searchTitleWithYear({
+      query: 'Title 2020',
+      title: 'Title',
+      year: 2020,
+      page: 2,
+    });
+    assert.equal(result.page, 2);
+    assert.equal(result.total_pages, 3);
+    assert.equal(result.total_results, 72);
+    for (const call of get.mock.calls.filter(
+      (call) => call.arguments[0] !== '/search/multi'
+    )) {
+      assert.equal(call.arguments[1]?.params?.page, 2);
+    }
+    assert.deepEqual(
+      result.results.map((item) => item.media_type),
+      ['movie', 'tv']
+    );
+  });
+
   it('falls back to the original search when the year search is empty', async () => {
     const original = page([{ id: 1, name: 'Show', media_type: 'tv' }]);
     mock.method(api, 'get', async (endpoint: string) =>
@@ -149,6 +267,35 @@ describe('searchTitleWithYear', () => {
         query: 'Show 2020',
         title: 'Show',
         year: 2020,
+      }),
+      original
+    );
+  });
+
+  it('keeps the original search on later pages when there are no year-filtered matches', async () => {
+    const original = {
+      ...page([{ id: 1, name: 'Show', media_type: 'tv' }]),
+      page: 2,
+      total_pages: 2,
+      total_results: 21,
+    };
+    mock.method(
+      api,
+      'get',
+      async (
+        endpoint: string,
+        config?: { params?: Record<string, unknown> }
+      ) => {
+        if (endpoint !== '/search/multi') return page([]);
+        return config?.params?.page === 1 ? page([]) : original;
+      }
+    );
+    assert.equal(
+      await searchTitleWithYear({
+        query: 'Show 2020',
+        title: 'Show',
+        year: 2020,
+        page: 2,
       }),
       original
     );
