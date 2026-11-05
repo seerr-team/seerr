@@ -60,6 +60,20 @@ const page = (results: object[]) => ({
 describe('searchTitleWithYear', () => {
   afterEach(() => mock.restoreAll());
 
+  it('uses page 1 for the original and filtered searches when the page is invalid', async () => {
+    const get = mock.method(api, 'get', async () => page([]));
+    await searchTitleWithYear({
+      query: 'Blade Runner 2049',
+      title: 'Blade Runner',
+      year: 2049,
+      page: NaN,
+    });
+    assert.equal(get.mock.calls.length, 3);
+    for (const call of get.mock.calls) {
+      assert.equal(call.arguments[1]?.params?.page, 1);
+    }
+  });
+
   it('treats y: as the same explicit year filter and preserves provider priority', async () => {
     const get = mock.method(api, 'get', async () => page([]));
     const provider = findSearchProvider('avatar y:2009');

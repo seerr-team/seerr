@@ -75,13 +75,14 @@ export const searchTitleWithYear = async ({
   page?: number;
 }): Promise<TmdbSearchMultiResponse> => {
   const tmdb = new TheMovieDb();
-  const yearProvider = findSearchProvider(`year:${year}`);
-  if (!yearProvider) return tmdb.searchMulti({ query, language, page });
-
   const currentPage =
     Number.isInteger(page) && (page as number) > 0 ? (page as number) : 1;
+  const yearProvider = findSearchProvider(`year:${year}`);
+  if (!yearProvider)
+    return tmdb.searchMulti({ query, language, page: currentPage });
+
   const [original, filtered, firstPage] = await Promise.all([
-    tmdb.searchMulti({ query, language, page }),
+    tmdb.searchMulti({ query, language, page: currentPage }),
     yearProvider
       .search({
         id: String(year),
