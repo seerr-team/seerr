@@ -76,7 +76,7 @@
     "node-schedule": "2.1.1",
     "nodemailer": "10.2.1",
     "openpgp": "6.3.0",
-    "pg": "8.23.0",
+    "pg": "8.23.1",
     "pug": "3.0.4",
     "react": "19.2.6",
     "react-ace": "14.0.1",
