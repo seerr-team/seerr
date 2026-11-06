@@ -64,10 +64,7 @@ const migrationArrTags = async (settings: any): Promise<AllSettings> => {
       continue;
     }
     try {
-      const sonarr = new SonarrAPI({
-        apiKey: sonarrSettings.apiKey,
-        url: SonarrAPI.buildUrl(sonarrSettings, '/api/v3'),
-      });
+      const sonarr = await SonarrAPI.fromSettings(sonarrSettings);
       const sonarrTags = await sonarr.getTags();
       for (const user of users) {
         const userTag = sonarrTags.find(

@@ -38,19 +38,16 @@ sonarrRoutes.post('/', async (req, res) => {
 
 sonarrRoutes.post('/test', async (req, res, next) => {
   try {
-    const sonarr = new SonarrAPI({
-      apiKey: req.body.apiKey,
-      url: SonarrAPI.buildUrl(req.body, '/api/v3'),
-    });
+    const sonarr = await SonarrAPI.fromSettings(req.body, { persist: false });
 
     const systemStatus = await sonarr.getSystemStatus();
-    const sonarrMajorVersion = Number(systemStatus.version.split('.')[0]);
 
     const urlBase = systemStatus.urlBase;
     const profiles = await sonarr.getProfiles();
     const folders = await sonarr.getRootFolders();
-    const languageProfiles =
-      sonarrMajorVersion <= 3 ? await sonarr.getLanguageProfiles() : null;
+    const languageProfiles = sonarr.capabilities.languageProfiles
+      ? await sonarr.getLanguageProfiles()
+      : null;
     const tags = await sonarr.getTags();
 
     return res.status(200).json({
@@ -62,6 +59,7 @@ sonarrRoutes.post('/test', async (req, res, next) => {
       languageProfiles,
       tags,
       urlBase,
+      apiMajorVersion: sonarr.capabilities.major,
     });
   } catch (e) {
     logger.error('Failed to test Sonarr', {
@@ -100,6 +98,8 @@ sonarrRoutes.put<{ id: string }>('/:id', async (req, res) => {
   settings.sonarr[sonarrIndex] = {
     ...req.body,
     id: Number(req.params.id),
+    apiMajorVersion:
+      req.body.apiMajorVersion ?? settings.sonarr[sonarrIndex].apiMajorVersion,
   } as SonarrSettings;
   await settings.save();
 
