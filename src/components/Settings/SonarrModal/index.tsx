@@ -306,6 +306,8 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
               preventSearch: !values.enableSearch,
               tagRequests: values.tagRequests,
               monitorNewItems: values.monitorNewItems,
+              apiMajorVersion:
+                testResponse.apiMajorVersion ?? sonarr?.apiMajorVersion,
             };
             if (!sonarr) {
               await axios.post('/api/v1/settings/sonarr', submission);

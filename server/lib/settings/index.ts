@@ -101,6 +101,7 @@ export interface SonarrSettings extends DVRSettings {
   animeTags?: number[];
   enableSeasonFolders: boolean;
   monitorNewItems: 'all' | 'none';
+  apiMajorVersion?: number;
 }
 
 interface Quota {

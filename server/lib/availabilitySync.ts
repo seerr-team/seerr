@@ -750,12 +750,9 @@ class AvailabilitySync {
     for (const server of this.sonarrServers.filter((server) => {
       return server.is4k === is4k;
     })) {
-      const sonarrAPI = new SonarrAPI({
-        apiKey: server.apiKey,
-        url: SonarrAPI.buildUrl(server, '/api/v3'),
-      });
-
       try {
+        const sonarrAPI = await SonarrAPI.fromSettings(server);
+
         let sonarr: SonarrSeries | undefined;
 
         if (media.externalServiceId && !is4k) {

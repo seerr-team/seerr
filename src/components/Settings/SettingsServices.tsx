@@ -91,6 +91,7 @@ export type SonarrTestResponse = DVRTestResponse & {
         name: string;
       }[]
     | null;
+  apiMajorVersion?: number;
 };
 
 const ServerInstance = ({
