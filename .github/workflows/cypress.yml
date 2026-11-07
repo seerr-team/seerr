@@ -6,21 +6,27 @@ on:
   pull_request:
     branches: ['*']
     paths:
-      - '{src,server,config,cypress}/**'
+      - 'src/**'
+      - 'server/**'
+      - 'config/**'
+      - 'cypress/**'
       - 'cypress.config.ts'
       - 'package.json'
       - 'pnpm-lock.yaml'
-      - 'next.config.ts'
+      - 'next.config.mjs'
       - 'tsconfig.json'
       - '.github/workflows/cypress.yml'
   push:
     branches: [develop]
     paths:
-      - '{src,server,config,cypress}/**'
+      - 'src/**'
+      - 'server/**'
+      - 'config/**'
+      - 'cypress/**'
       - 'cypress.config.ts'
       - 'package.json'
       - 'pnpm-lock.yaml'
-      - 'next.config.ts'
+      - 'next.config.mjs'
       - 'tsconfig.json'
       - '.github/workflows/cypress.yml'
 
@@ -34,27 +40,27 @@ concurrency:
 jobs:
   cypress-run:
     name: Cypress Run
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
       - parallel:
           - name: Set up Node.js
-            uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+            uses: actions/setup-node@v7.0.0
             with:
               node-version-file: package.json
               package-manager-cache: false
 
           - name: Pnpm Setup
-            uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+            uses: pnpm/action-setup@v6.0.10
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Setup cypress cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        uses: actions/cache@v6.1.0
         with:
           path: ~/.cache/Cypress
           key: ${{ runner.os }}-cypress-store-${{ hashFiles('**/pnpm-lock.yaml') }}
@@ -67,7 +73,7 @@ jobs:
         run: pnpm exec cypress install
 
       - name: Cypress run
-        uses: cypress-io/github-action@09090944bd8aaa2a517cefb6e38bf1aae336b42b # v7.4.3
+        uses: cypress-io/github-action@v7.4.6
         with:
           install: false
           build: pnpm cypress:build

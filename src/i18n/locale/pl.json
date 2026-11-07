@@ -1603,7 +1603,6 @@
   "components.Settings.SettingsMain.streamingRegion": "Region streamingu",
   "components.Settings.SettingsMain.streamingRegionTip": "Pokazuj serwisy streamingowe według dostępności regionalnej",
   "components.Settings.SettingsMain.validationUrl": "Musisz podać prawidłowy adres URL",
-  "components.Settings.SettingsMain.validationUrlTrailingSlash": "Adres URL nie może kończyć się ukośnikiem",
   "components.Settings.SettingsMain.youtubeUrl": "Adres URL YouTube",
   "components.Settings.SettingsMain.youtubeUrlTip": "Bazowy adres URL filmów YouTube, jeśli używana jest samodzielnie hostowana instancja YouTube.",
   "components.Settings.SettingsNetwork.apiRequestTimeout": "Limit czasu żądania API",
@@ -1706,5 +1705,11 @@
   "components.ManageSlideOver.clearmediadataerror": "Wystąpił błąd podczas czyszczenia danych multimediów.",
   "components.ManageSlideOver.removemediaerror": "Wystąpił błąd podczas usuwania multimediów.",
   "components.RequestList.RequestItem.removemediaerror": "Wystąpił błąd podczas usuwania multimedia.",
-  "components.Settings.Notifications.NotificationsGotify.embedPoster": "Dołącz plakat"
+  "components.Settings.Notifications.NotificationsGotify.embedPoster": "Dołącz plakat",
+  "components.Login.demoModeInfo": "Tryb demo jest włączony. Użyj loginu i hasła dla wersji demo, by się zalogować.",
+  "components.Settings.Notifications.NotificationsNtfy.tags": "Tagi",
+  "components.Settings.Notifications.NotificationsNtfy.tagsPlaceholder": "oczy,ostrzeżenie",
+  "components.Settings.SettingsMain.hideRequested": "Ukryj poproszone media",
+  "components.Settings.SettingsMain.hideRequestedTip": "Ukryj media, o które poproszono w zakładce Odkryj, lecz nie z wyników wyszukiwania",
+  "components.UserList.searchUsers": "Wyszukaj…"
 }

@@ -1516,7 +1516,6 @@
   "components.Settings.SettingsJobsCache.hits": "Treffers",
   "components.Settings.SettingsJobsCache.ipv4Fallbacks": "IPv4-fallbacks",
   "components.Settings.SettingsJobsCache.misses": "Missers",
-  "components.Settings.SettingsMain.validationUrlTrailingSlash": "URL mag niet eindigen met een schuine streep",
   "components.Settings.SettingsMain.youtubeUrlTip": "Basis-URL voor YouTube-video's als een zelfgehoste YouTube-instantie wordt gebruikt.",
   "components.Settings.SettingsNetwork.dnsCacheForceMaxTtl": "Maximale TTL DNS-cache",
   "components.Settings.SettingsNetwork.dnsCacheForceMinTtl": "Minimale TTL DNS-cache",
@@ -1706,5 +1705,11 @@
   "components.Settings.Notifications.NotificationsGotify.embedPoster": "Poster invoegen",
   "components.Settings.jellyfinSyncFailedConnectionError": "De server {mediaServerName} kan niet worden bereikt. Controleer of de server actief is en bereikbaar is vanuit Seerr.",
   "components.Settings.toastPlexSyncFailure": "Het synchroniseren van de Plex-bibliotheken is mislukt.",
-  "components.Settings.toggleLibraryFailure": "Het is niet gelukt om de bibliotheek bij te werken."
+  "components.Settings.toggleLibraryFailure": "Het is niet gelukt om de bibliotheek bij te werken.",
+  "components.Settings.Notifications.NotificationsNtfy.tags": "Labels",
+  "components.Settings.Notifications.NotificationsNtfy.tagsPlaceholder": "ogen, waarschuwing",
+  "components.UserList.searchUsers": "Zoek…",
+  "components.Settings.SettingsMain.hideRequested": "Verberg Aangevraagde Media",
+  "components.Settings.SettingsMain.hideRequestedTip": "Verberg media die aangevraagd is op de ontdek paginas, maar niet van de zoekresultaten",
+  "components.Login.demoModeInfo": "De demomodus is ingeschakeld. Gebruik de demo-inloggegevens om in te loggen."
 }

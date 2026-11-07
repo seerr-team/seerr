@@ -1375,7 +1375,6 @@
   "components.Settings.SettingsMain.validationApplicationUrl": "Érvényes URL-címet kell megadnia",
   "components.Settings.SettingsMain.validationApplicationUrlTrailingSlash": "Az URL nem végződhet perjeljel",
   "components.Settings.SettingsMain.validationUrl": "Érvényes URL-címet kell megadnia",
-  "components.Settings.SettingsMain.validationUrlTrailingSlash": "Az URL nem végződhet perjeljel",
   "components.Settings.SettingsMain.youtubeUrl": "YouTube URL",
   "components.Settings.SettingsMain.youtubeUrlTip": "A YouTube-videók alap URL-je, ha saját YouTube-instanciát használ.",
   "components.Settings.SettingsNetwork.csrfProtection": "CSRF védelem bekapcsolása",
@@ -1706,5 +1705,11 @@
   "components.Settings.Notifications.NotificationsGotify.embedPoster": "Poszter beágyazása",
   "components.Settings.jellyfinSyncFailedConnectionError": "A {mediaServerName} szerver nem elérhető. Ellenőrizze, hogy fut-e és elérhető-e a Seerr-ből.",
   "components.Settings.toastPlexSyncFailure": "Sikertelen a Plex könyvtárak szinkronizációja.",
-  "components.Settings.toggleLibraryFailure": "Nem sikerült a könyvtár frissítése."
+  "components.Settings.toggleLibraryFailure": "Nem sikerült a könyvtár frissítése.",
+  "components.Settings.Notifications.NotificationsNtfy.tags": "Címkék",
+  "components.UserList.searchUsers": "Keresés…",
+  "components.Settings.SettingsMain.hideRequested": "A kért média elrejtése",
+  "components.Settings.SettingsMain.hideRequestedTip": "A felfedező oldalakról kért médiaelemek elrejtése a keresési találatok között",
+  "components.Settings.Notifications.NotificationsNtfy.tagsPlaceholder": "megfigyelés,figyelmeztetés",
+  "components.Login.demoModeInfo": "A demó mód engedélyezve van. A demóhoz tartozó bejelentkezési adatokkal jelentkezzen be."
 }

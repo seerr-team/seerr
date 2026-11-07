@@ -19,20 +19,20 @@ concurrency:
 jobs:
   semantic-title:
     name: Validate PR Title
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
       pull-requests: write
       checks: write
       issues: write
     steps:
-      - uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50 # v6.1.1
+      - uses: amannn/action-semantic-pull-request@v6.1.1
         id: lint_pr_title
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - parallel:
-          - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+          - uses: actions/github-script@v9.0.0
             if: always() && steps.lint_pr_title.outputs.error_message != null
             env:
               ERROR_MESSAGE: ${{ steps.lint_pr_title.outputs.error_message }}
@@ -80,7 +80,7 @@ jobs:
                   });
                 }
 
-          - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+          - uses: actions/github-script@v9.0.0
             if: always() && steps.lint_pr_title.outputs.error_message == null
             with:
               github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -112,7 +112,7 @@ jobs:
   template-check:
     name: Validate PR Template
     if: github.event.action != 'synchronize' && github.actor != 'renovate[bot]'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
       issues: write
@@ -125,12 +125,12 @@ jobs:
             run: echo "skip=true" >> "$GITHUB_OUTPUT"
 
           - name: Checkout
-            uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+            uses: actions/checkout@v7.0.1
             with:
               persist-credentials: false
 
       - name: Set up Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        uses: actions/setup-node@v7.0.0
         with:
           node-version-file: 'package.json'
           package-manager-cache: false
@@ -141,11 +141,31 @@ jobs:
           PR_BODY: ${{ github.event.pull_request.body }}
         run: printf '%s' "$PR_BODY" > /tmp/pr-body.txt
 
+      - name: Look up author permission
+        if: steps.bot-check.outputs.skip != 'true'
+        id: permission
+        uses: actions/github-script@v9.0.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          result-encoding: string
+          script: |
+            try {
+              const { data } = await github.rest.repos.getCollaboratorPermissionLevel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                username: context.payload.pull_request.user.login,
+              });
+              return data.permission;
+            } catch (e) {
+              console.log('Could not look up author permission:', e.message);
+              return 'none';
+            }
+
       - name: Run template check
         if: steps.bot-check.outputs.skip != 'true'
         id: check
         env:
-          AUTHOR_ASSOCIATION: ${{ github.event.pull_request.author_association }}
+          AUTHOR_PERMISSION: ${{ steps.permission.outputs.result }}
         run: |
           set +e
           ISSUES=$(node bin/check-pr-template.mjs /tmp/pr-body.txt)
@@ -161,7 +181,7 @@ jobs:
       - parallel:
           - name: Label and comment on failure
             if: steps.bot-check.outputs.skip != 'true' && steps.check.outputs.exit_code != '0'
-            uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+            uses: actions/github-script@v9.0.0
             env:
               ISSUES_JSON: ${{ steps.check.outputs.issues }}
               PR_AUTHOR: ${{ github.event.pull_request.user.login }}
@@ -247,7 +267,7 @@ jobs:
 
           - name: Remove label on success
             if: steps.bot-check.outputs.skip != 'true' && steps.check.outputs.exit_code == '0'
-            uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+            uses: actions/github-script@v9.0.0
             with:
               github-token: ${{ secrets.GITHUB_TOKEN }}
               script: |

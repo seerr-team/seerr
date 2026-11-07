@@ -1428,7 +1428,6 @@
   "components.Settings.SettingsMain.enableSpecialEpisodes": "Povolit žádosti o speciální epizody",
   "components.Settings.SettingsMain.hideAvailableTip": "Skrýt dostupná média ze stránek objevování, ale ne z výsledků vyhledávání",
   "components.Settings.SettingsMain.validationUrl": "Musíte zadat platnou adresu URL",
-  "components.Settings.SettingsMain.validationUrlTrailingSlash": "Adresa URL nesmí končit lomítkem",
   "components.Settings.SettingsMain.youtubeUrl": "Adresa URL YouTube",
   "components.Settings.SettingsMain.youtubeUrlTip": "Základní adresa URL pro videa na YouTube, pokud je použita vlastní hostovaná instance YouTube.",
   "components.Settings.SettingsNetwork.csrfProtection": "Povolit ochranu CSRF",

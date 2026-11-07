@@ -1642,7 +1642,6 @@
   "components.Selector.CertificationSelector.selectCertification": "",
   "components.Settings.Notifications.NotificationsSlack.embedPoster": "",
   "components.Settings.SettingsJobsCache.dnscacheflushed": "",
-  "components.Settings.SettingsMain.validationUrlTrailingSlash": "",
   "components.Settings.providerStatus": "",
   "i18n.error": "",
   "components.Discover.timeWindowDay": "",

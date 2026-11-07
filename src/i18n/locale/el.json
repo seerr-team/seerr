@@ -1625,7 +1625,6 @@
   "components.UserProfile.UserSettings.UserNotificationSettings.UserNotificationsWebPush.subscriptiondeleted": "",
   "components.UserProfile.UserSettings.UserNotificationSettings.UserNotificationsWebPush.subscriptiondeleteerror": "",
   "components.Selector.CertificationSelector.starttyping": "",
-  "components.Settings.SettingsMain.validationUrlTrailingSlash": "",
   "components.Settings.addrule": "",
   "components.Blocklist.filterBlocklistedTags": "",
   "components.Selector.canceled": "",

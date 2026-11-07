@@ -15,13 +15,13 @@ concurrency:
 jobs:
   stale:
     name: Close stale issues and PRs
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       actions: write
       issues: write
       pull-requests: write
     steps:
-      - uses: actions/stale@4391f3da665fdf50b6810c1a66712fb9ba21aa93 # v11.0.0
+      - uses: actions/stale@v11.0.0
         with:
           any-of-labels: "pending author's response"
           exempt-issue-labels: 'confirmed'

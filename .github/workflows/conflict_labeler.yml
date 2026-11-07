@@ -21,14 +21,14 @@ jobs:
   label:
     name: Labeling
     if: github.actor != 'renovate[bot]'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     permissions:
       contents: read
       pull-requests: write
     steps:
       - name: Apply label
-        uses: eps1lon/actions-label-merge-conflict@0273be72a0bbd58fcd71d0d6c02c209b50d1e5e1 # v3.1.0
+        uses: eps1lon/actions-label-merge-conflict@v3.1.0
         with:
           dirtyLabel: 'merge conflict'
           commentOnDirty: 'This pull request has merge conflicts. Please resolve the conflicts so the PR can be successfully reviewed and merged.'

@@ -1523,7 +1523,6 @@
   "components.Settings.SettingsMain.streamingRegion": "",
   "components.Settings.SettingsMain.streamingRegionTip": "Mostrar sitios de streaming por disponibilidad regional",
   "components.Settings.SettingsMain.validationUrl": "Debe proveer una URL válida",
-  "components.Settings.SettingsMain.validationUrlTrailingSlash": "La URL debe no terminar en una barra final",
   "components.Settings.SettingsMain.youtubeUrl": "URL de YouTube",
   "components.Settings.SettingsMain.youtubeUrlTip": "",
   "components.Settings.SettingsNetwork.apiRequestTimeout": "",

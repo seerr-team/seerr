@@ -12,6 +12,10 @@ sidebar_position: 1
 If the [Application URL](/using-seerr/settings/general#application-title) setting is configured in **Settings → General**, Seerr will explicitly set the origin server hostname when connecting to the SMTP host.
 :::
 
+### Use Public Seerr Logo (optional)
+
+If your Seerr instance is not publicly accessible, email clients outside your network will not be able to load its logo. Enable this option to use the public Seerr logo instead, which is loaded from the project's public GitHub repository.
+
 ### Require User Email
 
 When enabled, users will be required to provide a valid email address in their user settings. This is useful if you want to ensure all users can receive email notifications.
@@ -40,6 +44,10 @@ In most cases, [Use Implicit TLS](https://tools.ietf.org/html/rfc8314) should be
 
 The default value for this setting is **Use STARTTLS if available**.
 
+### Allow Self-Signed Certificates (optional)
+
+Enable this if your SMTP server uses a self-signed TLS certificate. When enabled, Seerr stops verifying the server's TLS certificate, so any certificate is accepted, including invalid or untrusted ones. Only use it with a server you trust.
+
 ### SMTP Username & Password
 
 :::info
@@ -52,3 +60,7 @@ Configure these values as appropriate to authenticate with your SMTP host.
 Configure these values to enable encrypting and signing of email messages using [OpenPGP](https://www.openpgp.org/). Note that individual users must also have their **PGP public keys** configured in their user settings in order for PGP encryption to be used in messages addressed to them.
 
 When configuring the PGP keys, be sure to keep the entire contents of the key intact. For example, private keys always begin with `-----BEGIN PGP PRIVATE KEY BLOCK-----` and end with `-----END PGP PRIVATE KEY BLOCK-----`.
+
+### Embed Poster (optional)
+
+When enabled, the poster image of the requested movie or series is included in the notification when one is available.

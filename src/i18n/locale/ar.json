@@ -1362,7 +1362,6 @@
   "components.Settings.SettingsMain.streamingRegion": "منطقة البث",
   "components.Settings.SettingsMain.streamingRegionTip": "إظهار مواقع البث بحسب التوافر الإقليمي",
   "components.Settings.SettingsMain.validationUrl": "يجب تقديم رابط صالح",
-  "components.Settings.SettingsMain.validationUrlTrailingSlash": "يجب ألا ينتهي الرابط بشرطة مائلة /",
   "components.Settings.SettingsMain.youtubeUrl": "رابط YouTube",
   "components.Settings.SettingsMain.youtubeUrlTip": "الرابط الجذري لمقاطع YouTube في حال استخدام نسخة مستضافة ذاتياً.",
   "components.Settings.SettingsNetwork.csrfProtection": "تفعيل حماية CSRF",

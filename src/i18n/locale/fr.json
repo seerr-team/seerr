@@ -838,7 +838,7 @@
   "components.QuotaSelector.days": "{count, plural, one {jour} other {jours}}",
   "components.UserProfile.UserSettings.UserGeneralSettings.languageDefault": "Par défaut ({language})",
   "components.Settings.webAppUrlTip": "Rediriger éventuellement les utilisateurs vers l'application web de votre serveur plutôt que vers https://app.plex.tv/desktop",
-  "components.Settings.webAppUrl": "URL de l'<WebAppLink>application web</WebAppLink>",
+  "components.Settings.webAppUrl": "URL <WebAppLink>application web</WebAppLink>",
   "components.Settings.noDefault4kServer": "Un serveur {serverType} 4K doit être défini par défaut pour permettre aux utilisateurs de faire des demandes de {mediaType} en 4K.",
   "components.Settings.is4k": "4K",
   "components.Settings.SettingsUsers.newPlexLoginTip": "Autoriser les utilisateurs {mediaServerName} à se connecter sans avoir été importés",
@@ -1528,7 +1528,6 @@
   "components.Settings.Notifications.NotificationsWebhook.webhookUrlTip": "L'URL de test des notifications est définie sur {testUrl} au lieu de la véritable URL du webhook.",
   "components.Settings.SettingsJobsCache.misses": "Échecs",
   "components.Settings.SettingsMain.hideAvailableTip": "Masquer les médias disponibles dans les pages de découverte, mais pas dans les résultats de recherche",
-  "components.Settings.SettingsMain.validationUrlTrailingSlash": "L'URL ne doit pas se terminer par un slash (/)",
   "components.Settings.SettingsMain.youtubeUrl": "URL YouTube",
   "components.Settings.metadataProviderSelection": "Sélection des fournisseurs de métadonnées",
   "components.Settings.searchKeywords": "Recherche par mots-clés…",
@@ -1708,5 +1707,9 @@
   "components.Settings.toastPlexSyncFailure": "Échec de la synchronisation des bibliothèques Plex.",
   "components.Settings.toggleLibraryFailure": "Échec de la mise à jour de la bibliothèque.",
   "components.UserList.searchUsers": "Rechercher…",
-  "components.Settings.Notifications.NotificationsNtfy.tags": "Tags"
+  "components.Settings.Notifications.NotificationsNtfy.tags": "Tags",
+  "components.Settings.SettingsMain.hideRequested": "Masquer les médias demandés",
+  "components.Settings.SettingsMain.hideRequestedTip": "Masquer les médias déjà demandés des pages Découvrir, mais pas des résultats de recherche",
+  "components.Login.demoModeInfo": "Le mode démo est activé. Utilisez les identifiants de démonstration pour vous connecter.",
+  "components.Settings.Notifications.NotificationsNtfy.tagsPlaceholder": "eyes,warning"
 }

@@ -78,7 +78,7 @@ commit_parsers = [
   { message = "^refactor", group = "<!-- 5 -->🚜 Refactor" },
   { message = "^style", group = "<!-- 6 -->🎨 Styling" },
   { message = "^test", group = "<!-- 7 -->🧪 Testing" },
-  { message = "^chore|^ci", group = "<!-- 8 -->⚙️ Miscellaneous Tasks" },
+  { message = "^chore|^ci|^build", group = "<!-- 8 -->⚙️ Miscellaneous Tasks" },
   { message = "^revert", group = "<!-- 9 -->◀️ Revert" },
 ]
 protect_breaking_commits = false

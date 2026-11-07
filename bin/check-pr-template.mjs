@@ -16,9 +16,9 @@ if (!bodyFile) {
 const body = readFileSync(resolve(bodyFile), 'utf8');
 const issues = [];
 
-const MAINTAINER_ROLES = ['OWNER', 'MEMBER', 'COLLABORATOR'];
-const isMaintainer = MAINTAINER_ROLES.includes(
-  process.env.AUTHOR_ASSOCIATION ?? ''
+const MAINTAINER_PERMISSIONS = ['admin', 'write'];
+const isMaintainer = MAINTAINER_PERMISSIONS.includes(
+  process.env.AUTHOR_PERMISSION ?? ''
 );
 
 const stripComments = (s) => {

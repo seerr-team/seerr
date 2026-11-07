@@ -10,21 +10,21 @@ describe('Auto Request Settings', () => {
   });
 
   it('should not see watchlist sync settings on an account without permissions', () => {
-    visitUserEditPage(Cypress.env('USER_EMAIL'));
+    visitUserEditPage(Cypress.expose('USER_EMAIL'));
 
     cy.contains('Auto-Request Movies').should('not.exist');
     cy.contains('Auto-Request Series').should('not.exist');
   });
 
   it('should see watchlist sync settings on an admin account', () => {
-    visitUserEditPage(Cypress.env('ADMIN_EMAIL'));
+    visitUserEditPage(Cypress.expose('ADMIN_EMAIL'));
 
     cy.contains('Auto-Request Movies').should('exist');
     cy.contains('Auto-Request Series').should('exist');
   });
 
   it('should see auto-request settings after being given permission', () => {
-    visitUserEditPage(Cypress.env('USER_EMAIL'));
+    visitUserEditPage(Cypress.expose('USER_EMAIL'));
 
     cy.get('[data-testid=settings-nav-desktop').contains('Permissions').click();
 

@@ -16,7 +16,7 @@ jobs:
   determine-tag-version:
     name: Determine tag version
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
     outputs:
@@ -24,13 +24,13 @@ jobs:
     steps:
       - parallel:
           - name: Checkout
-            uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+            uses: actions/checkout@v7.0.1
             with:
               fetch-depth: 0
               persist-credentials: false
 
           - name: Install git-cliff
-            uses: taiki-e/install-action@742a3317eac7bd62f91cd888b4eead5e784ba833 # v2.87.1
+            uses: taiki-e/install-action@v2.87.1
             with:
               tool: git-cliff
 
@@ -47,7 +47,7 @@ jobs:
   create-tag:
     name: Create tag
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: write
     needs: determine-tag-version
@@ -56,16 +56,16 @@ jobs:
       TAG_VERSION: ${{ needs.determine-tag-version.outputs.tag_version }}
     steps:
       - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@v7.0.1
         with:
           ssh-key: '${{ secrets.COMMIT_KEY }}'
 
       - parallel:
           - name: Pnpm Setup
-            uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+            uses: pnpm/action-setup@v6.0.10
 
           - name: Set up Node.js
-            uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+            uses: actions/setup-node@v7.0.0
             with:
               node-version-file: 'package.json'
               # For workflows with elevated privileges we recommend disabling automatic caching.

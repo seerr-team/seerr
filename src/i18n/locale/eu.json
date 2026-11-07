@@ -1497,7 +1497,6 @@
   "components.Settings.SettingsJobsCache.ipv4Fallbacks": "IPv4 ordezkoak",
   "components.Settings.SettingsMain.hideAvailableTip": "Ezkutatu eskuragarri dauden multimedia edukiak aurkikuntza-orrialdeetatik, baina ez bilaketa-emaitzetatik",
   "components.Settings.SettingsMain.validationUrl": "Baliozko URL bat eman behar duzu",
-  "components.Settings.SettingsMain.validationUrlTrailingSlash": "URLak ez du barra batean amaitu behar",
   "components.Settings.SettingsMain.youtubeUrl": "YouTube URLa",
   "components.Settings.SettingsMain.youtubeUrlTip": "YouTube bideoen oinarrizko URLa, auto-ostatutako YouTube instantzia bat erabiltzen bada.",
   "components.Settings.SettingsNetwork.dnsCache": "DNS cachea",
@@ -1695,5 +1694,7 @@
   "components.UserProfile.UserSettings.LinkJellyfinQuickConnectModal.usePassword": "Erabili pasahitza horren ordez",
   "hooks.useQuickConnect.errorMessage": "Quick Connect hasieratzeak huts egin du. Mesedez, saiatu berriro.",
   "i18n.sync": "Sinkronizazioa",
-  "i18n.syncing": "Sinkronizatzen…"
+  "i18n.syncing": "Sinkronizatzen…",
+  "components.Settings.Notifications.NotificationsNtfy.tags": "Etiketak",
+  "components.Settings.Notifications.NotificationsNtfy.tagsPlaceholder": "begiak,oharra"
 }

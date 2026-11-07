@@ -413,7 +413,7 @@ const SettingsJobs = () => {
                         })
                       }
                     >
-                      {[5, 10, 15, 20, 30, 60].map((v) => (
+                      {[3, 5, 10, 15, 20, 30, 60].map((v) => (
                         <option value={v} key={`jobScheduleMinutes-${v}`}>
                           {intl.formatMessage(
                             messages.editJobScheduleSelectorMinutes,

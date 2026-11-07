@@ -1303,7 +1303,6 @@
   "components.Settings.SettingsJobsCache.process-blocklisted-tags": "",
   "components.Settings.SettingsMain.hideBlocklistedTip": "",
   "components.Settings.SettingsMain.validationUrl": "",
-  "components.Settings.SettingsMain.validationUrlTrailingSlash": "",
   "components.Settings.SettingsMain.youtubeUrl": "",
   "components.Settings.SettingsMain.youtubeUrlTip": "",
   "components.Settings.SettingsNetwork.csrfProtectionHoverTip": "",
