@@ -206,7 +206,14 @@ const UserLinkedAccountsSettings = () => {
         try {
           await initiateOidcLogin(
             p.slug,
-            new URL(window.location.pathname, window.location.origin).toString()
+            // this is hard-coded, since this page can be reached as both
+            // `/profile/settings/linked-accounts` and
+            // `/users/{id}/settings/linked-accounts`, but we want the OIDC
+            // redirect URLs to be static so users can register them.
+            new URL(
+              '/profile/settings/linked-accounts',
+              window.location.origin
+            ).toString()
           );
         } catch {
           setError(intl.formatMessage(messages.errorUnknown));
