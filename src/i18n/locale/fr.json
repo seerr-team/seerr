@@ -1711,5 +1711,6 @@
   "components.Settings.SettingsMain.hideRequested": "Masquer les médias demandés",
   "components.Settings.SettingsMain.hideRequestedTip": "Masquer les médias déjà demandés des pages Découvrir, mais pas des résultats de recherche",
   "components.Login.demoModeInfo": "Le mode démo est activé. Utilisez les identifiants de démonstration pour vous connecter.",
-  "components.Settings.Notifications.NotificationsNtfy.tagsPlaceholder": "eyes,warning"
+  "components.Settings.Notifications.NotificationsNtfy.tagsPlaceholder": "eyes,warning",
+  "components.RequestModal.noSeasonsAvailable": "Toutes les saisons sélectionnées sont déjà demandées ou disponibles."
 }
