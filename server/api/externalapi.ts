@@ -137,6 +137,8 @@ class ExternalAPI {
           .catch((e) => {
             logger.warn('Failed to refresh cached response in background', {
               label: 'External API',
+              baseUrl: e.config?.baseURL,
+              endpoint,
               errorMessage: e.message,
             });
           });
