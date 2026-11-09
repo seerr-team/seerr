@@ -42,7 +42,6 @@ interface PushNotificationPayload {
   actionUrlTitle?: string;
   requestId?: number;
   pendingRequestsCount?: number;
-  isAdmin?: boolean;
 }
 
 interface WebPushError extends Error {
@@ -193,7 +192,6 @@ class WebPushAgent
       actionUrl,
       actionUrlTitle,
       pendingRequestsCount: payload.pendingRequestsCount,
-      isAdmin: payload.isAdmin,
     };
   }
 
@@ -296,11 +294,7 @@ class WebPushAgent
       );
     }
 
-    if (
-      payload.notifyAdmin ||
-      type === Notification.MEDIA_APPROVED ||
-      type === Notification.MEDIA_DECLINED
-    ) {
+    if (payload.notifyAdmin) {
       const users = await userRepository.find();
 
       const manageUsers = users.filter(
@@ -327,51 +321,12 @@ class WebPushAgent
               .getMany()
           : [];
 
-      // We only want to send the custom notification when type is approved or declined
-      // Otherwise, default to the normal notification
-      if (
-        type === Notification.MEDIA_APPROVED ||
-        type === Notification.MEDIA_DECLINED
-      ) {
-        if (mainUser && allSubs.length > 0) {
-          webpush.setVapidDetails(
-            `mailto:${mainUser.email}`,
-            settings.vapidPublic,
-            settings.vapidPrivate
-          );
-
-          await Promise.all(
-            allSubs.map(async (sub) => {
-              const locale = sub.user?.settings?.locale as AvailableLocale;
-              // Custom payload only for updating the app badge
-              const notificationBadgePayload = Buffer.from(
-                JSON.stringify(
-                  this.getNotificationPayload(
-                    type,
-                    {
-                      subject: payload.subject,
-                      notifySystem: false,
-                      notifyAdmin: true,
-                      isAdmin: true,
-                      pendingRequestsCount: pendingRequests.length,
-                    },
-                    locale
-                  )
-                ),
-                'utf-8'
-              );
-              await webPushNotification(sub, notificationBadgePayload);
-            })
-          );
-        }
-      } else {
-        pushSubs.push(
-          ...allSubs.map((sub) => ({
-            sub,
-            locale: sub.user?.settings?.locale as AvailableLocale,
-          }))
-        );
-      }
+      pushSubs.push(
+        ...allSubs.map((sub) => ({
+          sub,
+          locale: sub.user?.settings?.locale as AvailableLocale,
+        }))
+      );
     }
 
     if (mainUser && pushSubs.length > 0) {

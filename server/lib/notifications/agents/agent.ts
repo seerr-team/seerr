@@ -20,7 +20,6 @@ export interface NotificationPayload {
   issue?: Issue;
   comment?: IssueComment;
   pendingRequestsCount?: number;
-  isAdmin?: boolean;
 }
 
 export abstract class BaseAgent<T extends NotificationAgentConfig> {
