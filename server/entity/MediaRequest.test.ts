@@ -8,12 +8,15 @@ import Media from '@server/entity/Media';
 import {
   DuplicateMediaRequestError,
   MediaRequest,
+  NoSeasonsAvailableError,
   QuotaRestrictedError,
 } from '@server/entity/MediaRequest';
 import SeasonRequest from '@server/entity/SeasonRequest';
 import { User } from '@server/entity/User';
 import { Permission } from '@server/lib/permissions';
 import { setupTestDb } from '@server/test/db';
+
+const EMPTY_SEASON = 4;
 
 // get is a prototype method unlike getMovie, and replaces the cache lookup too
 const externalApiGetMock = mock.method(
@@ -31,7 +34,12 @@ const externalApiGetMock = mock.method(
     return {
       id: tmdbId,
       external_ids: {},
-      seasons: [1, 2, 3].map((season_number) => ({ season_number })),
+      seasons: [
+        { season_number: 1, episode_count: 10 },
+        { season_number: 2, episode_count: 10 },
+        { season_number: 3, episode_count: 10 },
+        { season_number: EMPTY_SEASON, episode_count: 0 },
+      ],
       // Skips getMovie's localized fallback call
       videos: { results: [{ type: 'Trailer', key: 'trailer' }] },
     };
@@ -170,6 +178,47 @@ describe('MediaRequest.request', () => {
       1
     );
     assert.strictEqual(await seasonRequestRepository.count(), 3);
+  });
+
+  it('does not save requested seasons with no episodes on TMDB', async () => {
+    const seasonRequestRepository = getRepository(SeasonRequest);
+    const requester = await seedRequester(5);
+
+    await MediaRequest.request(
+      {
+        mediaId: 77777,
+        mediaType: MediaType.TV,
+        seasons: [1, EMPTY_SEASON, 99],
+        is4k: false,
+      },
+      requester
+    );
+
+    const saved = await seasonRequestRepository.find();
+    assert.deepStrictEqual(
+      saved.map((season) => season.seasonNumber),
+      [1]
+    );
+  });
+
+  it('rejects a request for only a season with no episodes', async () => {
+    const requestRepository = getRepository(MediaRequest);
+    const requester = await seedRequester(5);
+
+    await assert.rejects(
+      () =>
+        MediaRequest.request(
+          {
+            mediaId: 77778,
+            mediaType: MediaType.TV,
+            seasons: [EMPTY_SEASON],
+            is4k: false,
+          },
+          requester
+        ),
+      NoSeasonsAvailableError
+    );
+    assert.strictEqual(await requestRepository.count(), 0);
   });
 
   it('creates one media row for concurrent 4k and non-4k requests', async () => {

@@ -1,4 +1,5 @@
 import TheMovieDb from '@server/api/themoviedb';
+import type { TmdbTvSeasonResult } from '@server/api/themoviedb/interfaces';
 import {
   MediaRequestStatus,
   MediaStatus,
@@ -388,7 +389,10 @@ export class MediaRequest {
                   season.season_number !== 0 && season.episode_count > 0
               )
               .map((season) => season.season_number)
-          : (requestBody.seasons as number[]);
+          : MediaRequest.filterSeasonsWithEpisodes(
+              requestBody.seasons as number[],
+              tmdbMediaShow.seasons
+            );
       if (!settings.main.enableSpecialEpisodes) {
         requestedSeasons = requestedSeasons.filter((sn) => sn > 0);
       }
@@ -513,6 +517,18 @@ export class MediaRequest {
       await requestRepository.save(request);
       return request;
     }
+  }
+
+  public static filterSeasonsWithEpisodes(
+    seasonNumbers: number[],
+    tmdbSeasons: TmdbTvSeasonResult[]
+  ): number[] {
+    return seasonNumbers.filter((seasonNumber) =>
+      tmdbSeasons.some(
+        (season) =>
+          season.season_number === seasonNumber && season.episode_count > 0
+      )
+    );
   }
 
   @PrimaryGeneratedColumn()

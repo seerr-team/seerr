@@ -211,6 +211,20 @@ class SonarrAPI extends ServarrBase<{
     try {
       const series = await this.getSeriesByTvdbId(options.tvdbid);
 
+      const missingSeasons = options.seasons.filter(
+        (seasonNumber) =>
+          !series.seasons.some((season) => season.seasonNumber === seasonNumber)
+      );
+
+      if (missingSeasons.length > 0) {
+        logger.warn('Requested seasons are missing in Sonarr', {
+          label: 'Sonarr',
+          seriesTitle: series.title,
+          tvdbId: options.tvdbid,
+          missingSeasons,
+        });
+      }
+
       // If the series already exists, we will simply just update it
       if (series.id) {
         series.monitored = options.monitored ?? series.monitored;
