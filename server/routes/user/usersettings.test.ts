@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { before, beforeEach, describe, it, mock } from 'node:test';
 
-import JellyfinAPI from '@server/api/jellyfin';
+import JellyfinMainAPI from '@server/api/jellyfinMain';
 import { MediaServerType } from '@server/constants/server';
 import { UserType } from '@server/constants/user';
 import { getRepository } from '@server/datasource';
@@ -29,7 +29,7 @@ const defaultAuthenticateResponse = {
 };
 
 const authenticateQCMock = mock.method(
-  JellyfinAPI.prototype,
+  JellyfinMainAPI.prototype,
   'authenticateQuickConnect',
   async () => ({ ...defaultAuthenticateResponse })
 );
