@@ -216,13 +216,19 @@ class SonarrAPI extends ServarrBase<{
           !series.seasons.some((season) => season.seasonNumber === seasonNumber)
       );
 
-      if (missingSeasons.length > 0) {
-        logger.warn('Requested seasons are missing in Sonarr', {
-          label: 'Sonarr',
-          seriesTitle: series.title,
-          tvdbId: options.tvdbid,
-          missingSeasons,
-        });
+      const missingSeasonsError =
+        missingSeasons.length > 0
+          ? new Error(
+              `Sonarr does not have seasons ${missingSeasons.join(', ')} of ${series.title}`
+            )
+          : undefined;
+
+      // With none of the seasons to apply, an update would only search unrelated ones
+      if (
+        missingSeasonsError &&
+        missingSeasons.length === options.seasons.length
+      ) {
+        throw missingSeasonsError;
       }
 
       // If the series already exists, we will simply just update it
@@ -281,6 +287,10 @@ class SonarrAPI extends ServarrBase<{
             this.searchSeries(newSeriesResponse.data.id);
           }
 
+          if (missingSeasonsError) {
+            throw missingSeasonsError;
+          }
+
           return newSeriesResponse.data;
         } else {
           logger.error('Failed to update series in Sonarr', {
@@ -333,6 +343,10 @@ class SonarrAPI extends ServarrBase<{
         throw new Error('Failed to add series to Sonarr');
       }
 
+      if (missingSeasonsError) {
+        throw missingSeasonsError;
+      }
+
       return createdSeriesResponse.data;
     } catch (e) {
       logger.error('Something went wrong while adding a series to Sonarr.', {
@@ -341,7 +355,7 @@ class SonarrAPI extends ServarrBase<{
         options,
         response: e?.response?.data,
       });
-      throw new Error('Failed to add series', { cause: e });
+      throw new Error(`Failed to add series: ${e.message}`, { cause: e });
     }
   }
 

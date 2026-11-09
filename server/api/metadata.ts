@@ -1,7 +1,12 @@
 import type { TvShowProvider } from '@server/api/provider';
 import TheMovieDb from '@server/api/themoviedb';
+import { ANIME_KEYWORD_ID } from '@server/api/themoviedb/constants';
+import type {
+  TmdbTvDetails,
+  TmdbTvSeasonResult,
+} from '@server/api/themoviedb/interfaces';
 import Tvdb from '@server/api/tvdb';
-import { getSettings, MetadataProviderType } from '@server/lib/settings';
+import { MetadataProviderType, getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 
 export const getMetadataProvider = async (
@@ -36,4 +41,23 @@ export const getMetadataProvider = async (
     });
     return new TheMovieDb();
   }
+};
+
+export const getTvMetadataProvider = async (
+  tmdbTv: TmdbTvDetails
+): Promise<TvShowProvider> =>
+  getMetadataProvider(
+    tmdbTv.keywords.results.some((keyword) => keyword.id === ANIME_KEYWORD_ID)
+      ? 'anime'
+      : 'tv'
+  );
+
+export const getProviderSeasons = async (
+  tmdbTv: TmdbTvDetails
+): Promise<TmdbTvSeasonResult[]> => {
+  const metadataProvider = await getTvMetadataProvider(tmdbTv);
+
+  return metadataProvider instanceof TheMovieDb
+    ? tmdbTv.seasons
+    : (await metadataProvider.getTvShow({ tvId: tmdbTv.id })).seasons;
 };

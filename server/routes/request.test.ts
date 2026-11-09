@@ -6,6 +6,7 @@ import type {
   TmdbMovieDetails,
   TmdbTvDetails,
 } from '@server/api/themoviedb/interfaces';
+import Tvdb from '@server/api/tvdb';
 import {
   MediaRequestStatus,
   MediaStatus,
@@ -20,7 +21,7 @@ import SeasonRequest from '@server/entity/SeasonRequest';
 import { User } from '@server/entity/User';
 import { Permission } from '@server/lib/permissions';
 import type { RadarrSettings, SonarrSettings } from '@server/lib/settings';
-import { getSettings } from '@server/lib/settings';
+import { MetadataProviderType, getSettings } from '@server/lib/settings';
 import { checkUser } from '@server/middleware/auth';
 import { MediaRequestSubscriber } from '@server/subscriber/MediaRequestSubscriber';
 import { setupTestDb } from '@server/test/db';
@@ -55,7 +56,7 @@ Object.defineProperty(TheMovieDb.prototype, 'getMovie', {
   configurable: true,
 });
 
-const getTvShowImpl: (args: {
+let getTvShowImpl: (args: {
   tvId: number;
   language?: string;
 }) => Promise<TmdbTvDetails> = async ({ tvId }) => fakeTmdbShow(tvId);
@@ -80,6 +81,7 @@ function fakeTmdbMovie(tmdbId: number): TmdbMovieDetails {
 }
 
 const EMPTY_SEASON = 6;
+const OTHER_EMPTY_SEASON = 7;
 
 function fakeTmdbShow(tmdbId: number): TmdbTvDetails {
   return {
@@ -94,6 +96,7 @@ function fakeTmdbShow(tmdbId: number): TmdbTvDetails {
         episode_count: 10,
       })),
       { season_number: EMPTY_SEASON, episode_count: 0 },
+      { season_number: OTHER_EMPTY_SEASON, episode_count: 0 },
     ],
   } as unknown as TmdbTvDetails;
 }
@@ -603,6 +606,122 @@ describe('PUT /request/:requestId (season availability)', () => {
     assert.deepStrictEqual(
       saved.seasons.map((s) => s.seasonNumber),
       [1]
+    );
+  });
+
+  it('leaves seasons on the request alone without fetching the show', async (t) => {
+    const requestRepo = getRepository(MediaRequest);
+    const requester = await seedUser('demo@seerr.dev');
+    const mediaRequest = await seedTvRequest(requester, [1, 2, EMPTY_SEASON]);
+
+    const realGetTvShow = getTvShowImpl;
+    const fetchShow = t.mock.fn(async (): Promise<TmdbTvDetails> => {
+      throw new Error('TMDB unavailable');
+    });
+    getTvShowImpl = fetchShow;
+    t.after(() => {
+      getTvShowImpl = realGetTvShow;
+    });
+
+    const agent = await loginAs('demo@seerr.dev', 'test1234');
+    const res = await agent.put(`/request/${mediaRequest.id}`).send({
+      mediaType: MediaType.TV,
+      seasons: [1, EMPTY_SEASON],
+    });
+
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(fetchShow.mock.callCount(), 0);
+
+    const saved = await requestRepo.findOneOrFail({
+      where: { id: mediaRequest.id },
+    });
+    assert.deepStrictEqual(
+      saved.seasons.map((s) => s.seasonNumber).sort((a, b) => a - b),
+      [1, EMPTY_SEASON]
+    );
+  });
+
+  it('saves other changes to a request holding only a season with no episodes', async () => {
+    const requestRepo = getRepository(MediaRequest);
+    const requester = await seedUser('demo@seerr.dev', {
+      permissions: Permission.REQUEST | Permission.REQUEST_ADVANCED,
+    });
+    const mediaRequest = await seedTvRequest(requester, [EMPTY_SEASON]);
+
+    const agent = await loginAs('demo@seerr.dev', 'test1234');
+    const res = await agent.put(`/request/${mediaRequest.id}`).send({
+      mediaType: MediaType.TV,
+      seasons: [EMPTY_SEASON],
+      serverId: 3,
+    });
+
+    assert.strictEqual(res.status, 200);
+
+    const saved = await requestRepo.findOneOrFail({
+      where: { id: mediaRequest.id },
+    });
+    assert.deepStrictEqual(
+      saved.seasons.map((s) => s.seasonNumber),
+      [EMPTY_SEASON]
+    );
+    assert.strictEqual(saved.serverId, 3);
+  });
+
+  it('drops an added season with no episodes but keeps one already held', async () => {
+    const requestRepo = getRepository(MediaRequest);
+    const requester = await seedUser('demo@seerr.dev');
+    const mediaRequest = await seedTvRequest(requester, [1, EMPTY_SEASON]);
+
+    const agent = await loginAs('demo@seerr.dev', 'test1234');
+    const res = await agent.put(`/request/${mediaRequest.id}`).send({
+      mediaType: MediaType.TV,
+      seasons: [1, 2, EMPTY_SEASON, OTHER_EMPTY_SEASON],
+    });
+
+    assert.strictEqual(res.status, 200);
+
+    const saved = await requestRepo.findOneOrFail({
+      where: { id: mediaRequest.id },
+    });
+    assert.deepStrictEqual(
+      saved.seasons.map((s) => s.seasonNumber).sort((a, b) => a - b),
+      [1, 2, EMPTY_SEASON]
+    );
+  });
+
+  it('adds a season only the TVDB provider has', async (t) => {
+    const requestRepo = getRepository(MediaRequest);
+    const requester = await seedUser('demo@seerr.dev');
+    const mediaRequest = await seedTvRequest(requester, [1]);
+
+    const { metadataSettings } = getSettings();
+    metadataSettings.tv = MetadataProviderType.TVDB;
+    t.after(() => {
+      metadataSettings.tv = MetadataProviderType.TMDB;
+    });
+    t.mock.method(Tvdb, 'getInstance', async () => ({
+      getTvShow: async () => ({
+        seasons: [
+          { season_number: 1, episode_count: 10 },
+          { season_number: 8, episode_count: 10 },
+        ],
+      }),
+    }));
+
+    const agent = await loginAs('demo@seerr.dev', 'test1234');
+    const res = await agent.put(`/request/${mediaRequest.id}`).send({
+      mediaType: MediaType.TV,
+      seasons: [1, 8],
+    });
+
+    assert.strictEqual(res.status, 200);
+
+    const saved = await requestRepo.findOneOrFail({
+      where: { id: mediaRequest.id },
+    });
+    assert.deepStrictEqual(
+      saved.seasons.map((s) => s.seasonNumber).sort((a, b) => a - b),
+      [1, 8]
     );
   });
 
