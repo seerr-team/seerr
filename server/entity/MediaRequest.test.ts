@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
+import type { TestContext } from 'node:test';
 import { beforeEach, describe, it, mock } from 'node:test';
 
 import ExternalAPI from '@server/api/externalapi';
+import { ANIME_KEYWORD_ID } from '@server/api/themoviedb/constants';
+import Tvdb from '@server/api/tvdb';
 import { MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
@@ -14,9 +17,12 @@ import {
 import SeasonRequest from '@server/entity/SeasonRequest';
 import { User } from '@server/entity/User';
 import { Permission } from '@server/lib/permissions';
+import { MetadataProviderType, getSettings } from '@server/lib/settings';
 import { setupTestDb } from '@server/test/db';
 
 const EMPTY_SEASON = 4;
+const TVDB_ONLY_SEASON = 5;
+const ANIME_SHOW_ID = 66001;
 
 // get is a prototype method unlike getMovie, and replaces the cache lookup too
 const externalApiGetMock = mock.method(
@@ -34,6 +40,9 @@ const externalApiGetMock = mock.method(
     return {
       id: tmdbId,
       external_ids: {},
+      keywords: {
+        results: tmdbId === ANIME_SHOW_ID ? [{ id: ANIME_KEYWORD_ID }] : [],
+      },
       seasons: [
         { season_number: 1, episode_count: 10 },
         { season_number: 2, episode_count: 10 },
@@ -70,6 +79,24 @@ async function createRequester(
   permissions = Permission.REQUEST
 ): Promise<User> {
   return getRepository(User).save(new User({ email, permissions, avatar: '' }));
+}
+
+function useTvdbFor(t: TestContext, mediaType: 'tv' | 'anime') {
+  const { metadataSettings } = getSettings();
+  const prior = metadataSettings[mediaType];
+  metadataSettings[mediaType] = MetadataProviderType.TVDB;
+  t.after(() => {
+    metadataSettings[mediaType] = prior;
+  });
+
+  t.mock.method(Tvdb, 'getInstance', async () => ({
+    getTvShow: async () => ({
+      seasons: [
+        { season_number: 1, episode_count: 10 },
+        { season_number: TVDB_ONLY_SEASON, episode_count: 10 },
+      ],
+    }),
+  }));
 }
 
 function requestMovies(mediaIds: number[], requester: User) {
@@ -219,6 +246,50 @@ describe('MediaRequest.request', () => {
       NoSeasonsAvailableError
     );
     assert.strictEqual(await requestRepository.count(), 0);
+  });
+
+  it('requests a season only the TVDB provider has', async (t) => {
+    const seasonRequestRepository = getRepository(SeasonRequest);
+    const requester = await seedRequester(5);
+    useTvdbFor(t, 'tv');
+
+    await MediaRequest.request(
+      {
+        mediaId: 77779,
+        mediaType: MediaType.TV,
+        seasons: [TVDB_ONLY_SEASON],
+        is4k: false,
+      },
+      requester
+    );
+
+    const saved = await seasonRequestRepository.find();
+    assert.deepStrictEqual(
+      saved.map((season) => season.seasonNumber),
+      [TVDB_ONLY_SEASON]
+    );
+  });
+
+  it("uses the anime provider's seasons for an 'all' request", async (t) => {
+    const seasonRequestRepository = getRepository(SeasonRequest);
+    const requester = await seedRequester(5);
+    useTvdbFor(t, 'anime');
+
+    await MediaRequest.request(
+      {
+        mediaId: ANIME_SHOW_ID,
+        mediaType: MediaType.TV,
+        seasons: 'all',
+        is4k: false,
+      },
+      requester
+    );
+
+    const saved = await seasonRequestRepository.find();
+    assert.deepStrictEqual(
+      saved.map((season) => season.seasonNumber).sort((a, b) => a - b),
+      [1, TVDB_ONLY_SEASON]
+    );
   });
 
   it('creates one media row for concurrent 4k and non-4k requests', async () => {

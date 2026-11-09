@@ -1,3 +1,4 @@
+import { getProviderSeasons } from '@server/api/metadata';
 import TheMovieDb from '@server/api/themoviedb';
 import type { TmdbTvSeasonResult } from '@server/api/themoviedb/interfaces';
 import {
@@ -381,9 +382,10 @@ export class MediaRequest {
       const tmdbMediaShow = tmdbMedia as Awaited<
         ReturnType<typeof tmdb.getTvShow>
       >;
+      const providerSeasons = await getProviderSeasons(tmdbMediaShow);
       let requestedSeasons =
         requestBody.seasons === 'all'
-          ? tmdbMediaShow.seasons
+          ? providerSeasons
               .filter(
                 (season) =>
                   season.season_number !== 0 && season.episode_count > 0
@@ -391,7 +393,7 @@ export class MediaRequest {
               .map((season) => season.season_number)
           : MediaRequest.filterSeasonsWithEpisodes(
               requestBody.seasons as number[],
-              tmdbMediaShow.seasons
+              providerSeasons
             );
       if (!settings.main.enableSpecialEpisodes) {
         requestedSeasons = requestedSeasons.filter((sn) => sn > 0);

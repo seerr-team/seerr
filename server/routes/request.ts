@@ -1,3 +1,4 @@
+import { getProviderSeasons } from '@server/api/metadata';
 import RadarrAPI from '@server/api/servarr/radarr';
 import SonarrAPI from '@server/api/servarr/sonarr';
 import TheMovieDb from '@server/api/themoviedb';
@@ -577,13 +578,21 @@ requestRoutes.put<{ requestId: string }>(
               });
             }
 
-            const tmdbShow = await new TheMovieDb().getTvShow({
-              tvId: request.media.tmdbId,
-            });
-            const seasonsWithEpisodes = MediaRequest.filterSeasonsWithEpisodes(
-              requestedSeasons,
-              tmdbShow.seasons
+            const currentSeasons = request.seasons.map((s) => s.seasonNumber);
+            const addedSeasons = requestedSeasons.filter(
+              (sn) => !currentSeasons.includes(sn)
             );
+            const addableSeasons =
+              addedSeasons.length > 0
+                ? MediaRequest.filterSeasonsWithEpisodes(
+                    addedSeasons,
+                    await getProviderSeasons(
+                      await new TheMovieDb().getTvShow({
+                        tvId: request.media.tmdbId,
+                      })
+                    )
+                  )
+                : [];
 
             // Same key as create, so an edit cannot claim a season that a new
             // request is taking at the same moment
@@ -616,10 +625,6 @@ requestRoutes.put<{ requestId: string }>(
                     return [...seasons, ...combinedSeasons];
                   }, [] as number[]);
 
-                const currentSeasons = request.seasons.map(
-                  (s) => s.seasonNumber
-                );
-
                 // Seasons the media already covers cannot be requested again, while
                 // the ones this request holds stay on it
                 const coveredSeasons = (media.seasons ?? [])
@@ -633,7 +638,7 @@ requestRoutes.put<{ requestId: string }>(
                   .map((season) => season.seasonNumber)
                   .filter((sn) => !currentSeasons.includes(sn));
 
-                const filteredSeasons = seasonsWithEpisodes.filter(
+                const filteredSeasons = requestedSeasons.filter(
                   (rs) => !existingSeasons.includes(rs)
                 );
 
@@ -643,7 +648,7 @@ requestRoutes.put<{ requestId: string }>(
 
                 const newSeasons = filteredSeasons.filter(
                   (sn) =>
-                    !currentSeasons.includes(sn) && !coveredSeasons.includes(sn)
+                    addableSeasons.includes(sn) && !coveredSeasons.includes(sn)
                 );
 
                 const resultingSeasonCount =
