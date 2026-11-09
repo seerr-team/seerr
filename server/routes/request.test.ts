@@ -79,6 +79,8 @@ function fakeTmdbMovie(tmdbId: number): TmdbMovieDetails {
   } as unknown as TmdbMovieDetails;
 }
 
+const EMPTY_SEASON = 6;
+
 function fakeTmdbShow(tmdbId: number): TmdbTvDetails {
   return {
     id: tmdbId,
@@ -86,6 +88,13 @@ function fakeTmdbShow(tmdbId: number): TmdbTvDetails {
     original_language: 'en',
     keywords: { results: [] },
     external_ids: {},
+    seasons: [
+      ...[1, 2, 3, 4, 5].map((season_number) => ({
+        season_number,
+        episode_count: 10,
+      })),
+      { season_number: EMPTY_SEASON, episode_count: 0 },
+    ],
   } as unknown as TmdbTvDetails;
 }
 
@@ -551,6 +560,50 @@ describe('PUT /request/:requestId (season availability)', () => {
     });
 
     assert.strictEqual(res.status, 202);
+  });
+
+  it('does not add a season with no episodes on TMDB', async () => {
+    const requestRepo = getRepository(MediaRequest);
+    const requester = await seedUser('demo@seerr.dev');
+    const mediaRequest = await seedTvRequest(requester, [1]);
+
+    const agent = await loginAs('demo@seerr.dev', 'test1234');
+    const res = await agent.put(`/request/${mediaRequest.id}`).send({
+      mediaType: MediaType.TV,
+      seasons: [1, EMPTY_SEASON],
+    });
+
+    assert.strictEqual(res.status, 200);
+
+    const saved = await requestRepo.findOneOrFail({
+      where: { id: mediaRequest.id },
+    });
+    assert.deepStrictEqual(
+      saved.seasons.map((s) => s.seasonNumber),
+      [1]
+    );
+  });
+
+  it('returns 202 when the only requested season has no episodes', async () => {
+    const requestRepo = getRepository(MediaRequest);
+    const requester = await seedUser('demo@seerr.dev');
+    const mediaRequest = await seedTvRequest(requester, [1]);
+
+    const agent = await loginAs('demo@seerr.dev', 'test1234');
+    const res = await agent.put(`/request/${mediaRequest.id}`).send({
+      mediaType: MediaType.TV,
+      seasons: [EMPTY_SEASON],
+    });
+
+    assert.strictEqual(res.status, 202);
+
+    const saved = await requestRepo.findOneOrFail({
+      where: { id: mediaRequest.id },
+    });
+    assert.deepStrictEqual(
+      saved.seasons.map((s) => s.seasonNumber),
+      [1]
+    );
   });
 
   it('keeps the seasons it already holds once they are available', async () => {

@@ -1,5 +1,6 @@
 import RadarrAPI from '@server/api/servarr/radarr';
 import SonarrAPI from '@server/api/servarr/sonarr';
+import TheMovieDb from '@server/api/themoviedb';
 import {
   MediaRequestStatus,
   MediaStatus,
@@ -576,6 +577,14 @@ requestRoutes.put<{ requestId: string }>(
               });
             }
 
+            const tmdbShow = await new TheMovieDb().getTvShow({
+              tvId: request.media.tmdbId,
+            });
+            const seasonsWithEpisodes = MediaRequest.filterSeasonsWithEpisodes(
+              requestedSeasons,
+              tmdbShow.seasons
+            );
+
             // Same key as create, so an edit cannot claim a season that a new
             // request is taking at the same moment
             return mediaLock.dispatch(
@@ -624,7 +633,7 @@ requestRoutes.put<{ requestId: string }>(
                   .map((season) => season.seasonNumber)
                   .filter((sn) => !currentSeasons.includes(sn));
 
-                const filteredSeasons = requestedSeasons.filter(
+                const filteredSeasons = seasonsWithEpisodes.filter(
                   (rs) => !existingSeasons.includes(rs)
                 );
 
