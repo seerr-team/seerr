@@ -5,6 +5,7 @@ import type { AxiosInstance } from 'axios';
 
 import type {
   AddSeriesOptions,
+  SonarrMissingSeasonsError,
   SonarrSeason,
 } from '@server/api/servarr/sonarr';
 import SonarrAPI from '@server/api/servarr/sonarr';
@@ -132,6 +133,15 @@ describe('SonarrAPI addSeries', () => {
     return calls.map((call) => call.arguments[0]);
   }
 
+  function missesSeasonTwoOfAppliedSeries(e: unknown): boolean {
+    const { message, series } = e as SonarrMissingSeasonsError;
+
+    assert.match(message, /seasons 2 of/);
+    assert.strictEqual(series?.id, 9);
+
+    return true;
+  }
+
   it('rejects after updating and searching the seasons Sonarr has', async () => {
     const sonarr = buildSonarr();
     const { put, post } = stubSonarr(sonarr, () => ({
@@ -141,7 +151,10 @@ describe('SonarrAPI addSeries', () => {
       seasons: [{ seasonNumber: 1, monitored: false }],
     }));
 
-    await assert.rejects(() => sonarr.addSeries(options), /seasons 2 of/);
+    await assert.rejects(
+      () => sonarr.addSeries(options),
+      missesSeasonTwoOfAppliedSeries
+    );
 
     assert.deepStrictEqual(sentSeasons(put.mock.calls[0]), [
       { seasonNumber: 1, monitored: true },
@@ -159,7 +172,10 @@ describe('SonarrAPI addSeries', () => {
       ],
     }));
 
-    await assert.rejects(() => sonarr.addSeries(options), /seasons 2 of/);
+    await assert.rejects(
+      () => sonarr.addSeries(options),
+      missesSeasonTwoOfAppliedSeries
+    );
 
     assert.deepStrictEqual(sentUrls(post.mock.calls), ['/series']);
     assert.deepStrictEqual(sentSeasons(post.mock.calls[0]), [
