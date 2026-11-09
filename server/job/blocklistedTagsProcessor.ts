@@ -6,10 +6,15 @@ import type {
   TmdbSearchMovieResponse,
   TmdbSearchTvResponse,
 } from '@server/api/themoviedb/interfaces';
-import { MediaStatus, MediaType } from '@server/constants/media';
+import {
+  MediaRequestStatus,
+  MediaStatus,
+  MediaType,
+} from '@server/constants/media';
 import dataSource from '@server/datasource';
 import { Blocklist } from '@server/entity/Blocklist';
 import Media from '@server/entity/Media';
+import { MediaRequest } from '@server/entity/MediaRequest';
 import type {
   RunnableScanner,
   StatusBase,
@@ -27,6 +32,16 @@ const LIBRARY_OR_REQUESTED = [
   MediaStatus.PROCESSING,
   MediaStatus.PENDING,
 ];
+const ACTIVE_REQUEST_STATUSES = [
+  MediaRequestStatus.PENDING,
+  MediaRequestStatus.APPROVED,
+  MediaRequestStatus.FAILED,
+];
+const BLOCK_ELIGIBLE = [
+  MediaStatus.UNKNOWN,
+  MediaStatus.DELETED,
+  MediaStatus.BLOCKLISTED,
+];
 class AbortTransaction extends Error {}
 
 interface TagEntry {
@@ -35,10 +50,15 @@ interface TagEntry {
   mediaType: MediaType;
   blocklistedTags: string;
   mediaId: number | null;
+  status: MediaStatus | null;
+  status4k: MediaStatus | null;
 }
 
 const titleKey = (tmdbId: number, mediaType: MediaType) =>
   `${mediaType}:${tmdbId}`;
+
+const isLibraryOrRequested = (status: MediaStatus | null) =>
+  status !== null && LIBRARY_OR_REQUESTED.includes(status);
 
 class BlocklistedTagProcessor implements RunnableScanner<StatusBase> {
   private running = false;
@@ -54,6 +74,10 @@ class BlocklistedTagProcessor implements RunnableScanner<StatusBase> {
       await dataSource.transaction(async (em) => {
         await this.createBlocklistEntries(em);
         await this.reconcileTagEntries(em);
+
+        if (!this.running) {
+          throw new AbortTransaction();
+        }
       });
     } catch (err) {
       if (err instanceof AbortTransaction) {
@@ -229,18 +253,24 @@ class BlocklistedTagProcessor implements RunnableScanner<StatusBase> {
         continue;
       }
 
-      const inLibraryOrRequested = await mediaRepository.exist({
-        where: [
-          { tmdbId: entry.id, mediaType, status: In(LIBRARY_OR_REQUESTED) },
-          { tmdbId: entry.id, mediaType, status4k: In(LIBRARY_OR_REQUESTED) },
-        ],
-      });
+      // A BLOCKLISTED row can still hold live requests, so status alone isn't enough
+      const inLibraryOrRequested =
+        (await mediaRepository.exist({
+          where: [
+            { tmdbId: entry.id, mediaType, status: In(LIBRARY_OR_REQUESTED) },
+            { tmdbId: entry.id, mediaType, status4k: In(LIBRARY_OR_REQUESTED) },
+          ],
+        })) ||
+        (await em.getRepository(MediaRequest).exist({
+          where: {
+            media: { tmdbId: entry.id, mediaType },
+            status: In(ACTIVE_REQUEST_STATUSES),
+          },
+        }));
 
       if (inLibraryOrRequested) {
         continue;
       }
-
-      this.matchedKeywords.set(key, new Set([keywordId]));
 
       const alreadyBlocklisted = await blocklistRepository.exist({
         where: { tmdbId: entry.id, mediaType },
@@ -259,6 +289,8 @@ class BlocklistedTagProcessor implements RunnableScanner<StatusBase> {
           em
         );
       }
+
+      this.matchedKeywords.set(key, new Set([keywordId]));
     }
   }
 
@@ -280,6 +312,8 @@ class BlocklistedTagProcessor implements RunnableScanner<StatusBase> {
       .addSelect('blocklist.mediaType', 'mediaType')
       .addSelect('blocklist.blocklistedTags', 'blocklistedTags')
       .addSelect('media.id', 'mediaId')
+      .addSelect('media.status', 'status')
+      .addSelect('media.status4k', 'status4k')
       .leftJoin(
         Media,
         'media',
@@ -289,15 +323,30 @@ class BlocklistedTagProcessor implements RunnableScanner<StatusBase> {
       .getRawMany<TagEntry>();
 
     const staleEntries: TagEntry[] = [];
+    const unblockedMediaIds: number[] = [];
 
     for (const entry of tagEntries) {
       const keywords = this.matchedKeywords.get(
         titleKey(entry.tmdbId, entry.mediaType)
       );
 
-      if (!keywords) {
+      // A scan or request can land after the title passed the guard earlier in the run
+      if (
+        !keywords ||
+        isLibraryOrRequested(entry.status) ||
+        isLibraryOrRequested(entry.status4k)
+      ) {
         staleEntries.push(entry);
         continue;
+      }
+
+      if (entry.mediaId === null) {
+        await this.createPlaceholderMedia(entry, em);
+      } else if (
+        entry.status !== MediaStatus.BLOCKLISTED ||
+        entry.status4k !== MediaStatus.BLOCKLISTED
+      ) {
+        unblockedMediaIds.push(entry.mediaId);
       }
 
       const blocklistedTags = `,${[...keywords].join(',')},`;
@@ -305,6 +354,18 @@ class BlocklistedTagProcessor implements RunnableScanner<StatusBase> {
       if (entry.blocklistedTags !== blocklistedTags) {
         await blocklistRepository.update(entry.id, { blocklistedTags });
       }
+    }
+
+    // Requests are blocked by the media status, not the blocklist row
+    for (let i = 0; i < unblockedMediaIds.length; i += 500) {
+      await em.getRepository(Media).update(
+        {
+          id: In(unblockedMediaIds.slice(i, i + 500)),
+          status: In(BLOCK_ELIGIBLE),
+          status4k: In(BLOCK_ELIGIBLE),
+        },
+        { status: MediaStatus.BLOCKLISTED, status4k: MediaStatus.BLOCKLISTED }
+      );
     }
 
     // Batch removes so the query doesn't get too large
@@ -315,6 +376,21 @@ class BlocklistedTagProcessor implements RunnableScanner<StatusBase> {
 
       await this.removeStaleEntries(staleEntries.slice(i, i + 500), em);
     }
+  }
+
+  private async createPlaceholderMedia(entry: TagEntry, em: EntityManager) {
+    const media = await em.getRepository(Media).save(
+      new Media({
+        tmdbId: entry.tmdbId,
+        mediaType: entry.mediaType,
+        status: MediaStatus.BLOCKLISTED,
+        status4k: MediaStatus.BLOCKLISTED,
+      })
+    );
+
+    await em
+      .getRepository(Blocklist)
+      .update(entry.id, { media: { id: media.id } });
   }
 
   private async removeStaleEntries(entries: TagEntry[], em: EntityManager) {
@@ -348,14 +424,53 @@ class BlocklistedTagProcessor implements RunnableScanner<StatusBase> {
       await mediaRepository.delete(placeholders.map(({ id }) => id));
     }
 
-    await mediaRepository.update(
-      { id: In(mediaIds), status: MediaStatus.BLOCKLISTED },
-      { status: MediaStatus.UNKNOWN }
-    );
-    await mediaRepository.update(
-      { id: In(mediaIds), status4k: MediaStatus.BLOCKLISTED },
-      { status4k: MediaStatus.UNKNOWN }
-    );
+    const activeRequests = await em
+      .getRepository(MediaRequest)
+      .createQueryBuilder('request')
+      .select('media.id', 'mediaId')
+      .addSelect('request.status', 'status')
+      .addSelect('request.is4k', 'is4k')
+      .innerJoin('request.media', 'media')
+      .where('media.id IN (:...mediaIds)', { mediaIds })
+      .andWhere('request.status IN (:...statuses)', {
+        statuses: ACTIVE_REQUEST_STATUSES,
+      })
+      .getRawMany<{
+        mediaId: number;
+        status: MediaRequestStatus;
+        is4k: boolean | number;
+      }>();
+
+    for (const column of ['status', 'status4k'] as const) {
+      const requests = activeRequests.filter(
+        ({ is4k }) => Boolean(is4k) === (column === 'status4k')
+      );
+      const restoredStatuses: [MediaStatus, number[]][] = [
+        [
+          MediaStatus.PROCESSING,
+          requests
+            .filter(({ status }) => status !== MediaRequestStatus.PENDING)
+            .map(({ mediaId }) => mediaId),
+        ],
+        [
+          MediaStatus.PENDING,
+          requests
+            .filter(({ status }) => status === MediaRequestStatus.PENDING)
+            .map(({ mediaId }) => mediaId),
+        ],
+        [MediaStatus.UNKNOWN, mediaIds],
+      ];
+
+      // Each update only sees rows still BLOCKLISTED, so this order sets the precedence
+      for (const [status, ids] of restoredStatuses) {
+        if (ids.length > 0) {
+          await mediaRepository.update(
+            { id: In(ids), [column]: MediaStatus.BLOCKLISTED },
+            { [column]: status }
+          );
+        }
+      }
+    }
   }
 }
 
