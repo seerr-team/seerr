@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { before, beforeEach, describe, it, mock } from 'node:test';
 
+import SonarrAPI from '@server/api/servarr/sonarr';
 import TheMovieDb from '@server/api/themoviedb';
 import type {
   TmdbMovieDetails,
@@ -19,6 +20,7 @@ import OverrideRule from '@server/entity/OverrideRule';
 import Season from '@server/entity/Season';
 import SeasonRequest from '@server/entity/SeasonRequest';
 import { User } from '@server/entity/User';
+import { Notification } from '@server/lib/notifications';
 import { Permission } from '@server/lib/permissions';
 import type { RadarrSettings, SonarrSettings } from '@server/lib/settings';
 import { MetadataProviderType, getSettings } from '@server/lib/settings';
@@ -29,6 +31,7 @@ import {
   assertNoCredentials,
   seedUserSettings,
 } from '@server/test/userSettings';
+import axios from 'axios';
 import type { Express } from 'express';
 import express from 'express';
 import session from 'express-session';
@@ -1175,6 +1178,59 @@ describe('POST /request/:requestId/:status', () => {
 
     const persisted = await repo.findOneOrFail({ where: { id: declined.id } });
     assert.strictEqual(persisted.status, MediaRequestStatus.DECLINED);
+  });
+});
+
+describe('POST /request/:requestId/approve, season missing from Sonarr', () => {
+  async function waitForNotification(type: Notification) {
+    for (let attempt = 0; attempt < 300; attempt++) {
+      if (
+        sendNotificationMock.calls.some(
+          (call) => (call.arguments as unknown[])[2] === type
+        )
+      ) {
+        return;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+
+    assert.fail('notification was never sent');
+  }
+
+  it('links the series Sonarr added and still fails the request', async (t) => {
+    const requester = await seedUser('demo@seerr.dev');
+    const mediaRequest = await seedTvRequest(requester, [1, 2]);
+    mediaRequest.media.tvdbId = 454109;
+    await getRepository(Media).save(mediaRequest.media);
+
+    configureSonarr([{}]);
+    t.after(() => configureSonarr([]));
+    t.mock.method(SonarrAPI.prototype, 'getSeriesByTvdbId', async () => ({
+      title: 'Test Show',
+      seasons: [{ seasonNumber: 1, monitored: true }],
+    }));
+    t.mock.method(axios.Axios.prototype, 'post', async () => ({
+      data: { id: 9, title: 'Test Show', titleSlug: 'test-show' },
+    }));
+
+    const admin = await loginAs('admin@seerr.dev', 'test1234');
+    const res = await admin.post(`/request/${mediaRequest.id}/approve`);
+
+    assert.strictEqual(res.status, 200);
+    await waitForNotification(Notification.MEDIA_FAILED);
+
+    const media = await getRepository(Media).findOneOrFail({
+      where: { id: mediaRequest.media.id },
+    });
+    assert.strictEqual(media.serviceId, 0);
+    assert.strictEqual(media.externalServiceId, 9);
+    assert.strictEqual(media.externalServiceSlug, 'test-show');
+
+    const failed = await getRepository(MediaRequest).findOneOrFail({
+      where: { id: mediaRequest.id },
+    });
+    assert.strictEqual(failed.status, MediaRequestStatus.FAILED);
   });
 });
 
