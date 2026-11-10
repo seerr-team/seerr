@@ -1711,5 +1711,6 @@
   "components.Settings.Notifications.NotificationsNtfy.tagsPlaceholder": "eyes,warning",
   "components.Settings.SettingsMain.hideRequested": "Skjul anmodede medier",
   "components.Settings.SettingsMain.hideRequestedTip": "Skjul medier, der er anmodet om, fra Udforsk-siderne, men ikke fra søgeresultaterne",
-  "components.Login.demoModeInfo": "Demotilstand er aktiveret. Brug demo-loginoplysningerne til at logge ind."
+  "components.Login.demoModeInfo": "Demotilstand er aktiveret. Brug demo-loginoplysningerne til at logge ind.",
+  "components.RequestModal.noSeasonsAvailable": "Alle de valgte sæsoner er allerede anmodet om eller tilgængelige."
 }

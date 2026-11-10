@@ -567,7 +567,9 @@ class JellyfinAPI extends ExternalAPI {
       );
 
       return episodeResponse.Items.filter(
-        (item: JellyfinLibraryItem) => item.LocationType !== 'Virtual'
+        (item: JellyfinLibraryItem) =>
+          item.LocationType !== 'Virtual' &&
+          (!item.SeasonId || item.SeasonId === seasonID)
       );
     } catch (e) {
       logger.error(
