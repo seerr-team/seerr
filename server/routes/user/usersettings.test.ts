@@ -6,8 +6,13 @@ import { MediaServerType } from '@server/constants/server';
 import { UserType } from '@server/constants/user';
 import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
+import { UserSettings } from '@server/entity/UserSettings';
 import { getSettings } from '@server/lib/settings';
-import { checkUser, isAuthenticated } from '@server/middleware/auth';
+import {
+  checkUser,
+  hashApiKey,
+  isAuthenticated,
+} from '@server/middleware/auth';
 import authRoutes from '@server/routes/auth';
 import { setupTestDb } from '@server/test/db';
 import type { Express } from 'express';
@@ -130,5 +135,46 @@ describe('POST /user/:id/settings/linked-accounts/jellyfin/quickconnect', () => 
       where: { id: userId },
     });
     assert.strictEqual(user.jellyfinUserId, null);
+  });
+});
+
+describe('/user/:id/settings/api-key', () => {
+  const me = (apiKey: string) =>
+    request(app).get('/auth/me').set('X-API-Key', apiKey);
+
+  it('authenticates as the user until regenerated or revoked', async () => {
+    const { agent, userId } = await loginAs('demo@seerr.dev', 'test1234');
+    const url = `/user/${userId}/settings/api-key`;
+
+    const first = (await agent.post(url).expect(200)).body.apiKey;
+    assert.strictEqual((await me(first)).body.id, userId);
+    assert.deepStrictEqual((await agent.get(url)).body, { hasApiKey: true });
+
+    const settings = await getRepository(UserSettings).findOneOrFail({
+      where: { user: { id: userId } },
+      select: ['id', 'apiKeyHash'],
+    });
+    assert.strictEqual(settings.apiKeyHash, hashApiKey(first));
+
+    const second = (await agent.post(url).expect(200)).body.apiKey;
+    assert.strictEqual((await me(first)).status, 403);
+    assert.strictEqual((await me(second)).body.id, userId);
+
+    await agent.delete(url).expect(204);
+    assert.strictEqual((await me(second)).status, 403);
+    assert.strictEqual(
+      (await agent.get('/auth/me').set('X-API-Key', second)).body.id,
+      userId
+    );
+    assert.deepStrictEqual((await agent.get(url)).body, { hasApiKey: false });
+  });
+
+  it("returns 403 for another user's key", async () => {
+    const { agent } = await loginAs('demo@seerr.dev', 'test1234');
+    const admin = await getRepository(User).findOneOrFail({
+      where: { email: 'admin@seerr.dev' },
+    });
+
+    await agent.post(`/user/${admin.id}/settings/api-key`).expect(403);
   });
 });

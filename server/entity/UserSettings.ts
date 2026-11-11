@@ -4,6 +4,7 @@ import { NotificationAgentKey } from '@server/lib/settings';
 import {
   Column,
   Entity,
+  Index,
   JoinColumn,
   OneToOne,
   PrimaryGeneratedColumn,
@@ -51,6 +52,10 @@ export class UserSettings {
 
   @Column({ nullable: true })
   public originalLanguage?: string;
+
+  @Index({ unique: true })
+  @Column({ type: 'varchar', nullable: true, select: false })
+  public apiKeyHash?: string | null;
 
   @Column({ nullable: true })
   public pgpKey?: string;
