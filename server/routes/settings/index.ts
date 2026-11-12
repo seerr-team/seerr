@@ -31,7 +31,6 @@ import { appDataPath } from '@server/utils/appDataVolume';
 import { getAppVersion } from '@server/utils/appVersion';
 import { dnsCache } from '@server/utils/dnsCache';
 import { getHostname } from '@server/utils/getHostname';
-import type { DnsEntries, DnsStats } from 'dns-caching';
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import fs from 'fs';
@@ -825,9 +824,6 @@ settingsRoutes.get('/cache', async (_req, res) => {
   const tvdbImageCache = await ImageProxy.getImageStats('tvdb');
   const avatarImageCache = await ImageProxy.getImageStats('avatar');
 
-  const stats: DnsStats | undefined = dnsCache?.getStats();
-  const entries: DnsEntries | undefined = dnsCache?.getCacheEntries();
-
   return res.status(200).json({
     apiCaches,
     imageCache: {
@@ -835,9 +831,9 @@ settingsRoutes.get('/cache', async (_req, res) => {
       tvdb: tvdbImageCache,
       avatar: avatarImageCache,
     },
-    dnsCache: {
-      stats,
-      entries,
+    dnsCache: dnsCache && {
+      stats: dnsCache.getStats(),
+      entries: dnsCache.getCacheEntries(),
     },
   });
 });

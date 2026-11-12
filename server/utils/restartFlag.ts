@@ -8,6 +8,7 @@ class RestartFlag {
     this.networkSettings = {
       ...settings.network,
       proxy: { ...settings.network.proxy },
+      dnsCache: { ...settings.network.dnsCache },
     };
   }
 
@@ -17,7 +18,9 @@ class RestartFlag {
     return (
       this.networkSettings.csrfProtection !== networkSettings.csrfProtection ||
       this.networkSettings.trustProxy !== networkSettings.trustProxy ||
-      this.networkSettings.proxy.enabled !== networkSettings.proxy.enabled
+      this.networkSettings.proxy.enabled !== networkSettings.proxy.enabled ||
+      this.networkSettings.forceIpv4First !== networkSettings.forceIpv4First ||
+      this.networkSettings.dnsCache.enabled !== networkSettings.dnsCache.enabled
     );
   }
 }
