@@ -205,12 +205,13 @@ jobs:
       VERSION: ${{ github.ref_name }}
       COSIGN_YES: 'true'
     steps:
-      - parallel:
-          - name: Checkout
-            uses: actions/checkout@v7.0.1
-            with:
-              persist-credentials: false
+      # checkout clears the workspace that setup-trivy clones into
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
 
+      - parallel:
           - name: Install Cosign
             uses: sigstore/cosign-installer@v4.1.2
 
