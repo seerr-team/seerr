@@ -55,11 +55,11 @@ const messages = defineMessages('components.RequestModal.AdvancedRequester', {
 });
 
 export type RequestOverrides = {
-  server?: number;
-  profile?: number;
-  folder?: string;
-  tags?: number[];
-  language?: number;
+  server?: number | null;
+  profile?: number | null;
+  folder?: string | null;
+  tags?: number[] | null;
+  language?: number | null;
   user?: User;
   ignoreQuota?: boolean;
 };
@@ -100,7 +100,7 @@ const AdvancedRequester = ({
     }
   );
   const [selectedServer, setSelectedServer] = useState<number | null>(
-    defaultOverrides?.server !== undefined && defaultOverrides?.server >= 0
+    defaultOverrides?.server != null && defaultOverrides.server >= 0
       ? defaultOverrides?.server
       : null
   );

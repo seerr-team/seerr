@@ -32,6 +32,9 @@ const externalApiGetMock = mock.method(
       id: tmdbId,
       external_ids: {},
       seasons: [1, 2, 3].map((season_number) => ({ season_number })),
+      keywords: endpoint.startsWith('/movie')
+        ? { keywords: [] }
+        : { results: [] },
       // Skips getMovie's localized fallback call
       videos: { results: [{ type: 'Trailer', key: 'trailer' }] },
     };
