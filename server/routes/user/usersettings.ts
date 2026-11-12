@@ -242,7 +242,7 @@ userSettingsRoutes.post<
 
     // If the user has a password, we need to check the currentPassword is correct
     if (
-      user.password &&
+      userWithPassword.password &&
       (!req.body.currentPassword ||
         !(await userWithPassword.passwordMatch(req.body.currentPassword)))
     ) {

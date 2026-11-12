@@ -132,3 +132,35 @@ describe('POST /user/:id/settings/linked-accounts/jellyfin/quickconnect', () => 
     assert.strictEqual(user.jellyfinUserId, null);
   });
 });
+
+describe('POST /user/:id/settings/password', () => {
+  async function passwordUnchanged(userId: number) {
+    const user = await getRepository(User).findOneOrFail({
+      select: ['id', 'password'],
+      where: { id: userId },
+    });
+    return user.passwordMatch('test1234');
+  }
+
+  it('rejects a wrong current password', async () => {
+    const { agent, userId } = await loginAs('demo@seerr.dev', 'test1234');
+
+    const res = await agent
+      .post(`/user/${userId}/settings/password`)
+      .send({ currentPassword: 'wrong-password', newPassword: 'new-password' });
+
+    assert.strictEqual(res.status, 403);
+    assert.ok(await passwordUnchanged(userId));
+  });
+
+  it('rejects a missing current password', async () => {
+    const { agent, userId } = await loginAs('demo@seerr.dev', 'test1234');
+
+    const res = await agent
+      .post(`/user/${userId}/settings/password`)
+      .send({ newPassword: 'new-password' });
+
+    assert.strictEqual(res.status, 403);
+    assert.ok(await passwordUnchanged(userId));
+  });
+});
