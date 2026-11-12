@@ -1004,7 +1004,6 @@
   "components.Settings.SettingsMain.hideBlocklisted": "",
   "components.Settings.SettingsMain.hideBlocklistedTip": "",
   "components.Settings.SettingsMain.originallanguageTip": "",
-  "components.Settings.SettingsMain.validationUrlTrailingSlash": "",
   "components.Settings.SettingsMain.youtubeUrl": "",
   "components.Settings.SettingsMain.youtubeUrlTip": "",
   "components.Settings.SettingsNetwork.apiRequestTimeoutTip": "",

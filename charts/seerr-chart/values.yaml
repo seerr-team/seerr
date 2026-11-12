@@ -6,6 +6,9 @@ image:
   tag: ''
   sha: ''
 
+# -- Number of replicas: 0 or 1 only (Seerr does not support multiple replicas). Set to 0 to scale down, e.g. for migrations.
+replicaCount: 1
+
 imagePullSecrets: []
 nameOverride: ''
 fullnameOverride: ''

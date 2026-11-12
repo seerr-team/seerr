@@ -104,7 +104,28 @@ interface WatchlistResponse {
     Metadata?: {
       ratingKey: string;
     }[];
+    Video?: {
+      ratingKey: string;
+    }[];
   };
+}
+
+function isWatchlistResponse(data: unknown): data is WatchlistResponse {
+  if (
+    typeof data !== 'object' ||
+    data === null ||
+    !('MediaContainer' in data)
+  ) {
+    return false;
+  }
+
+  const { MediaContainer: container } = data as WatchlistResponse;
+  return (
+    typeof container === 'object' &&
+    container !== null &&
+    !Array.isArray(container) &&
+    typeof container.totalSize === 'number'
+  );
 }
 
 type PlexMetadataItem = {
@@ -116,7 +137,7 @@ type PlexMetadataItem = {
   }[];
 };
 interface MetadataResponse {
-  MediaContainer: {
+  MediaContainer?: {
     Metadata?: PlexMetadataItem[];
     Video?: PlexMetadataItem[];
   };
@@ -131,7 +152,7 @@ export interface PlexWatchlistItem {
 }
 
 export interface PlexWatchlistCache {
-  etag: string;
+  etag?: string;
   response: WatchlistResponse;
 }
 
@@ -335,8 +356,8 @@ class PlexTvAPI extends ExternalAPI {
     }
 
     const metadata =
-      detailedResponse.MediaContainer.Metadata?.[0] ??
-      detailedResponse.MediaContainer.Video?.[0];
+      detailedResponse.MediaContainer?.Metadata?.[0] ??
+      detailedResponse.MediaContainer?.Video?.[0];
 
     if (!metadata) {
       logger.warn(
@@ -373,11 +394,18 @@ class PlexTvAPI extends ExternalAPI {
     totalSize: number;
     items: PlexWatchlistItem[];
   }> {
+    const watchlistCache = cacheManager.getCache('plexwatchlist');
+    let cachedWatchlist = watchlistCache.data.get<PlexWatchlistCache>(
+      this.authToken
+    );
+
     try {
-      const watchlistCache = cacheManager.getCache('plexwatchlist');
-      let cachedWatchlist = watchlistCache.data.get<PlexWatchlistCache>(
-        this.authToken
-      );
+      // Drop poisoned entries so we don't send If-None-Match for a body
+      // without MediaContainer (which would 304 and keep failing).
+      if (cachedWatchlist && !isWatchlistResponse(cachedWatchlist.response)) {
+        watchlistCache.data.del(this.authToken);
+        cachedWatchlist = undefined;
+      }
 
       const response = await this.axios.get<WatchlistResponse>(
         '/library/sections/watchlist/all',
@@ -386,16 +414,20 @@ class PlexTvAPI extends ExternalAPI {
             'X-Plex-Container-Start': offset,
             'X-Plex-Container-Size': size,
           },
-          headers: {
-            'If-None-Match': cachedWatchlist?.etag,
-          },
+          headers: cachedWatchlist?.etag
+            ? { 'If-None-Match': cachedWatchlist.etag }
+            : undefined,
           baseURL: 'https://discover.provider.plex.tv',
           validateStatus: (status) => status < 400, // Allow HTTP 304 to return without error
         }
       );
 
       // If we don't recieve HTTP 304, the watchlist has been updated and we need to update the cache.
-      if (response.status >= 200 && response.status <= 299) {
+      if (
+        response.status >= 200 &&
+        response.status <= 299 &&
+        isWatchlistResponse(response.data)
+      ) {
         cachedWatchlist = {
           etag: response.headers.etag,
           response: response.data,
@@ -407,8 +439,16 @@ class PlexTvAPI extends ExternalAPI {
         );
       }
 
+      const metadata = cachedWatchlist?.response.MediaContainer.Metadata;
+      const video = cachedWatchlist?.response.MediaContainer.Video;
+      const watchlistItems = Array.isArray(metadata)
+        ? metadata
+        : Array.isArray(video)
+          ? video
+          : [];
+
       const watchlistDetails = await mapWithConcurrency(
-        cachedWatchlist?.response.MediaContainer.Metadata ?? [],
+        watchlistItems,
         WATCHLIST_METADATA_CONCURRENCY,
         (watchlistItem) => this.fetchWatchlistItemMetadata(watchlistItem)
       );

@@ -1523,7 +1523,6 @@
   "components.Settings.SettingsMain.streamingRegion": "",
   "components.Settings.SettingsMain.streamingRegionTip": "Mostrar sitios de streaming por disponibilidad regional",
   "components.Settings.SettingsMain.validationUrl": "Debe proveer una URL válida",
-  "components.Settings.SettingsMain.validationUrlTrailingSlash": "La URL debe no terminar en una barra final",
   "components.Settings.SettingsMain.youtubeUrl": "URL de YouTube",
   "components.Settings.SettingsMain.youtubeUrlTip": "",
   "components.Settings.SettingsNetwork.apiRequestTimeout": "",
@@ -1695,5 +1694,6 @@
   "components.UserProfile.UserSettings.LinkJellyfinQuickConnectModal.subtitle": "Conexión rápida",
   "components.UserProfile.UserSettings.LinkJellyfinQuickConnectModal.title": "Vincular cuenta de {mediaServerName}",
   "components.UserProfile.UserSettings.LinkJellyfinQuickConnectModal.usePassword": "Usar contraseña en su lugar",
-  "components.Settings.jellyfinSyncFailedConnectionError": "No se pudo conectar con el servidor de {mediaServerName} . Compruebe que se esta ejecutando y es accesible desde Seerr."
+  "components.Settings.jellyfinSyncFailedConnectionError": "No se pudo conectar con el servidor de {mediaServerName} . Compruebe que se esta ejecutando y es accesible desde Seerr.",
+  "components.RequestModal.noSeasonsAvailable": "Todas las temporadas seleccionadas ya han sido pedidas o ya están disponibles."
 }

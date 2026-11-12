@@ -80,7 +80,6 @@ const messages = defineMessages('components.Settings.SettingsMain', {
   versionCheck: 'Version Check',
   versionCheckTip: 'Automatically check for new versions on GitHub.',
   validationUrl: 'You must provide a valid URL',
-  validationUrlTrailingSlash: 'URL must not end in a trailing slash',
 });
 
 const SettingsMain = () => {
@@ -123,13 +122,7 @@ const SettingsMain = () => {
         'Number must be less than or equal to 250.',
         (value) => (value ?? 0) <= 250
       ),
-    youtubeUrl: Yup.string()
-      .url(intl.formatMessage(messages.validationUrl))
-      .test(
-        'no-trailing-slash',
-        intl.formatMessage(messages.validationUrlTrailingSlash),
-        (value) => !value || !value.endsWith('/')
-      ),
+    youtubeUrl: Yup.string().url(intl.formatMessage(messages.validationUrl)),
   });
 
   const regenerate = async () => {

@@ -26,9 +26,9 @@ Cypress.Commands.add('login', (email, password) => {
 });
 
 Cypress.Commands.add('loginAsAdmin', () => {
-  cy.login(Cypress.env('ADMIN_EMAIL'), Cypress.env('ADMIN_PASSWORD'));
+  cy.login(Cypress.expose('ADMIN_EMAIL'), Cypress.expose('ADMIN_PASSWORD'));
 });
 
 Cypress.Commands.add('loginAsUser', () => {
-  cy.login(Cypress.env('USER_EMAIL'), Cypress.env('USER_PASSWORD'));
+  cy.login(Cypress.expose('USER_EMAIL'), Cypress.expose('USER_PASSWORD'));
 });

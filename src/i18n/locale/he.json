@@ -786,7 +786,6 @@
   "components.Settings.SettingsMain.generalsettings": "",
   "components.Settings.SettingsMain.streamingRegion": "",
   "components.Settings.SettingsMain.validationApplicationUrlTrailingSlash": "",
-  "components.Settings.SettingsMain.validationUrlTrailingSlash": "",
   "components.Settings.SettingsNetwork.apiRequestTimeout": "",
   "components.Settings.SettingsNetwork.apiRequestTimeoutTip": "",
   "components.Settings.SettingsNetwork.csrfProtectionHoverTip": "",

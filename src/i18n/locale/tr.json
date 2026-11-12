@@ -1560,7 +1560,6 @@
   "components.Settings.SettingsMain.hideBlocklisted": "Engellenen Öğeleri Gizle",
   "components.Settings.SettingsMain.hideBlocklistedTip": "\"Engelleme Listesini Yönet\" iznine sahip tüm kullanıcılar için engellenen öğeleri keşfet sayfalarından gizle",
   "components.Settings.SettingsMain.validationUrl": "Geçerli bir URL girmelisiniz",
-  "components.Settings.SettingsMain.validationUrlTrailingSlash": "URL eğik çizgi ile bitmemelidir",
   "components.Settings.SettingsMain.youtubeUrl": "YouTube URL",
   "components.Settings.SettingsMain.youtubeUrlTip": "Kendi barındırdığınız bir YouTube örneği kullanılıyorsa YouTube videoları için temel URL.",
   "components.Settings.SettingsNetwork.apiRequestTimeout": "API İstek Zaman Aşımı",

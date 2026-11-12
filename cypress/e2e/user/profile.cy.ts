@@ -9,10 +9,12 @@ describe('User Profile', () => {
     cy.get('[data-testid=user-menu]').click();
     cy.get('[data-testid=user-menu-profile]').click();
 
-    cy.get('h1').should('contain', Cypress.env('ADMIN_EMAIL'));
+    cy.get('h1').should('contain', Cypress.expose('ADMIN_EMAIL'));
   });
 
   it('loads plex watchlist', () => {
+    // Title cards only load once they're on screen, so fit the watchlist without scrolling
+    cy.viewport(1000, 1200);
     cy.intercept('/api/v1/user/[0-9]*/watchlist', {
       fixture: 'watchlist.json',
     }).as('getWatchlist');
@@ -22,16 +24,11 @@ describe('User Profile', () => {
     cy.visit('/profile');
 
     cy.wait('@getWatchlist');
-
-    const sliderHeader = cy.contains('.slider-header', 'Plex Watchlist');
-
-    sliderHeader.scrollIntoView();
-
     cy.wait('@getTmdbMovie');
     // Wait a little longer to make sure the movie component reloaded
     cy.wait(500);
 
-    sliderHeader
+    cy.contains('.slider-header', 'Plex Watchlist')
       .next('[data-testid=media-slider]')
       .find('[data-testid=title-card]')
       .first()

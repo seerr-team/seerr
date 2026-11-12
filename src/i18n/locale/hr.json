@@ -1505,7 +1505,6 @@
   "components.Settings.SettingsMain.streamingRegion": "",
   "components.Settings.SettingsMain.streamingRegionTip": "",
   "components.Settings.SettingsMain.validationUrl": "",
-  "components.Settings.SettingsMain.validationUrlTrailingSlash": "",
   "components.Settings.SettingsMain.youtubeUrl": "",
   "components.Settings.SettingsMain.youtubeUrlTip": "",
   "components.Settings.SettingsNetwork.apiRequestTimeoutTip": "",

@@ -1356,7 +1356,6 @@
   "components.Settings.SettingsMain.streamingRegion": "Região de streaming",
   "components.Settings.SettingsMain.streamingRegionTip": "Mostrar sites de streaming por disponibilidade regional",
   "components.Settings.SettingsMain.validationUrl": "Deve fornecer um URL válido",
-  "components.Settings.SettingsMain.validationUrlTrailingSlash": "O URL não deve terminar com uma barra",
   "components.Settings.SettingsMain.youtubeUrl": "URL YouTube",
   "components.Settings.SettingsMain.youtubeUrlTip": "URL base para vídeos do YouTube se uma instância auto-hospedada do YouTube for utilizada.",
   "components.Settings.SettingsNetwork.csrfProtection": "Ativar proteção CSRF",

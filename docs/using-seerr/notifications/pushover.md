@@ -25,3 +25,11 @@ For more details on registering applications or the API token, please see the [P
 Set this to the user key for your Pushover account. Alternatively, you can set this to a group key to deliver notifications to multiple users.
 
 For more details, please see the [Pushover API documentation](https://pushover.net/api#identifiers).
+
+### Notification Sound (optional)
+
+The sound Pushover plays for notifications from Seerr. The available sounds are loaded from Pushover. Leave it on Device Default to use the sound set on each device.
+
+### Embed Poster (optional)
+
+When enabled, the poster image of the requested movie or series is included in the notification when one is available.

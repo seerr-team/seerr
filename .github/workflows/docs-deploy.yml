@@ -22,21 +22,21 @@ concurrency:
 jobs:
   build:
     name: Build Docusaurus
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
       - parallel:
           - name: Set up Node.js
-            uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+            uses: actions/setup-node@v7.0.0
             with:
               node-version-file: package.json
               package-manager-cache: false
 
           - name: Pnpm Setup
-            uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+            uses: pnpm/action-setup@v6.0.10
 
       - name: Get pnpm store directory
         shell: sh
@@ -44,7 +44,7 @@ jobs:
           echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
 
       - name: Setup pnpm cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        uses: actions/cache@v6.1.0
         with:
           path: ${{ env.STORE_PATH }}
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
@@ -61,14 +61,14 @@ jobs:
         run: pnpm gen-api-docs && pnpm build
 
       - name: Upload Build Artifact
-        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b6 # v4.0.0
+        uses: actions/upload-pages-artifact@v5.0.0
         with:
           path: gen-docs/build
 
   deploy:
     name: Deploy to GitHub Pages
     needs: build
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
       pages: write
@@ -79,4 +79,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5
+        uses: actions/deploy-pages@v5.0.0

@@ -1124,7 +1124,6 @@
   "components.Settings.SettingsMain.validationApplicationUrl": "有効なURLを指定してください",
   "components.Settings.SettingsMain.validationApplicationUrlTrailingSlash": "URLの末尾をスラッシュにしないでください",
   "components.Settings.SettingsMain.validationUrl": "有効なURLを指定してください",
-  "components.Settings.SettingsMain.validationUrlTrailingSlash": "URLの末尾をスラッシュにしないでください",
   "components.Settings.SettingsMain.youtubeUrl": "YouTubeのURL",
   "components.Settings.SettingsMain.youtubeUrlTip": "自己ホスト型のYouTubeインスタンスが使用されている場合のYouTube動画のベース URL。",
   "components.Settings.SettingsNetwork.csrfProtection": "CSRF保護を有効にする",

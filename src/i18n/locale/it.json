@@ -1491,7 +1491,6 @@
   "components.Settings.SettingsMain.apikeyCopied": "Chiave API copiata negli appunti.",
   "components.Settings.SettingsMain.hideAvailableTip": "Nascondi i media disponibili dalla pagine di esplorazione, ma non dai risultati di ricerca",
   "components.Settings.SettingsMain.validationUrl": "Devi fornire un URL valido",
-  "components.Settings.SettingsMain.validationUrlTrailingSlash": "La URL non può terminare con \"/\"",
   "components.Settings.SettingsMain.youtubeUrl": "ULR Youtube",
   "components.Settings.SettingsMain.youtubeUrlTip": "URL base per i video di YouTube se stai usando un'istanza self-hosted di YouTube.",
   "components.Settings.SettingsNetwork.dnsCache": "Memoria DNS",
