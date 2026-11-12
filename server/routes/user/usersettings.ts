@@ -24,7 +24,10 @@ import {
 import { Router } from 'express';
 import net from 'net';
 import { Not } from 'typeorm';
+import { z } from 'zod';
 import { canMakePermissionsChange } from '.';
+
+const phoneNumberSchema = z.string().regex(/^\+?[0-9]{1,15}$/);
 
 const userSettingsRoutes = Router({ mergeParams: true });
 
@@ -49,6 +52,7 @@ userSettingsRoutes.get<{ id: string }, UserSettingsGeneralResponse>(
       return res.status(200).json({
         username: user.username,
         email: user.email,
+        phoneNumber: user.phoneNumber ?? '',
         locale: user.settings?.locale,
         discoverRegion: user.settings?.discoverRegion,
         streamingRegion: user.settings?.streamingRegion,
@@ -108,6 +112,16 @@ userSettingsRoutes.post<
       throw new ApiError(400, ApiErrorCode.InvalidEmail);
     }
 
+    if (req.body.phoneNumber) {
+      const result = phoneNumberSchema.safeParse(req.body.phoneNumber);
+      if (!result.success) {
+        throw new ApiError(400, ApiErrorCode.InvalidPhoneNumber);
+      }
+      user.phoneNumber = result.data;
+    } else {
+      user.phoneNumber = '';
+    }
+
     // Update quota values only if the user has the correct permissions
     if (
       !user.hasPermission(Permission.MANAGE_USERS) &&
@@ -149,6 +163,7 @@ userSettingsRoutes.post<
       watchlistSyncMovies: savedUser.settings?.watchlistSyncMovies,
       watchlistSyncTv: savedUser.settings?.watchlistSyncTv,
       email: savedUser.email,
+      phoneNumber: savedUser.phoneNumber ?? '',
     });
   } catch (e) {
     if (e.errorCode) {
