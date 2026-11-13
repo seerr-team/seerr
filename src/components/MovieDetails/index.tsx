@@ -641,6 +641,7 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
             onUpdate={() => revalidate()}
           />
           {(data.mediaInfo?.status === MediaStatus.AVAILABLE ||
+            data.mediaInfo?.status === MediaStatus.PROCESSING ||
             (settings.currentSettings.movie4kEnabled &&
               hasPermission(
                 [Permission.REQUEST_4K, Permission.REQUEST_4K_MOVIE],
@@ -648,7 +649,8 @@ const MovieDetails = ({ movie }: MovieDetailsProps) => {
                   type: 'or',
                 }
               ) &&
-              data.mediaInfo?.status4k === MediaStatus.AVAILABLE)) &&
+              (data.mediaInfo?.status4k === MediaStatus.AVAILABLE ||
+                data.mediaInfo?.status4k === MediaStatus.PROCESSING))) &&
             hasPermission(
               [Permission.CREATE_ISSUES, Permission.MANAGE_ISSUES],
               {
