@@ -973,30 +973,31 @@ class AvailabilitySync {
       }
     }
 
-    // Here we check each season in plex for availability
-    // If the API returns an error other than a 404,
-    // we will have to prevent the season check from happening
+    // Here we check each season in plex for availability.
     if (media.mediaType === 'tv') {
       const seasonsMap: Map<number, boolean> = new Map();
 
-      if (!preventSeasonSearch) {
-        const filteredSeasons = media.seasons.filter(
-          (season) =>
-            season[is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE ||
-            season[is4k ? 'status4k' : 'status'] ===
-              MediaStatus.PARTIALLY_AVAILABLE
+      const filteredSeasons = media.seasons.filter(
+        (season) =>
+          season[is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE ||
+          season[is4k ? 'status4k' : 'status'] ===
+            MediaStatus.PARTIALLY_AVAILABLE
+      );
+
+      // If the Plex lookup failed but the show should be preserved, skip
+      // per-season lookups and keep previously available seasons available.
+      if (preventSeasonSearch) {
+        filteredSeasons.forEach((season) =>
+          seasonsMap.set(season.seasonNumber, true)
         );
+        return { existsInPlex, seasonsMap };
+      }
 
-        for (const season of filteredSeasons) {
-          const seasonExists = await this.seasonExistsInPlex(
-            media,
-            season,
-            is4k
-          );
+      for (const season of filteredSeasons) {
+        const seasonExists = await this.seasonExistsInPlex(media, season, is4k);
 
-          if (seasonExists) {
-            seasonsMap.set(season.seasonNumber, true);
-          }
+        if (seasonExists) {
+          seasonsMap.set(season.seasonNumber, true);
         }
       }
 
@@ -1122,30 +1123,35 @@ class AvailabilitySync {
       }
     }
 
-    // Here we check each season in jellyfin for availability
-    // If the API returns an error other than a 404,
-    // we will have to prevent the season check from happening
+    // Here we check each season in jellyfin for availability.
     if (media.mediaType === 'tv') {
       const seasonsMap: Map<number, boolean> = new Map();
 
-      if (!preventSeasonSearch) {
-        const filteredSeasons = media.seasons.filter(
-          (season) =>
-            season[is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE ||
-            season[is4k ? 'status4k' : 'status'] ===
-              MediaStatus.PARTIALLY_AVAILABLE
+      const filteredSeasons = media.seasons.filter(
+        (season) =>
+          season[is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE ||
+          season[is4k ? 'status4k' : 'status'] ===
+            MediaStatus.PARTIALLY_AVAILABLE
+      );
+
+      // If the Jellyfin lookup failed but the show should be preserved, skip
+      // per-season lookups and keep previously available seasons available.
+      if (preventSeasonSearch) {
+        filteredSeasons.forEach((season) =>
+          seasonsMap.set(season.seasonNumber, true)
+        );
+        return { existsInJellyfin, seasonsMap };
+      }
+
+      for (const season of filteredSeasons) {
+        const seasonExists = await this.seasonExistsInJellyfin(
+          media,
+          season,
+          is4k
         );
 
-        for (const season of filteredSeasons) {
-          const seasonExists = await this.seasonExistsInJellyfin(
-            media,
-            season,
-            is4k
-          );
-
-          if (seasonExists) {
-            seasonsMap.set(season.seasonNumber, true);
-          }
+        if (seasonExists) {
+          seasonsMap.set(season.seasonNumber, true);
         }
       }
 
