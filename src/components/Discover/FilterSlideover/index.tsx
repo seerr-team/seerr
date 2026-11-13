@@ -343,16 +343,23 @@ const FilterSlideover = ({
             currentFilters.watchProviders?.split('|').map((v) => Number(v)) ??
             []
           }
-          onChange={(region, providers) => {
-            if (providers.length) {
+          excludeProviders={
+            currentFilters.excludeWatchProviders
+              ?.split('|')
+              .map((v) => Number(v)) ?? []
+          }
+          onChange={(region, providers, excludes) => {
+            if (providers.length || excludes.length) {
               batchUpdateQueryParams({
                 watchRegion: region,
                 watchProviders: providers.join('|'),
+                excludeWatchProviders: excludes.join('|'),
               });
             } else {
               batchUpdateQueryParams({
                 watchRegion: undefined,
                 watchProviders: undefined,
+                excludeWatchProviders: undefined,
               });
             }
           }}
