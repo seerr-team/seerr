@@ -1,6 +1,13 @@
 import type { DnsEntries, DnsStats } from 'dns-caching';
 import type { PaginatedResponse } from './common';
 
+// 'show' = no distinction, other users' requested/available media shows as
+// available to everyone (today's behavior).
+// 'distinguish' = media only available/requested by another user shows a
+// separate badge state instead of the normal "Available" one.
+// 'hide' = same media shows as if it were never requested/available at all.
+export type OtherUserAvailabilityDisplay = 'show' | 'distinguish' | 'hide';
+
 export type LogMessage = {
   timestamp: string;
   level: string;
@@ -32,6 +39,7 @@ export interface PublicSettingsResponse {
   hideAvailable: boolean;
   hideBlocklisted: boolean;
   hideRequested: boolean;
+  otherUserAvailability: OtherUserAvailabilityDisplay;
   localLogin: boolean;
   mediaServerLogin: boolean;
   movie4kEnabled: boolean;
