@@ -1,5 +1,10 @@
 import RadarrAPI from '@server/api/servarr/radarr';
 import SonarrAPI from '@server/api/servarr/sonarr';
+import TheMovieDb from '@server/api/themoviedb';
+import type {
+  TmdbMovieDetails,
+  TmdbTvDetails,
+} from '@server/api/themoviedb/interfaces';
 import {
   MediaRequestStatus,
   MediaStatus,
@@ -21,7 +26,13 @@ import type {
   MediaRequestBody,
   RequestResultsResponse,
 } from '@server/interfaces/api/requestInterfaces';
+import overrideRules from '@server/lib/overrideRules';
 import { Permission } from '@server/lib/permissions';
+import type { RequestOverrideValues } from '@server/lib/serviceDefaults';
+import {
+  isAnimeMedia,
+  stripDefaultOverrides,
+} from '@server/lib/serviceDefaults';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { isAuthenticated } from '@server/middleware/auth';
@@ -467,6 +478,51 @@ requestRoutes.get('/:requestId', async (req, res, next) => {
   }
 });
 
+const editedOverrides = async (
+  request: MediaRequest,
+  body: MediaRequestBody,
+  requestUser: User
+): Promise<RequestOverrideValues> => {
+  const overrides = {
+    rootFolder: body.rootFolder,
+    profileId: body.profileId,
+    languageProfileId: body.languageProfileId,
+    tags: body.tags,
+  };
+  const serviceId =
+    body.serverId === undefined ? request.serverId : body.serverId;
+
+  let tmdbMedia: TmdbMovieDetails | TmdbTvDetails;
+  try {
+    const tmdb = new TheMovieDb();
+    tmdbMedia =
+      request.type === MediaType.MOVIE
+        ? await tmdb.getMovie({ movieId: request.media.tmdbId })
+        : await tmdb.getTvShow({ tvId: request.media.tmdbId });
+  } catch {
+    // Without the media the anime defaults and rule coverage are unknown, so store as sent
+    return overrides;
+  }
+
+  const { covered } = await overrideRules({
+    mediaType: request.type,
+    is4k: request.is4k,
+    tmdbMedia,
+    requestUser,
+    tags: body.tags,
+    serviceId,
+  });
+
+  return stripDefaultOverrides({
+    mediaType: request.type,
+    is4k: request.is4k,
+    serviceId,
+    isAnime: isAnimeMedia(tmdbMedia),
+    overrides,
+    covered,
+  });
+};
+
 requestRoutes.put<{ requestId: string }>(
   '/:requestId',
   async (req, res, next) => {
@@ -530,6 +586,26 @@ requestRoutes.put<{ requestId: string }>(
         // quota, so it is charged in full rather than as a delta
         const ownerChanging = requestUser.id !== previousOwnerId;
 
+        const requestedSeasons: number[] = req.body.seasons ?? [];
+
+        if (request.type === MediaType.TV && requestedSeasons.length === 0) {
+          return next({
+            status: 400,
+            message:
+              'Missing seasons. If you want to cancel a series request, use the DELETE method.',
+          });
+        }
+
+        // Looked up before the user lock so a slow TMDB response can't hold it
+        const overrides =
+          request.type === MediaType.MOVIE ||
+          req.user?.hasPermission(
+            [Permission.MANAGE_REQUESTS, Permission.REQUEST_ADVANCED],
+            { type: 'or' }
+          )
+            ? await editedOverrides(request, req.body, requestUser)
+            : undefined;
+
         return requestLock.dispatch(userKey(requestUser.id), async () => {
           if (request.type === MediaType.MOVIE) {
             if (ownerChanging && !request.ignoreQuota) {
@@ -543,38 +619,25 @@ requestRoutes.put<{ requestId: string }>(
               }
             }
 
-            request.serverId = req.body.serverId;
-            request.profileId = req.body.profileId;
-            request.rootFolder = req.body.rootFolder;
-            request.tags = req.body.tags;
+            if (overrides) {
+              request.serverId = req.body.serverId;
+              request.profileId = overrides.profileId;
+              request.rootFolder = overrides.rootFolder;
+              request.tags = overrides.tags;
+            }
             request.requestedBy = requestUser as User;
 
             await requestRepository.save(request);
           } else if (request.type === MediaType.TV) {
             const mediaRepository = getRepository(Media);
-            if (
-              req.user?.hasPermission(
-                [Permission.MANAGE_REQUESTS, Permission.REQUEST_ADVANCED],
-                { type: 'or' }
-              )
-            ) {
+            if (overrides) {
               request.serverId = req.body.serverId;
-              request.profileId = req.body.profileId;
-              request.rootFolder = req.body.rootFolder;
-              request.languageProfileId = req.body.languageProfileId;
-              request.tags = req.body.tags;
+              request.profileId = overrides.profileId;
+              request.rootFolder = overrides.rootFolder;
+              request.languageProfileId = overrides.languageProfileId;
+              request.tags = overrides.tags;
             }
             request.requestedBy = requestUser as User;
-
-            const requestedSeasons = req.body.seasons as number[] | undefined;
-
-            if (!requestedSeasons || requestedSeasons.length === 0) {
-              return next({
-                status: 400,
-                message:
-                  'Missing seasons. If you want to cancel a series request, use the DELETE method.',
-              });
-            }
 
             // Same key as create, so an edit cannot claim a season that a new
             // request is taking at the same moment
