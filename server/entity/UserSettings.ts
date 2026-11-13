@@ -1,6 +1,6 @@
 import type { NotificationAgentTypes } from '@server/interfaces/api/userSettingsInterfaces';
+import { NotificationAgentKey } from '@server/interfaces/settings';
 import { hasNotificationType, Notification } from '@server/lib/notifications';
-import { NotificationAgentKey } from '@server/lib/settings';
 import {
   Column,
   Entity,
