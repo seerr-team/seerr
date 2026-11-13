@@ -16,6 +16,17 @@ const clickFirstTitleCardInSlider = (sliderTitle: string): void => {
     });
 };
 
+const discoverPage = (page: number, count: number, totalPages: number) => ({
+  page,
+  totalPages,
+  totalResults: totalPages * 20,
+  results: Array.from({ length: count }, (_, i) => ({
+    id: page * 100 + i,
+    mediaType: 'movie',
+    title: `Movie ${page}-${i}`,
+  })),
+});
+
 describe('Discover', () => {
   beforeEach(() => {
     cy.loginAsAdmin();
@@ -58,6 +69,78 @@ describe('Discover', () => {
     cy.visit('/');
     cy.wait('@getUpcomingSeries');
     clickFirstTitleCardInSlider('Upcoming Series');
+  });
+
+  it('keeps paging past a short page', () => {
+    cy.intercept('/api/v1/discover/movies?page=1*', discoverPage(1, 20, 4));
+    cy.intercept('/api/v1/discover/movies?page=2*', discoverPage(2, 20, 4));
+    cy.intercept('/api/v1/discover/movies?page=3*', discoverPage(3, 19, 4));
+    cy.intercept('/api/v1/discover/movies?page=4*', discoverPage(4, 20, 4)).as(
+      'page4'
+    );
+    cy.visit('/discover/movies');
+    cy.get('[data-testid=title-card]').should('have.length', 59);
+    cy.scrollTo('bottom');
+    cy.wait('@page4');
+    cy.get('[data-testid=title-card]').should('have.length', 79);
+  });
+
+  it('skips a single failed page', () => {
+    cy.intercept('/api/v1/discover/movies?page=1*', discoverPage(1, 20, 5));
+    cy.intercept('/api/v1/discover/movies?page=2*', discoverPage(2, 20, 5));
+    cy.intercept('/api/v1/discover/movies?page=3*', discoverPage(3, 20, 5));
+    cy.intercept('/api/v1/discover/movies?page=4*', { statusCode: 500 }).as(
+      'page4'
+    );
+    cy.intercept('/api/v1/discover/movies?page=5*', discoverPage(5, 20, 5)).as(
+      'page5'
+    );
+    cy.visit('/discover/movies');
+    cy.get('[data-testid=title-card]').should('have.length', 60);
+    cy.scrollTo('bottom');
+    cy.wait('@page4');
+    cy.wait('@page4');
+    cy.wait('@page5');
+    cy.get('[data-testid=title-card]').should('have.length', 80);
+  });
+
+  it('keeps a page that succeeds on retry', () => {
+    cy.intercept('/api/v1/discover/movies?page=1*', discoverPage(1, 20, 4));
+    cy.intercept('/api/v1/discover/movies?page=2*', discoverPage(2, 20, 4));
+    cy.intercept('/api/v1/discover/movies?page=3*', discoverPage(3, 20, 4));
+    cy.intercept('/api/v1/discover/movies?page=4*', discoverPage(4, 20, 4)).as(
+      'page4'
+    );
+    cy.intercept(
+      { url: '/api/v1/discover/movies?page=4*', times: 1 },
+      { statusCode: 500 }
+    ).as('page4Failed');
+    cy.visit('/discover/movies');
+    cy.get('[data-testid=title-card]').should('have.length', 60);
+    cy.scrollTo('bottom');
+    cy.wait('@page4Failed');
+    cy.wait('@page4');
+    cy.get('[data-testid=title-card]').should('have.length', 80);
+  });
+
+  it('surfaces two failed pages in a row', () => {
+    cy.intercept('/api/v1/discover/movies?page=1*', discoverPage(1, 20, 6));
+    cy.intercept('/api/v1/discover/movies?page=2*', discoverPage(2, 20, 6));
+    cy.intercept('/api/v1/discover/movies?page=3*', discoverPage(3, 20, 6));
+    cy.intercept('/api/v1/discover/movies?page=4*', { statusCode: 500 }).as(
+      'page4'
+    );
+    cy.intercept('/api/v1/discover/movies?page=5*', { statusCode: 500 }).as(
+      'page5'
+    );
+    cy.visit('/discover/movies');
+    cy.get('[data-testid=title-card]').should('have.length', 60);
+    cy.scrollTo('bottom');
+    cy.wait('@page4');
+    cy.wait('@page4');
+    cy.wait('@page5');
+    cy.contains('Something went wrong. Please try again.').should('be.visible');
+    cy.get('[data-testid=title-card]').should('have.length', 60);
   });
 
   it('displays error for media with invalid TMDB ID', () => {
