@@ -621,6 +621,11 @@ components:
         syncEnabled:
           type: boolean
           example: false
+        downloadQueueSize:
+          type: integer
+          minimum: 10
+          maximum: 1000
+          default: 10
         preventSearch:
           type: boolean
           example: false
@@ -700,6 +705,11 @@ components:
         syncEnabled:
           type: boolean
           example: false
+        downloadQueueSize:
+          type: integer
+          minimum: 10
+          maximum: 1000
+          default: 10
         preventSearch:
           type: boolean
           example: false
