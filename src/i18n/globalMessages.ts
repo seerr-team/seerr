@@ -73,6 +73,15 @@ const globalMessages = defineMessages('i18n', {
   removefromBlocklist: 'Remove from Blocklist',
   specials: 'Specials',
   notificationLocale: 'Notification Language',
+  findlisting: 'Find Listing',
+  retryunavailable: 'Retrying cannot resolve this failure.',
+  failurereasonunreachable: 'Could not connect to {serviceName}.',
+  failurereasondispatch: '{serviceName} rejected the request.',
+  failurereasontvdbid: 'This series could not be identified on TheTVDB.',
+  failurereasonseasonunverified:
+    'The season numbering could not be checked against TheTVDB.',
+  failurereasonseasonmismatch:
+    'This listing numbers its seasons differently than TheTVDB.',
 });
 
 export default globalMessages;
