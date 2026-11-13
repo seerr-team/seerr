@@ -4,7 +4,9 @@ import type {
   AddSeriesOptions,
   SonarrSeries,
 } from '@server/api/servarr/sonarr';
-import SonarrAPI from '@server/api/servarr/sonarr';
+import SonarrAPI, {
+  SonarrMissingSeasonsError,
+} from '@server/api/servarr/sonarr';
 import TheMovieDb from '@server/api/themoviedb';
 import { ANIME_KEYWORD_ID } from '@server/api/themoviedb/constants';
 import {
@@ -773,31 +775,44 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           searchNow: !sonarrSettings.preventSearch,
         };
 
+        const linkSeries = async (sonarrSeries: SonarrSeries) => {
+          // Needs its own repository as this runs detached from the request transaction
+          const mediaRepository = getRepository(Media);
+          // We grab media again here to make sure we have the latest version of it
+          const media = await mediaRepository.findOne({
+            where: { id: entity.media.id },
+          });
+
+          if (!media) {
+            throw new Error('Media data not found');
+          }
+
+          media[entity.is4k ? 'externalServiceId4k' : 'externalServiceId'] =
+            sonarrSeries.id;
+          media[entity.is4k ? 'externalServiceSlug4k' : 'externalServiceSlug'] =
+            sonarrSeries.titleSlug;
+          media[entity.is4k ? 'serviceId4k' : 'serviceId'] = sonarrSettings?.id;
+          await mediaRepository.save(media);
+        };
+
         // Run entity asynchronously so we don't wait for it on the UI side
         sonarr
           .addSeries(sonarrSeriesOptions)
-          .then(async (sonarrSeries) => {
-            // Needs its own repository as this runs detached from the request transaction
-            const mediaRepository = getRepository(Media);
-            // We grab media again here to make sure we have the latest version of it
-            const media = await mediaRepository.findOne({
-              where: { id: entity.media.id },
-            });
-
-            if (!media) {
-              throw new Error('Media data not found');
+          .then(linkSeries)
+          .catch(async (e) => {
+            if (e instanceof SonarrMissingSeasonsError && e.series) {
+              await linkSeries(e.series).catch((linkError) => {
+                logger.error('Failed to save the Sonarr series link', {
+                  label: 'Media Request',
+                  requestId: entity.id,
+                  errorMessage:
+                    linkError instanceof Error
+                      ? linkError.message
+                      : String(linkError),
+                });
+              });
             }
 
-            media[entity.is4k ? 'externalServiceId4k' : 'externalServiceId'] =
-              sonarrSeries.id;
-            media[
-              entity.is4k ? 'externalServiceSlug4k' : 'externalServiceSlug'
-            ] = sonarrSeries.titleSlug;
-            media[entity.is4k ? 'serviceId4k' : 'serviceId'] =
-              sonarrSettings?.id;
-            await mediaRepository.save(media);
-          })
-          .catch(async () => {
             try {
               const requestRepository = getRepository(MediaRequest);
 
