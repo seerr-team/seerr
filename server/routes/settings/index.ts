@@ -17,6 +17,11 @@ import type {
 import { scheduledJobs } from '@server/job/schedule';
 import type { AvailableCacheIds } from '@server/lib/cache';
 import cacheManager from '@server/lib/cache';
+import {
+  CUSTOM_CSS_MAX_LENGTH,
+  readCustomCss,
+  writeCustomCss,
+} from '@server/lib/customCss';
 import ImageProxy from '@server/lib/imageproxy';
 import { Permission } from '@server/lib/permissions';
 import { jellyfinFullScanner } from '@server/lib/scanners/jellyfin';
@@ -82,10 +87,40 @@ settingsRoutes.get('/main', (req, res, next) => {
 settingsRoutes.post('/main', async (req, res) => {
   const settings = getSettings();
 
-  settings.main = merge(settings.main, req.body);
+  settings.main = merge(settings.main, omit(req.body, 'customCss'));
   await settings.save();
 
   return res.status(200).json(settings.main);
+});
+
+const customCssSchema = z.object({
+  css: z.string().max(CUSTOM_CSS_MAX_LENGTH),
+});
+
+settingsRoutes.get('/custom.css', async (_req, res, next) => {
+  try {
+    const css = await readCustomCss();
+    return res.status(200).json({ css });
+  } catch {
+    return next({ status: 500, message: 'Unable to read custom CSS.' });
+  }
+});
+
+settingsRoutes.post('/custom.css', async (req, res, next) => {
+  const parsed = customCssSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return next({
+      status: 400,
+      message: 'Custom CSS must be a string of 512KB or less.',
+    });
+  }
+
+  try {
+    await writeCustomCss(parsed.data.css);
+    return res.status(200).json({ css: await readCustomCss() });
+  } catch {
+    return next({ status: 500, message: 'Unable to save custom CSS.' });
+  }
 });
 
 settingsRoutes.get('/network', (req, res) => {

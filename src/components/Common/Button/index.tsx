@@ -72,12 +72,12 @@ function Button<P extends ElementTypes = 'button'>(
       break;
     case 'ghost':
       buttonStyle.push(
-        'text-white bg-transparent border-gray-600 hover:border-gray-200 focus:border-gray-100 active:border-gray-100'
+        'text-gray-100 bg-transparent border-gray-600 hover:border-gray-200 focus:border-gray-100 active:border-gray-100'
       );
       break;
     default:
       buttonStyle.push(
-        'text-gray-200 bg-gray-800/80 border-gray-600 hover:text-white hover:bg-gray-700 hover:border-gray-600 group-hover:text-white group-hover:bg-gray-700 group-hover:border-gray-600 focus:border-blue-300 focus:ring-blue active:text-gray-200 active:bg-gray-700 active:border-gray-600'
+        'text-gray-200 bg-gray-800/80 border-gray-600 hover:text-gray-50 hover:bg-gray-700 hover:border-gray-600 group-hover:text-gray-50 group-hover:bg-gray-700 group-hover:border-gray-600 focus:border-blue-300 focus:ring-blue active:text-gray-200 active:bg-gray-700 active:border-gray-600'
       );
   }
 
