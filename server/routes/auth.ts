@@ -340,6 +340,51 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
       where: { jellyfinUserId: account.User.Id },
     });
 
+    const embyEmail = account.User.Email?.trim().toLowerCase();
+    if (
+      !user &&
+      settings.main.mediaServerType === MediaServerType.EMBY &&
+      embyEmail
+    ) {
+      const emailUser = await userRepository.findOne({
+        where: { email: embyEmail },
+      });
+
+      if (emailUser?.jellyfinUserId) {
+        logger.warn(
+          'Failed Emby Connect sign-in: email belongs to a Seerr user linked to another Emby account',
+          {
+            label: 'API',
+            ip: req.ip,
+            userId: emailUser.id,
+            jellyfinUserId: account.User.Id,
+            jellyfinUsername: account.User.Name,
+          }
+        );
+        return next({
+          status: 409,
+          message: 'This email is already linked to another account.',
+        });
+      }
+
+      if (emailUser) {
+        logger.info(
+          'Found matching Seerr user by Emby Connect email; linking Emby account',
+          {
+            label: 'API',
+            ip: req.ip,
+            userId: emailUser.id,
+            jellyfinUserId: account.User.Id,
+            jellyfinUsername: account.User.Name,
+          }
+        );
+        emailUser.jellyfinUserId = account.User.Id;
+        emailUser.jellyfinDeviceId = deviceId;
+        emailUser.userType = UserType.EMBY;
+        user = emailUser;
+      }
+    }
+
     const missingAdminUser = !user && !(await userRepository.count());
     if (
       missingAdminUser ||
@@ -442,24 +487,43 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
     }
     // User already exists, let's update their information
     else if (account.User.Id === user?.jellyfinUserId) {
+      const serverType =
+        settings.main.mediaServerType === MediaServerType.JELLYFIN
+          ? ServerType.JELLYFIN
+          : ServerType.EMBY;
+
       logger.info(
-        `Found matching ${
-          settings.main.mediaServerType === MediaServerType.JELLYFIN
-            ? ServerType.JELLYFIN
-            : ServerType.EMBY
-        } user; updating user with ${
-          settings.main.mediaServerType === MediaServerType.JELLYFIN
-            ? ServerType.JELLYFIN
-            : ServerType.EMBY
-        }`,
+        `Found matching ${serverType} user; updating user with ${serverType}`,
         {
           label: 'API',
           ip: req.ip,
           jellyfinUsername: account.User.Name,
         }
       );
+
       user.avatar = getUserAvatarUrl(user);
       user.jellyfinUsername = account.User.Name;
+
+      if (embyEmail && user.email !== embyEmail) {
+        const emailOwner = await userRepository.findOne({
+          where: { email: embyEmail },
+          select: { id: true },
+        });
+
+        if (!emailOwner) {
+          user.email = embyEmail;
+        } else {
+          logger.warn(
+            'Skipped email update: Emby Connect email belongs to another Seerr user',
+            {
+              label: 'API',
+              ip: req.ip,
+              userId: user.id,
+              jellyfinUsername: account.User.Name,
+            }
+          );
+        }
+      }
 
       if (user.username === account.User.Name) {
         user.username = '';
@@ -482,7 +546,7 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
       });
     } else if (!user) {
       logger.info(
-        'Sign-in attempt from Jellyfin user with access to the media server; creating new Seerr user',
+        'Sign-in attempt from Jellyfin/Emby user with access to the media server; creating new Seerr user',
         {
           label: 'API',
           ip: req.ip,
@@ -491,7 +555,7 @@ authRoutes.post('/jellyfin', async (req, res, next) => {
       );
 
       user = new User({
-        email: body.email,
+        email: embyEmail || body.email,
         jellyfinUsername: account.User.Name,
         jellyfinUserId: account.User.Id,
         jellyfinDeviceId: deviceId,
