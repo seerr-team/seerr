@@ -2,8 +2,8 @@ import animeList from '@server/api/animelist';
 import type {
   JellyfinLibraryItem,
   JellyfinLibraryItemExtended,
-} from '@server/api/jellyfinMain';
-import JellyfinMainAPI from '@server/api/jellyfinMain';
+} from '@server/api/jellyfin';
+import JellyfinAPI from '@server/api/jellyfin';
 import { getMetadataProvider } from '@server/api/metadata';
 import TheMovieDb from '@server/api/themoviedb';
 import { ANIME_KEYWORD_ID } from '@server/api/themoviedb/constants';
@@ -13,6 +13,8 @@ import type {
   TmdbTvScanDetails,
 } from '@server/api/themoviedb/interfaces';
 import { MediaServerType } from '@server/constants/server';
+import { getRepository } from '@server/datasource';
+import { User } from '@server/entity/User';
 import type {
   ProcessableSeason,
   RunnableScanner,
@@ -22,7 +24,6 @@ import BaseScanner from '@server/lib/scanners/baseScanner';
 import type { Library } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import { getHostname } from '@server/utils/getHostname';
-import { getMediaServerAdmin } from '@server/utils/getMediaServerAdmin';
 import { uniqWith } from 'lodash';
 
 interface JellyfinSyncStatus extends StatusBase {
@@ -34,7 +35,7 @@ class JellyfinScanner
   extends BaseScanner<JellyfinLibraryItem>
   implements RunnableScanner<JellyfinSyncStatus>
 {
-  private jfClient: JellyfinMainAPI;
+  private jfClient: JellyfinAPI;
   private libraries: Library[];
   private currentLibrary: Library;
   private isRecentOnly = false;
@@ -468,13 +469,18 @@ class JellyfinScanner
     const sessionId = this.startRun();
 
     try {
-      const admin = await getMediaServerAdmin(MediaServerType.JELLYFIN);
+      const userRepository = getRepository(User);
+      const admin = await userRepository.findOne({
+        where: { id: 1 },
+        select: ['id', 'jellyfinUserId', 'jellyfinDeviceId'],
+        order: { id: 'ASC' },
+      });
 
       if (!admin) {
         return this.log('No admin configured. Jellyfin sync skipped.', 'warn');
       }
 
-      this.jfClient = new JellyfinMainAPI(
+      this.jfClient = new JellyfinAPI(
         getHostname(),
         settings.jellyfin.apiKey,
         admin.jellyfinDeviceId

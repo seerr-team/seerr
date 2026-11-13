@@ -1,6 +1,4 @@
-import JellyfinMainAPI, {
-  type JellyfinLibrary,
-} from '@server/api/jellyfinMain';
+import JellyfinAPI, { type JellyfinLibrary } from '@server/api/jellyfin';
 import PlexAPI from '@server/api/plexapi';
 import PlexTvAPI from '@server/api/plextv';
 import TautulliAPI from '@server/api/tautulli';
@@ -317,7 +315,7 @@ settingsRoutes.post('/jellyfin', async (req, res, next) => {
 
     const tempJellyfinSettings = { ...settings.jellyfin, ...req.body };
 
-    const jellyfinClient = new JellyfinMainAPI(
+    const jellyfinClient = new JellyfinAPI(
       getHostname(tempJellyfinSettings),
       tempJellyfinSettings.apiKey,
       admin.jellyfinDeviceId ?? ''
@@ -399,7 +397,7 @@ settingsRoutes.post('/jellyfin/library/sync', async (_req, res, next) => {
     where: { id: 1 },
     order: { id: 'ASC' },
   });
-  const jellyfinClient = new JellyfinMainAPI(
+  const jellyfinClient = new JellyfinAPI(
     getHostname(),
     settings.jellyfin.apiKey,
     admin.jellyfinDeviceId ?? ''
@@ -462,7 +460,7 @@ settingsRoutes.get('/jellyfin/users', async (req, res) => {
     throw new Error('Admin user not found');
   }
 
-  const jellyfinClient = new JellyfinMainAPI(
+  const jellyfinClient = new JellyfinAPI(
     getHostname(),
     settings.jellyfin.apiKey,
     admin.jellyfinDeviceId ?? ''
