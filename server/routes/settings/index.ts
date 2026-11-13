@@ -40,6 +40,7 @@ import { rescheduleJob } from 'node-schedule';
 import path from 'path';
 import semver from 'semver';
 import { URL } from 'url';
+import externalProviderRoutes from './externalProviders';
 import { z } from 'zod';
 import metadataRoutes from './metadata';
 import notificationRoutes from './notifications';
@@ -53,6 +54,7 @@ settingsRoutes.use('/radarr', radarrRoutes);
 settingsRoutes.use('/sonarr', sonarrRoutes);
 settingsRoutes.use('/discover', discoverSettingRoutes);
 settingsRoutes.use('/metadatas', metadataRoutes);
+settingsRoutes.use('/external-providers', externalProviderRoutes);
 
 const libraryUpdateSchema = z.object({
   enabled: z.boolean(),
