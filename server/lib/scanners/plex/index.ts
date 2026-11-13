@@ -162,6 +162,34 @@ class PlexScanner
     }
   }
 
+  public async processRatingKey(ratingKey: string): Promise<PlexMetadata> {
+    const userRepository = getRepository(User);
+    const admin = await userRepository.findOne({
+      select: { id: true, plexToken: true },
+      where: { id: 1 },
+    });
+
+    if (!admin) {
+      throw new Error('No admin configured. Plex media processing skipped.');
+    }
+
+    const settings = getSettings();
+    this.plexClient = new PlexAPI({ plexToken: admin.plexToken });
+    this.libraries = settings.plex.libraries.filter(
+      (library) => library.enabled
+    );
+
+    const hasHama = await this.hasHamaAgent();
+    if (hasHama) {
+      await animeList.sync();
+    }
+
+    const metadata = await this.plexClient.getMetadata(ratingKey);
+    await this.processItem(metadata);
+
+    return metadata;
+  }
+
   private async paginateLibrary(
     library: Library,
     { start = 0, sessionId }: { start?: number; sessionId: string }
