@@ -168,9 +168,10 @@ blocklistRoutes.post(
   async (req, res, next) => {
     try {
       const tmdb = new TheMovieDb();
+      const mediaLocale = req.user?.settings?.mediaLocale || req.locale;
       const collection = await tmdb.getCollection({
         collectionId: Number(req.params.id),
-        language: req.locale,
+        language: mediaLocale,
       });
 
       const uniqueParts = [
@@ -319,9 +320,10 @@ blocklistRoutes.delete(
   async (req, res, next) => {
     try {
       const tmdb = new TheMovieDb();
+      const mediaLocale = req.user?.settings?.mediaLocale || req.locale;
       const collection = await tmdb.getCollection({
         collectionId: Number(req.params.id),
-        language: req.locale,
+        language: mediaLocale,
       });
 
       await dataSource.transaction(async (em) => {
