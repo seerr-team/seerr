@@ -96,7 +96,7 @@ class AvailabilitySync {
             this.jellyfinClient = new JellyfinAPI(
               getHostname(),
               settings.jellyfin.apiKey,
-              admin.jellyfinDeviceId
+              admin.jellyfinDeviceId ?? ''
             );
 
             this.jellyfinClient.setUserId(admin.jellyfinUserId ?? '');

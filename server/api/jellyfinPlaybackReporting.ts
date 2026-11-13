@@ -1,7 +1,8 @@
-import JellyfinAPI from '@server/api/jellyfin';
+import ExternalAPI from '@server/api/externalapi';
 import { ApiErrorCode } from '@server/constants/error';
 import logger from '@server/logger';
 import { ApiError } from '@server/types/error';
+import { buildJellyfinAuthHeader } from '@server/utils/jellyfin';
 
 interface CustomQueryResponse {
   colums: string[]; // typo in the plugin
@@ -23,7 +24,23 @@ interface GetPlaybackActivityOptions {
   itemType?: string;
 }
 
-class JellyfinPlaybackReportingAPI extends JellyfinAPI {
+class JellyfinPlaybackReportingAPI extends ExternalAPI {
+  constructor(jellyfinHost: string, authToken?: string, deviceId?: string) {
+    const authHeader = buildJellyfinAuthHeader(authToken, deviceId);
+
+    super(
+      jellyfinHost,
+      {},
+      {
+        headers: {
+          Authorization: authHeader,
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+      }
+    );
+  }
+
   public async getPlaybackActivity({
     sinceDate,
     userId,

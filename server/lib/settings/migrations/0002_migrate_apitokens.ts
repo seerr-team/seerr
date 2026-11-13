@@ -23,8 +23,8 @@ const migrateApiTokens = async (settings: any): Promise<AllSettings> => {
     }
     const jellyfinClient = new JellyfinAPI(
       getHostname(settings.jellyfin),
-      admin.jellyfinAuthToken,
-      admin.jellyfinDeviceId
+      admin.jellyfinAuthToken ?? '',
+      admin.jellyfinDeviceId ?? ''
     );
     jellyfinClient.setUserId(admin.jellyfinUserId ?? '');
     try {
