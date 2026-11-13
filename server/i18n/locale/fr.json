@@ -53,5 +53,19 @@
   "notifications.common.resolved": "Résolu",
   "notifications.common.series": "série",
   "notifications.common.viewIssue": "Voir le problème dans {applicationTitle}",
-  "notifications.common.viewMedia": "Voir le média dans {applicationTitle}"
+  "notifications.common.viewMedia": "Voir le média dans {applicationTitle}",
+  "notifications.event.approved": "{mediaType, select, movie {Demande de film approuvée} series {Demande de série approuvée} other {Demande approuvée}}",
+  "notifications.event.approved4k": "{mediaType, select, movie {Demande de film 4K approuvée} series {Demande de série 4K approuvée} other {Demande 4K approuvée}}",
+  "notifications.event.autoApproved": "{mediaType, select, movie {Demande de film approuvée automatiquement} series {Demande de série approuvée automatiquement} other {Demande approuvée automatiquement}}",
+  "notifications.event.autoApproved4k": "{mediaType, select, movie {Demande de film 4K approuvée automatiquement} series {Demande de série 4K approuvée automatiquement} other {Demande 4K approuvée automatiquement}}",
+  "notifications.event.autoRequested": "{mediaType, select, movie {Demande de film soumise automatiquement} series {Demande de série soumise automatiquement} other {Demande soumise automatiquement}}",
+  "notifications.event.autoRequested4k": "{mediaType, select, movie {Demande de film 4K soumise automatiquement} series {Demande de série 4K soumise automatiquement} other {Demande 4K soumise automatiquement}}",
+  "notifications.event.available": "{mediaType, select, movie {Film maintenant disponible} series {Série maintenant disponible} other {Maintenant disponible}}",
+  "notifications.event.available4k": "{mediaType, select, movie {Film 4K maintenant disponible} series {Série 4K maintenant disponible} other {Maintenant disponible en 4K}}",
+  "notifications.event.declined": "{mediaType, select, movie {Demande de film refusée} series {Demande de série refusée} other {Demande refusée}}",
+  "notifications.event.declined4k": "{mediaType, select, movie {Demande de film 4K refusée} series {Demande de série 4K refusée} other {Demande 4K refusée}}",
+  "notifications.event.failed": "{mediaType, select, movie {Échec de la demande de film} series {Échec de la demande de série} other {Échec de la demande}}",
+  "notifications.event.failed4k": "{mediaType, select, movie {Échec de la demande de film 4K} series {Échec de la demande de série 4K} other {Échec de la demande 4K}}",
+  "notifications.event.pending": "{mediaType, select, movie {Nouvelle demande de film} series {Nouvelle demande de série} other {Nouvelle demande}}",
+  "notifications.event.pending4k": "{mediaType, select, movie {Nouvelle demande de film 4K} series {Nouvelle demande de série 4K} other {Nouvelle demande 4K}}"
 }
