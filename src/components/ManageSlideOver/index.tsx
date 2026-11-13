@@ -24,7 +24,7 @@ import {
   MediaStatus,
   MediaType,
 } from '@server/constants/media';
-import { MediaServerType } from '@server/constants/server';
+import { MediaServerType, ServerType } from '@server/constants/server';
 import type { MediaWatchDataResponse } from '@server/interfaces/api/mediaInterfaces';
 import type { DownloadingItem } from '@server/lib/downloadtracker';
 import type { RadarrSettings, SonarrSettings } from '@server/lib/settings';
@@ -733,11 +733,11 @@ const ManageSlideOver = ({
                       mediaServerName:
                         settings.currentSettings.mediaServerType ===
                         MediaServerType.EMBY
-                          ? 'Emby'
+                          ? ServerType.EMBY
                           : settings.currentSettings.mediaServerType ===
                               MediaServerType.PLEX
-                            ? 'Plex'
-                            : 'Jellyfin',
+                            ? ServerType.PLEX
+                            : ServerType.JELLYFIN,
                     })}
                   </div>
                 </div>
