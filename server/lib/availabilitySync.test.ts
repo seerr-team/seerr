@@ -2627,6 +2627,134 @@ describe('AvailabilitySync', () => {
       assert.strictEqual(s1?.status, MediaStatus.AVAILABLE);
       assert.strictEqual(s1?.status4k, MediaStatus.AVAILABLE);
     });
+
+    it('should keep non-4K show availability when a verified 4K-only season sits beside an unverified season', async () => {
+      configurePlex();
+      configureSonarr([
+        { syncEnabled: true },
+        { is4k: true, syncEnabled: true },
+      ]);
+
+      const mediaRepository = getRepository(Media);
+
+      const media = new Media();
+      media.tmdbId = 687183;
+      media.mediaType = MediaType.TV;
+      media.status = MediaStatus.AVAILABLE;
+      media.status4k = MediaStatus.AVAILABLE;
+      media.ratingKey = 'mixed-verified-show-rk';
+      media.ratingKey4k = 'mixed-verified-show-rk';
+      media.seasons = [
+        new Season({
+          seasonNumber: 1,
+          status: MediaStatus.AVAILABLE,
+          status4k: MediaStatus.AVAILABLE,
+        }),
+        new Season({
+          seasonNumber: 2,
+          status: MediaStatus.AVAILABLE,
+          status4k: MediaStatus.AVAILABLE,
+        }),
+      ];
+      await mediaRepository.save(media);
+
+      getMetadataImpl = async (key: string) => {
+        if (key === 'mixed-verified-show-rk') {
+          return fakePlexShow('mixed-verified-show-rk');
+        }
+        throw new Error('404');
+      };
+
+      getChildrenMetadataImpl = async (key: string) => {
+        if (key === 'mixed-verified-show-rk') {
+          return [fakePlexSeason(1, 'mv-s1-rk'), fakePlexSeason(2, 'mv-s2-rk')];
+        }
+        if (key === 'mv-s1-rk') {
+          return [fakeVersionedEpisode('mv-s1-e1', [3840])];
+        }
+        if (key === 'mv-s2-rk') {
+          return [fakeVersionedEpisode('mv-s2-e1', [])];
+        }
+        return [];
+      };
+
+      await availabilitySync.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 687183 },
+        relations: ['seasons'],
+      });
+
+      assert.notStrictEqual(
+        updated.status,
+        MediaStatus.DELETED,
+        'A verified 4K-only season must not prove the non-4K tier is gone while another season is still unverified'
+      );
+      assert.strictEqual(updated.status4k, MediaStatus.AVAILABLE);
+    });
+
+    it('should not treat a same-season mix of verified and empty Media episodes as proof a tier is missing', async () => {
+      configurePlex();
+      configureSonarr([
+        { syncEnabled: true },
+        { is4k: true, syncEnabled: true },
+      ]);
+
+      const mediaRepository = getRepository(Media);
+
+      const media = new Media();
+      media.tmdbId = 687184;
+      media.mediaType = MediaType.TV;
+      media.status = MediaStatus.AVAILABLE;
+      media.status4k = MediaStatus.AVAILABLE;
+      media.ratingKey = 'same-season-mixed-rk';
+      media.ratingKey4k = 'same-season-mixed-rk';
+      media.seasons = [
+        new Season({
+          seasonNumber: 1,
+          status: MediaStatus.AVAILABLE,
+          status4k: MediaStatus.AVAILABLE,
+        }),
+      ];
+      await mediaRepository.save(media);
+
+      getMetadataImpl = async (key: string) => {
+        if (key === 'same-season-mixed-rk') {
+          return fakePlexShow('same-season-mixed-rk');
+        }
+        throw new Error('404');
+      };
+
+      getChildrenMetadataImpl = async (key: string) => {
+        if (key === 'same-season-mixed-rk') {
+          return [fakePlexSeason(1, 'ssm-s1-rk')];
+        }
+        if (key === 'ssm-s1-rk') {
+          return [
+            fakeVersionedEpisode('ssm-s1-e1', [3840]),
+            fakeVersionedEpisode('ssm-s1-e2', []),
+          ];
+        }
+        return [];
+      };
+
+      await availabilitySync.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 687184 },
+        relations: ['seasons'],
+      });
+      const s1 = updated.seasons.find((s) => s.seasonNumber === 1);
+
+      assert.strictEqual(
+        updated.status,
+        MediaStatus.AVAILABLE,
+        'A width-3840 episode must not prove the non-4K tier is gone while another episode in the same season has empty Media'
+      );
+      assert.strictEqual(updated.status4k, MediaStatus.AVAILABLE);
+      assert.strictEqual(s1?.status, MediaStatus.AVAILABLE);
+      assert.strictEqual(s1?.status4k, MediaStatus.AVAILABLE);
+    });
   });
 
   describe('specials season handling', () => {
