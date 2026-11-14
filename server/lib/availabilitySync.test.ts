@@ -1583,8 +1583,8 @@ describe('AvailabilitySync', () => {
 
       assert.deepStrictEqual(updated.plexRatingKeys?.sort(), ['plex-live-rk']);
       assert.strictEqual(updated.seasons[0].status, MediaStatus.AVAILABLE);
-      assert.strictEqual(updated.ratingKey, null);
-      assert.strictEqual(updated.ratingKey4k, null);
+      assert.strictEqual(updated.ratingKey, 'plex-dead-rk');
+      assert.strictEqual(updated.ratingKey4k, 'plex-dead-rk');
     });
 
     it('should clear deep-link keys and plexRatingKeys when the last stored key 404s', async () => {
@@ -1971,6 +1971,40 @@ describe('AvailabilitySync', () => {
       );
     });
 
+    it('should keep 4K movie availability in Plex after the last 4K Radarr server is removed', async () => {
+      configurePlex();
+      configureRadarr([{ syncEnabled: true }]);
+
+      const mediaRepository = getRepository(Media);
+
+      const media = new Media();
+      media.tmdbId = 687180;
+      media.mediaType = MediaType.MOVIE;
+      media.status = MediaStatus.UNKNOWN;
+      media.status4k = MediaStatus.AVAILABLE;
+      media.ratingKey4k = 'orphan-4k-rk';
+      await mediaRepository.save(media);
+
+      getMetadataImpl = async (key: string) => {
+        if (key === 'orphan-4k-rk') {
+          return fakePlexMovie('orphan-4k-rk', [3840]);
+        }
+        throw new Error('404');
+      };
+
+      await availabilitySync.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 687180 },
+      });
+
+      assert.strictEqual(
+        updated.status4k,
+        MediaStatus.AVAILABLE,
+        'Removing the last 4K Radarr server must not delete a 4K movie that still exists in Plex'
+      );
+    });
+
     it('should remove the non-4K status when the shared Plex item only has a 4K version left', async () => {
       configurePlex();
       configureRadarr([
@@ -2067,8 +2101,8 @@ describe('AvailabilitySync', () => {
       assert.strictEqual(updated.externalServiceSlug4k, 'test-movie');
       assert.strictEqual(
         updated.ratingKey4k,
-        null,
-        'A 404 from Plex must clear ratingKey4k even when a request is in flight'
+        'req-in-flight-rk',
+        'ratingKey4k must be kept while an approved 4K request is in flight'
       );
     });
 
@@ -2456,6 +2490,142 @@ describe('AvailabilitySync', () => {
       assert.strictEqual(s1?.status4k, MediaStatus.AVAILABLE);
       assert.strictEqual(updated.status, MediaStatus.AVAILABLE);
       assert.strictEqual(s1?.status, MediaStatus.AVAILABLE);
+    });
+
+    it('should keep non-4K show availability when one season is 4K-only and another episode fetch fails', async () => {
+      configurePlex();
+      configureSonarr([
+        { syncEnabled: true },
+        { is4k: true, syncEnabled: true },
+      ]);
+
+      const mediaRepository = getRepository(Media);
+
+      const media = new Media();
+      media.tmdbId = 687181;
+      media.mediaType = MediaType.TV;
+      media.status = MediaStatus.AVAILABLE;
+      media.status4k = MediaStatus.AVAILABLE;
+      media.ratingKey = 'partial-error-show-rk';
+      media.ratingKey4k = 'partial-error-show-rk';
+      media.seasons = [
+        new Season({
+          seasonNumber: 1,
+          status: MediaStatus.AVAILABLE,
+          status4k: MediaStatus.AVAILABLE,
+        }),
+        new Season({
+          seasonNumber: 2,
+          status: MediaStatus.AVAILABLE,
+          status4k: MediaStatus.AVAILABLE,
+        }),
+      ];
+      await mediaRepository.save(media);
+
+      getMetadataImpl = async (key: string) => {
+        if (key === 'partial-error-show-rk') {
+          return fakePlexShow('partial-error-show-rk');
+        }
+        throw new Error('404');
+      };
+
+      getChildrenMetadataImpl = async (key: string) => {
+        if (key === 'partial-error-show-rk') {
+          return [fakePlexSeason(1, 'pe-s1-rk'), fakePlexSeason(2, 'pe-s2-rk')];
+        }
+        if (key === 'pe-s1-rk') {
+          return [fakeVersionedEpisode('pe-s1-e1', [3840])];
+        }
+        if (key === 'pe-s2-rk') {
+          throw new Error('ECONNRESET');
+        }
+        return [];
+      };
+
+      await availabilitySync.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 687181 },
+        relations: ['seasons'],
+      });
+
+      assert.notStrictEqual(
+        updated.status,
+        MediaStatus.DELETED,
+        'A failed episode fetch must fail open at show level even if another season only verified 4K'
+      );
+      assert.strictEqual(
+        updated.status,
+        MediaStatus.PARTIALLY_AVAILABLE,
+        'The verified 4K-only season can still drop non-4K status while the failed season is preserved'
+      );
+      assert.strictEqual(updated.status4k, MediaStatus.AVAILABLE);
+      const s1 = updated.seasons.find((s) => s.seasonNumber === 1);
+      const s2 = updated.seasons.find((s) => s.seasonNumber === 2);
+      assert.strictEqual(s1?.status, MediaStatus.DELETED);
+      assert.strictEqual(s1?.status4k, MediaStatus.AVAILABLE);
+      assert.strictEqual(s2?.status, MediaStatus.AVAILABLE);
+      assert.strictEqual(s2?.status4k, MediaStatus.AVAILABLE);
+    });
+
+    it('should not treat unverified empty Media caches as proof a tier is missing', async () => {
+      configurePlex();
+      configureSonarr([
+        { syncEnabled: true },
+        { is4k: true, syncEnabled: true },
+      ]);
+
+      const mediaRepository = getRepository(Media);
+
+      const media = new Media();
+      media.tmdbId = 687182;
+      media.mediaType = MediaType.TV;
+      media.status = MediaStatus.AVAILABLE;
+      media.status4k = MediaStatus.AVAILABLE;
+      media.ratingKey = 'empty-media-show-rk';
+      media.ratingKey4k = 'empty-media-show-rk';
+      media.seasons = [
+        new Season({
+          seasonNumber: 1,
+          status: MediaStatus.AVAILABLE,
+          status4k: MediaStatus.AVAILABLE,
+        }),
+      ];
+      await mediaRepository.save(media);
+
+      getMetadataImpl = async (key: string) => {
+        if (key === 'empty-media-show-rk') {
+          return fakePlexShow('empty-media-show-rk');
+        }
+        throw new Error('404');
+      };
+
+      getChildrenMetadataImpl = async (key: string) => {
+        if (key === 'empty-media-show-rk') {
+          return [fakePlexSeason(1, 'em-s1-rk')];
+        }
+        if (key === 'em-s1-rk') {
+          return [fakeVersionedEpisode('em-s1-e1', [])];
+        }
+        return [];
+      };
+
+      await availabilitySync.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 687182 },
+        relations: ['seasons'],
+      });
+      const s1 = updated.seasons.find((s) => s.seasonNumber === 1);
+
+      assert.strictEqual(
+        updated.status,
+        MediaStatus.AVAILABLE,
+        'Empty Media arrays must not let a later tier pass treat a cached miss as verified'
+      );
+      assert.strictEqual(updated.status4k, MediaStatus.AVAILABLE);
+      assert.strictEqual(s1?.status, MediaStatus.AVAILABLE);
+      assert.strictEqual(s1?.status4k, MediaStatus.AVAILABLE);
     });
   });
 

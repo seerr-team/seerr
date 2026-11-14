@@ -1,7 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddMediaPlexRatingKeys1791568161106 implements MigrationInterface {
-  name = 'AddMediaPlexRatingKeys1791568161106';
+export class AddMediaPlexRatingKeys1794666034616 implements MigrationInterface {
+  name = 'AddMediaPlexRatingKeys1794666034616';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`ALTER TABLE "media" ADD "plexRatingKeys" text`);

@@ -26,7 +26,10 @@ class AvailabilitySync {
   public running = false;
   private plexClient: PlexAPI;
   private plexSeasonsCache: Record<string, PlexMetadata[]>;
-  private plexEpisodeExistsCache: Record<string, boolean>;
+  private plexEpisodeExistsCache: Record<
+    string,
+    { exists: boolean; verified: boolean }
+  >;
   private plexMetadataCache: Record<string, PlexMetadata | undefined>;
   private plexRatingKeyProbeCache: Record<
     string,
@@ -161,9 +164,18 @@ class AvailabilitySync {
 
           // plex
           if (mediaServerType === MediaServerType.PLEX) {
-            const { existsInPlex } = await this.mediaExistsInPlex(media, false);
-            const { existsInPlex: existsInPlex4k } =
-              await this.mediaExistsInPlex(media, true);
+            let existsInPlex = false;
+            let existsInPlex4k = false;
+
+            if (this.mediaHasAvailableTier(media, false)) {
+              ({ existsInPlex } = await this.mediaExistsInPlex(media, false));
+            }
+            if (this.mediaHasAvailableTier(media, true)) {
+              ({ existsInPlex: existsInPlex4k } = await this.mediaExistsInPlex(
+                media,
+                true
+              ));
+            }
 
             if (existsInPlex || existsInRadarr) {
               movieExists = true;
@@ -235,13 +247,21 @@ class AvailabilitySync {
           let showExists4k = false;
 
           //plex
+          let existsInPlex = false;
+          let existsInPlex4k = false;
+          let plexSeasonsMap: Map<number, boolean> = new Map();
+          let plexSeasonsMap4k: Map<number, boolean> = new Map();
 
-          const { existsInPlex, seasonsMap: plexSeasonsMap = new Map() } =
-            await this.mediaExistsInPlex(media, false);
-          const {
-            existsInPlex: existsInPlex4k,
-            seasonsMap: plexSeasonsMap4k = new Map(),
-          } = await this.mediaExistsInPlex(media, true);
+          if (this.mediaHasAvailableTier(media, false)) {
+            ({ existsInPlex, seasonsMap: plexSeasonsMap = new Map() } =
+              await this.mediaExistsInPlex(media, false));
+          }
+          if (this.mediaHasAvailableTier(media, true)) {
+            ({
+              existsInPlex: existsInPlex4k,
+              seasonsMap: plexSeasonsMap4k = new Map(),
+            } = await this.mediaExistsInPlex(media, true));
+          }
 
           //jellyfin
           const {
@@ -888,17 +908,25 @@ class AvailabilitySync {
       return;
     }
 
-    const remaining = keys.filter((stored) => stored !== ratingKey);
-    media.plexRatingKeys = remaining;
-
-    if (media.ratingKey === ratingKey) {
-      media.ratingKey = null;
-    }
-    if (media.ratingKey4k === ratingKey) {
-      media.ratingKey4k = null;
-    }
-
+    media.plexRatingKeys = keys.filter((stored) => stored !== ratingKey);
     await getRepository(Media).save(media);
+  }
+
+  private mediaHasAvailableTier(media: Media, is4k: boolean): boolean {
+    if (media.mediaType === 'movie') {
+      return media[is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE;
+    }
+
+    return (
+      media[is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE ||
+      media[is4k ? 'status4k' : 'status'] === MediaStatus.PARTIALLY_AVAILABLE ||
+      media.seasons.some(
+        (season) =>
+          season[is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE ||
+          season[is4k ? 'status4k' : 'status'] ===
+            MediaStatus.PARTIALLY_AVAILABLE
+      )
+    );
   }
 
   private async probePlexRatingKey(
@@ -954,27 +982,61 @@ class AvailabilitySync {
 
     let hasTier = false;
     let verified = false;
+    let sawError = false;
 
     for (const season of cachedSeasons) {
+      const cacheKey = `${is4k ? '4k' : 'std'}-${season.ratingKey}`;
+      const otherCacheKey = `${is4k ? 'std' : '4k'}-${season.ratingKey}`;
+
+      if (cacheKey in this.plexEpisodeExistsCache) {
+        const cached = this.plexEpisodeExistsCache[cacheKey];
+        if (cached.verified) {
+          verified = true;
+        }
+        if (cached.exists) {
+          hasTier = true;
+          break;
+        }
+        continue;
+      }
+
       try {
         const episodes = await this.plexClient?.getChildrenMetadata(
           season.ratingKey
         );
-        if (episodes?.some((episode) => episode.Media?.length)) {
+        const episodeVerified =
+          Array.isArray(episodes) &&
+          (episodes.length === 0 ||
+            episodes.some((episode) => episode.Media?.length));
+        if (episodeVerified) {
           verified = true;
         }
         const episodeVersions =
           episodes?.flatMap((episode) => episode.Media ?? []) ?? [];
-        if (this.seasonHasTieredEpisodes(episodeVersions, is4k)) {
+        const seasonHasTier = this.seasonHasTieredEpisodes(
+          episodeVersions,
+          is4k
+        );
+        this.plexEpisodeExistsCache[cacheKey] = {
+          exists: seasonHasTier,
+          verified: episodeVerified,
+        };
+        if (!(otherCacheKey in this.plexEpisodeExistsCache)) {
+          this.plexEpisodeExistsCache[otherCacheKey] = {
+            exists: this.seasonHasTieredEpisodes(episodeVersions, !is4k),
+            verified: episodeVerified,
+          };
+        }
+        if (seasonHasTier) {
           hasTier = true;
           break;
         }
       } catch {
-        // If we can't fetch episodes for a season, continue checking other seasons
+        sawError = true;
       }
     }
 
-    return { hasTier, verified };
+    return { hasTier, verified: verified && !sawError };
   }
 
   private async mediaExistsInPlex(
@@ -1000,25 +1062,33 @@ class AvailabilitySync {
       const plexMedia = this.plexMetadataCache[ratingKey];
 
       if (media.mediaType === 'movie') {
-        if (is4k) {
-          if (
+        if (!existsInPlex) {
+          if (is4k) {
+            if (
+              !plexMedia?.Media?.length ||
+              plexMedia.Media.some(
+                (mediaItem) => (mediaItem.width ?? 0) >= 2000
+              )
+            ) {
+              existsInPlex = true;
+            }
+          } else if (
+            !this.enable4kMovie ||
             !plexMedia?.Media?.length ||
-            plexMedia.Media.some((mediaItem) => (mediaItem.width ?? 0) >= 2000)
+            plexMedia.Media.some((mediaItem) => (mediaItem.width ?? 0) < 2000)
           ) {
             existsInPlex = true;
           }
-        } else if (
-          !this.enable4kMovie ||
-          !plexMedia?.Media?.length ||
-          plexMedia.Media.some((mediaItem) => (mediaItem.width ?? 0) < 2000)
-        ) {
-          existsInPlex = true;
         }
         continue;
       }
 
       if (!is4k && !this.enable4kShow) {
         existsInPlex = true;
+        continue;
+      }
+
+      if (existsInPlex) {
         continue;
       }
 
@@ -1101,7 +1171,8 @@ class AvailabilitySync {
       const cacheKey = `${is4k ? '4k' : 'std'}-${seasonMeta.ratingKey}`;
 
       if (cacheKey in this.plexEpisodeExistsCache) {
-        if (this.plexEpisodeExistsCache[cacheKey]) {
+        const cached = this.plexEpisodeExistsCache[cacheKey];
+        if (cached.exists || !cached.verified) {
           return true;
         }
         continue;
@@ -1113,16 +1184,26 @@ class AvailabilitySync {
         );
         const episodeVersions =
           episodes?.flatMap((episode) => episode.Media ?? []) ?? [];
+        const episodeVerified =
+          Array.isArray(episodes) &&
+          (episodes.length === 0 ||
+            episodes.some((episode) => episode.Media?.length));
         const seasonExists = this.seasonHasTieredEpisodes(
           episodeVersions,
           is4k
         );
-        this.plexEpisodeExistsCache[cacheKey] = seasonExists;
-        if (seasonExists) {
+        this.plexEpisodeExistsCache[cacheKey] = {
+          exists: seasonExists,
+          verified: episodeVerified,
+        };
+        if (seasonExists || !episodeVerified) {
           return true;
         }
       } catch {
-        this.plexEpisodeExistsCache[cacheKey] = true;
+        this.plexEpisodeExistsCache[cacheKey] = {
+          exists: true,
+          verified: true,
+        };
         return true;
       }
     }
