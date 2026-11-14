@@ -1,7 +1,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddMediaPlexRatingKeys1791568116449 implements MigrationInterface {
-  name = 'AddMediaPlexRatingKeys1791568116449';
+export class AddMediaPlexRatingKeys1794666022028 implements MigrationInterface {
+  name = 'AddMediaPlexRatingKeys1794666022028';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`DROP INDEX "IDX_f8233358694d1677a67899b90a"`);
