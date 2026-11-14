@@ -95,11 +95,19 @@ sonarrRoutes.put<{ id: string }>('/:id', async (req, res) => {
       });
   }
 
+  const existing = settings.sonarr[sonarrIndex];
+  const endpointChanged =
+    existing.hostname !== req.body.hostname ||
+    existing.port !== Number(req.body.port) ||
+    existing.useSsl !== req.body.useSsl ||
+    (existing.baseUrl ?? '') !== (req.body.baseUrl ?? '');
+
   settings.sonarr[sonarrIndex] = {
     ...req.body,
     id: Number(req.params.id),
-    apiMajorVersion:
-      req.body.apiMajorVersion ?? settings.sonarr[sonarrIndex].apiMajorVersion,
+    apiMajorVersion: endpointChanged
+      ? req.body.apiMajorVersion
+      : (req.body.apiMajorVersion ?? existing.apiMajorVersion),
   } as SonarrSettings;
   await settings.save();
 
