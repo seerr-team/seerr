@@ -981,8 +981,7 @@ class AvailabilitySync {
     }
 
     let hasTier = false;
-    let verified = false;
-    let sawError = false;
+    let verified = true;
 
     for (const season of cachedSeasons) {
       const cacheKey = `${is4k ? '4k' : 'std'}-${season.ratingKey}`;
@@ -990,8 +989,8 @@ class AvailabilitySync {
 
       if (cacheKey in this.plexEpisodeExistsCache) {
         const cached = this.plexEpisodeExistsCache[cacheKey];
-        if (cached.verified) {
-          verified = true;
+        if (!cached.verified) {
+          verified = false;
         }
         if (cached.exists) {
           hasTier = true;
@@ -1007,9 +1006,9 @@ class AvailabilitySync {
         const episodeVerified =
           Array.isArray(episodes) &&
           (episodes.length === 0 ||
-            episodes.some((episode) => episode.Media?.length));
-        if (episodeVerified) {
-          verified = true;
+            episodes.every((episode) => episode.Media?.length));
+        if (!episodeVerified) {
+          verified = false;
         }
         const episodeVersions =
           episodes?.flatMap((episode) => episode.Media ?? []) ?? [];
@@ -1032,11 +1031,11 @@ class AvailabilitySync {
           break;
         }
       } catch {
-        sawError = true;
+        verified = false;
       }
     }
 
-    return { hasTier, verified: verified && !sawError };
+    return { hasTier, verified };
   }
 
   private async mediaExistsInPlex(
@@ -1187,7 +1186,7 @@ class AvailabilitySync {
         const episodeVerified =
           Array.isArray(episodes) &&
           (episodes.length === 0 ||
-            episodes.some((episode) => episode.Media?.length));
+            episodes.every((episode) => episode.Media?.length));
         const seasonExists = this.seasonHasTieredEpisodes(
           episodeVersions,
           is4k
