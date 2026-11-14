@@ -196,14 +196,13 @@ requestRoutes.get<Record<string, unknown>, RequestResultsResponse>(
       // get all quality profiles for every configured sonarr server
       const sonarrServers = await Promise.all(
         settings.sonarr.map(async (sonarrSetting) => {
-          const sonarr = new SonarrAPI({
-            apiKey: sonarrSetting.apiKey,
-            url: SonarrAPI.buildUrl(sonarrSetting, '/api/v3'),
-          });
+          const profiles = await SonarrAPI.fromSettings(sonarrSetting)
+            .then((sonarr) => sonarr.getProfiles())
+            .catch(() => undefined);
 
           return {
             id: sonarrSetting.id,
-            profiles: await sonarr.getProfiles().catch(() => undefined),
+            profiles,
           };
         })
       );

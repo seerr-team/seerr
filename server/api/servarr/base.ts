@@ -79,7 +79,7 @@ interface QueueResponse<QueueItemAppendT> {
 }
 
 class ServarrBase<QueueItemAppendT> extends ExternalAPI {
-  static buildUrl(settings: DVRSettings, path?: string): string {
+  static buildUrl(settings: DVRSettings, path = ''): string {
     return `${settings.useSsl ? 'https' : 'http'}://${settings.hostname}:${
       settings.port
     }${settings.baseUrl ?? ''}${path}`;

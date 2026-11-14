@@ -1,5 +1,8 @@
+import type { SonarrSettings } from '@server/lib/settings';
+import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import type { AxiosResponse } from 'axios';
+import axios from 'axios';
 import ServarrBase from './base';
 
 export interface SonarrSeason {
@@ -109,13 +112,191 @@ export interface LanguageProfile {
   name: string;
 }
 
+export type SonarrApiPath = '/api/v3' | '/api/v5';
+
+export interface SonarrCapabilities {
+  major: number;
+  languageProfiles: boolean;
+  metadataLanguage: boolean;
+  seasonOrders: boolean;
+}
+
+interface SonarrApiInfo {
+  current?: string | null;
+  deprecated?: string[];
+}
+
+export function apiPathForMajor(major: number): SonarrApiPath {
+  return major >= 5 ? '/api/v5' : '/api/v3';
+}
+
+export function capabilitiesForMajor(major: number): SonarrCapabilities {
+  return {
+    major,
+    languageProfiles: major <= 3,
+    metadataLanguage: major >= 5,
+    seasonOrders: major >= 5,
+  };
+}
+
+export function majorFromApiInfoCurrent(
+  current: string | null | undefined
+): number | null {
+  const match = current?.match(/v?(\d+)/i);
+  if (!match) {
+    return null;
+  }
+
+  const major = Number(match[1]);
+  return Number.isFinite(major) ? major : null;
+}
+
 class SonarrAPI extends ServarrBase<{
   seriesId: number;
   episodeId: number;
   episode: EpisodeResult;
 }> {
-  constructor({ url, apiKey }: { url: string; apiKey: string }) {
+  public readonly capabilities: SonarrCapabilities;
+
+  constructor({
+    url,
+    apiKey,
+    major = 3,
+  }: {
+    url: string;
+    apiKey: string;
+    major?: number;
+  }) {
     super({ url, apiKey, apiName: 'Sonarr', cacheName: 'sonarr' });
+    this.capabilities = capabilitiesForMajor(major);
+  }
+
+  public static create({
+    url,
+    apiKey,
+    major = 3,
+  }: {
+    url: string;
+    apiKey: string;
+    major?: number;
+  }): SonarrAPI {
+    return new SonarrAPI({ url, apiKey, major });
+  }
+
+  public static async fromSettings(
+    settings: SonarrSettings,
+    options: { persist?: boolean } = {}
+  ): Promise<SonarrAPI> {
+    const persist = options.persist !== false;
+    let major = settings.apiMajorVersion;
+
+    if (!major) {
+      major = await SonarrAPI.probeMajorVersion(settings);
+      settings.apiMajorVersion = major;
+
+      if (persist && typeof settings.id === 'number') {
+        await SonarrAPI.persistApiMajorVersion(settings.id, major, settings);
+      }
+    }
+
+    return SonarrAPI.create({
+      url: SonarrAPI.buildUrl(settings, apiPathForMajor(major)),
+      apiKey: settings.apiKey,
+      major,
+    });
+  }
+
+  public static async probeMajorVersion(
+    settings: Pick<
+      SonarrSettings,
+      'hostname' | 'port' | 'apiKey' | 'useSsl' | 'baseUrl'
+    >
+  ): Promise<number> {
+    const rootUrl = SonarrAPI.buildUrl(settings as SonarrSettings);
+    const timeout = getSettings().network.apiRequestTimeout;
+    const requestConfig = {
+      params: { apikey: settings.apiKey },
+      timeout,
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+    };
+
+    // /api "current" is the API surface (v3/v5), not the app major. Sonarr v4
+    // reports current: "v3". Use it only to order which system/status to try.
+    let paths: SonarrApiPath[] = ['/api/v3', '/api/v5'];
+    try {
+      const response = await axios.get<SonarrApiInfo>(
+        `${rootUrl}/api`,
+        requestConfig
+      );
+      if (majorFromApiInfoCurrent(response.data?.current) === 5) {
+        paths = ['/api/v5', '/api/v3'];
+      }
+    } catch (e) {
+      logger.debug(
+        'Sonarr /api probe failed; trying system/status on both API paths',
+        {
+          label: 'Sonarr API',
+          errorMessage: e.message,
+        }
+      );
+    }
+
+    for (const path of paths) {
+      try {
+        const response = await axios.get<{ version: string }>(
+          `${rootUrl}${path}/system/status`,
+          requestConfig
+        );
+        const major = Number(String(response.data.version).split('.')[0]);
+        if (Number.isFinite(major) && major > 0) {
+          return major;
+        }
+      } catch (e) {
+        logger.debug(`Sonarr ${path}/system/status probe failed`, {
+          label: 'Sonarr API',
+          errorMessage: e.message,
+        });
+      }
+    }
+
+    throw new Error('[Sonarr] Failed to determine API version');
+  }
+
+  private static async persistApiMajorVersion(
+    id: number,
+    major: number,
+    endpoint: Pick<
+      SonarrSettings,
+      'hostname' | 'port' | 'apiKey' | 'useSsl' | 'baseUrl'
+    >
+  ): Promise<void> {
+    try {
+      const allSettings = getSettings();
+      const server = allSettings.sonarr.find((s) => s.id === id);
+      if (
+        !server ||
+        server.hostname !== endpoint.hostname ||
+        server.port !== endpoint.port ||
+        server.apiKey !== endpoint.apiKey ||
+        server.useSsl !== endpoint.useSsl ||
+        (server.baseUrl ?? '') !== (endpoint.baseUrl ?? '')
+      ) {
+        return;
+      }
+
+      server.apiMajorVersion = major;
+      await allSettings.save();
+    } catch (e) {
+      logger.warn('Failed to persist Sonarr apiMajorVersion', {
+        label: 'Sonarr API',
+        sonarrId: id,
+        major,
+        errorMessage: e.message,
+      });
+    }
   }
 
   public async getSeries(): Promise<SonarrSeries[]> {
@@ -277,32 +458,40 @@ class SonarrAPI extends ServarrBase<{
         }
       }
 
+      const createPayload: Partial<SonarrSeries> = {
+        tvdbId: options.tvdbid,
+        title: options.title,
+        qualityProfileId: options.profileId,
+        seasons: this.buildSeasonList(
+          options.seasons,
+          series.seasons.map((season) => ({
+            seasonNumber: season.seasonNumber,
+            // We force all seasons to false if its the first request
+            monitored: false,
+          }))
+        ),
+        tags: options.tags,
+        seasonFolder: options.seasonFolder,
+        monitored: options.monitored,
+        monitorNewItems: options.monitorNewItems,
+        rootFolderPath: options.rootFolderPath,
+        seriesType: options.seriesType,
+        addOptions: {
+          ignoreEpisodesWithFiles: true,
+          searchForMissingEpisodes: options.searchNow,
+        },
+      };
+
+      if (
+        this.capabilities.languageProfiles &&
+        options.languageProfileId != null
+      ) {
+        createPayload.languageProfileId = options.languageProfileId;
+      }
+
       const createdSeriesResponse = await this.axios.post<SonarrSeries>(
         '/series',
-        {
-          tvdbId: options.tvdbid,
-          title: options.title,
-          qualityProfileId: options.profileId,
-          languageProfileId: options.languageProfileId,
-          seasons: this.buildSeasonList(
-            options.seasons,
-            series.seasons.map((season) => ({
-              seasonNumber: season.seasonNumber,
-              // We force all seasons to false if its the first request
-              monitored: false,
-            }))
-          ),
-          tags: options.tags,
-          seasonFolder: options.seasonFolder,
-          monitored: options.monitored,
-          monitorNewItems: options.monitorNewItems,
-          rootFolderPath: options.rootFolderPath,
-          seriesType: options.seriesType,
-          addOptions: {
-            ignoreEpisodesWithFiles: true,
-            searchForMissingEpisodes: options.searchNow,
-          },
-        } as Partial<SonarrSeries>
+        createPayload
       );
 
       if (createdSeriesResponse.data.id) {
@@ -332,6 +521,10 @@ class SonarrAPI extends ServarrBase<{
   }
 
   public async getLanguageProfiles(): Promise<LanguageProfile[]> {
+    if (!this.capabilities.languageProfiles) {
+      return [];
+    }
+
     try {
       const data = await this.getRolling<LanguageProfile[]>(
         '/languageprofile',
