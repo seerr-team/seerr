@@ -5,6 +5,12 @@ import { ApiError } from '@server/types/error';
 import { buildJellyfinAuthHeader } from '@server/utils/jellyfin';
 
 interface CustomQueryResponse {
+  columns: string[];
+  results: unknown[][];
+  message?: string;
+}
+
+interface CustomQueryTypoResponse {
   colums: string[]; // typo in the plugin
   results: unknown[][];
   message?: string;
@@ -67,14 +73,16 @@ class JellyfinPlaybackReportingAPI extends ExternalAPI {
       const CustomQueryString = `SELECT DateCreated, UserId, ItemId, ItemType, PlayDuration FROM PlaybackActivity\
         ${whereSql} ORDER BY DateCreated ASC`;
 
-      const playbackActivityResult = await this.post<CustomQueryResponse>(
-        '/user_usage_stats/submit_custom_query',
-        { CustomQueryString }
-      );
+      const playbackActivityResult = await this.post<
+        CustomQueryResponse | CustomQueryTypoResponse
+      >('/user_usage_stats/submit_custom_query', { CustomQueryString });
 
+      const transformedplaybackActivityResult = this.transformCustomQueryResult(
+        playbackActivityResult
+      );
       const parsedPlaybackActivityResult =
         this.parseCustomQueryResult<JellyfinPlaybackActivityResponse>(
-          playbackActivityResult
+          transformedplaybackActivityResult
         );
 
       return parsedPlaybackActivityResult;
@@ -100,12 +108,26 @@ class JellyfinPlaybackReportingAPI extends ExternalAPI {
     }
   }
 
+  private transformCustomQueryResult(
+    customQueryResult: CustomQueryResponse | CustomQueryTypoResponse
+  ): CustomQueryResponse {
+    if ('colums' in customQueryResult) {
+      return {
+        results: customQueryResult.results,
+        message: customQueryResult.message,
+        columns: customQueryResult.colums,
+      };
+    }
+
+    return customQueryResult;
+  }
+
   private parseCustomQueryResult<T>(report: CustomQueryResponse): T[] {
-    const { colums, results } = report;
+    const { columns, results } = report;
 
     return results.map((row) => {
       const record: Record<string, unknown> = {};
-      colums.forEach((columnName, index) => {
+      columns.forEach((columnName, index) => {
         record[columnName] = row[index];
       });
 
