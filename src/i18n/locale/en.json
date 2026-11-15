@@ -1214,6 +1214,7 @@
   "components.Settings.invalidKeyword": "{keywordId} is not a TMDB keyword.",
   "components.Settings.invalidurlerror": "Unable to connect to {mediaServerName} server.",
   "components.Settings.is4k": "4K",
+  "components.Settings.jellyfinEnablePlaybackReporting": "Enable Playback Reporting Plugin integration",
   "components.Settings.jellyfinForgotPasswordUrl": "Forgot Password URL",
   "components.Settings.jellyfinSettings": "{mediaServerName} Settings",
   "components.Settings.jellyfinSettingsDescription": "Optionally configure the internal and external endpoints for your {mediaServerName} server. In most cases, the external URL is different to the internal URL. A custom password reset URL can also be set for {mediaServerName} login, in case you would like to redirect to a different password reset page. You can also change the Jellyfin API key, which was automatically generated previously.",

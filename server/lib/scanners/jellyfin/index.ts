@@ -483,7 +483,7 @@ class JellyfinScanner
       this.jfClient = new JellyfinAPI(
         getHostname(),
         settings.jellyfin.apiKey,
-        admin.jellyfinDeviceId
+        admin.jellyfinDeviceId ?? ''
       );
 
       this.jfClient.setUserId(admin.jellyfinUserId ?? '');

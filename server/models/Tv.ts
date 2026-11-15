@@ -33,6 +33,7 @@ interface Episode {
   episodeNumber: number;
   overview: string;
   productionCode: string;
+  runtime: number;
   seasonNumber: number;
   showId: number;
   stillPath?: string;
@@ -121,6 +122,7 @@ const mapEpisodeResult = (episode: TmdbTvEpisodeResult): Episode => ({
   name: episode.name,
   overview: episode.overview,
   productionCode: episode.production_code,
+  runtime: episode.runtime,
   seasonNumber: episode.season_number,
   showId: episode.show_id,
   voteAverage: episode.vote_average,
