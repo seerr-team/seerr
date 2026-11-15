@@ -673,6 +673,12 @@ userSettingsRoutes.delete<{ id: string; acctId: string }>(
       return res.status(404).send();
     }
 
+    if (!canModifyUser(user, req.user)) {
+      return res.status(403).json({
+        message: "You do not have permission to modify this user's settings.",
+      });
+    }
+
     const remainingOidcCount = user
       .getActiveLinkedAccounts()
       .filter((a) => a.id !== acctId).length;
