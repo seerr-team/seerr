@@ -656,27 +656,32 @@ const SettingsJellyfin: React.FC<SettingsJellyfinProps> = ({
                     )}
                 </div>
               </div>
-              <div className="form-row">
-                <label
-                  htmlFor="enablePlaybackReporting"
-                  className="checkbox-label"
-                >
-                  {intl.formatMessage(messages.jellyfinEnablePlaybackReporting)}
-                </label>
-                <div className="form-input-area">
-                  <Field
-                    type="checkbox"
-                    id="enablePlaybackReporting"
-                    name="enablePlaybackReporting"
-                    onChange={() => {
-                      setFieldValue(
-                        'enablePlaybackReporting',
-                        !values.enablePlaybackReporting
-                      );
-                    }}
-                  />
+              {settings.currentSettings.mediaServerType ===
+                MediaServerType.JELLYFIN && (
+                <div className="form-row">
+                  <label
+                    htmlFor="enablePlaybackReporting"
+                    className="checkbox-label"
+                  >
+                    {intl.formatMessage(
+                      messages.jellyfinEnablePlaybackReporting
+                    )}
+                  </label>
+                  <div className="form-input-area">
+                    <Field
+                      type="checkbox"
+                      id="enablePlaybackReporting"
+                      name="enablePlaybackReporting"
+                      onChange={() => {
+                        setFieldValue(
+                          'enablePlaybackReporting',
+                          !values.enablePlaybackReporting
+                        );
+                      }}
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
               <div
                 className={`actions ${isSetupSettings ? 'mt-0 border-0' : ''}`}
               >
