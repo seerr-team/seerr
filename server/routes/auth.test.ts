@@ -1276,6 +1276,120 @@ describe('OpenID Connect', () => {
       assert.strictEqual(response.status, 400);
       assert.strictEqual(response.body.error, ApiErrorCode.OidcMissingEmail);
     });
+
+    it('rejects new user when the email belongs to an existing user', async function () {
+      fetchMock.hardReset();
+
+      const settings = getSettings();
+      settings.oidc.providers[0].newUserLogin = true;
+
+      const unlinkedSub = 'unlinked-existing-email-sub';
+      await setupFetchMock({
+        supportsPKCE: false,
+        idTokenClaims: { sub: unlinkedSub, email: 'demo@seerr.dev' },
+        userinfoResponse: { sub: unlinkedSub, email: 'demo@seerr.dev' },
+      });
+
+      const response = await performOidcCallback();
+
+      assert.strictEqual(response.status, 403);
+      assert.strictEqual(response.body.error, ApiErrorCode.Unauthorized);
+
+      // The existing account must not be linked or replaced
+      const linked = await getRepository(LinkedAccount).findOne({
+        where: { provider: 'test', sub: unlinkedSub },
+      });
+      assert.strictEqual(linked, null);
+    });
+  });
+
+  describe('account linking', function () {
+    before(async () => {
+      await setupFetchMock({ supportsPKCE: false });
+    });
+
+    after(() => {
+      fetchMock.hardReset();
+    });
+
+    async function performOidcCallbackAs(
+      agent: ReturnType<typeof request.agent>
+    ) {
+      const loginResponse = await agent
+        .get('/auth/oidc/login/test')
+        .set('Accept', 'application/json');
+
+      assert.strictEqual(loginResponse.status, 200);
+
+      const state = new URL(loginResponse.body.redirectUrl).searchParams.get(
+        'state'
+      );
+      const callbackUrl = new URL(OIDC_REDIRECT_URL);
+      callbackUrl.searchParams.set('code', '123456');
+      if (state) callbackUrl.searchParams.set('state', state);
+
+      return agent
+        .post('/auth/oidc/callback/test')
+        .set('Accept', 'application/json')
+        .send({ callbackUrl: callbackUrl.toString() });
+    }
+
+    it('links the OIDC account to the logged-in user', async function () {
+      fetchMock.hardReset();
+      await setupFetchMock({
+        supportsPKCE: false,
+        idTokenClaims: EXISTING_USER_CLAIMS,
+        userinfoResponse: EXISTING_USER_CLAIMS,
+      });
+
+      const agent = await authenticatedAgent('demo@seerr.dev', 'test1234');
+      const response = await performOidcCallbackAs(agent);
+
+      assert.strictEqual(response.status, 204);
+
+      const linked = await getRepository(LinkedAccount).findOneOrFail({
+        relations: { user: true },
+        where: { provider: 'test', sub: EXISTING_USER_CLAIMS.sub },
+      });
+      assert.strictEqual(linked.user.email, 'demo@seerr.dev');
+    });
+
+    it('rejects an account that is already linked to a different user', async function () {
+      fetchMock.hardReset();
+      await setupFetchMock({
+        supportsPKCE: false,
+        idTokenClaims: EXISTING_USER_CLAIMS,
+        userinfoResponse: EXISTING_USER_CLAIMS,
+      });
+
+      const demo = await getRepository(User).findOneOrFail({
+        where: { email: 'demo@seerr.dev' },
+      });
+      await getRepository(LinkedAccount).save(
+        new LinkedAccount({
+          user: demo,
+          provider: 'test',
+          sub: EXISTING_USER_CLAIMS.sub,
+          username: 'friend',
+        })
+      );
+
+      const agent = await authenticatedAgent('admin@seerr.dev', 'test1234');
+      const response = await performOidcCallbackAs(agent);
+
+      assert.strictEqual(response.status, 409);
+      assert.strictEqual(
+        response.body.error,
+        ApiErrorCode.OidcAccountAlreadyLinked
+      );
+
+      // The account must stay linked to its original owner
+      const linked = await getRepository(LinkedAccount).findOneOrFail({
+        relations: { user: true },
+        where: { provider: 'test', sub: EXISTING_USER_CLAIMS.sub },
+      });
+      assert.strictEqual(linked.user.email, 'demo@seerr.dev');
+    });
   });
 
   describe('error handling', function () {
@@ -1352,6 +1466,36 @@ describe('OpenID Connect', () => {
         .send({ callbackUrl: callbackUrl.toString() });
 
       assert.strictEqual(response.status, 400);
+      assert.strictEqual(
+        response.body.error,
+        ApiErrorCode.OidcAuthorizationFailed
+      );
+    });
+
+    it('rejects callback when the state does not match', async function () {
+      await setupFetchMock();
+
+      const loginResponse = await request(app)
+        .get('/auth/oidc/login/test')
+        .set('Accept', 'application/json');
+
+      assert.strictEqual(loginResponse.status, 200);
+
+      const cookies = loginResponse.get('Set-Cookie');
+      assert.notStrictEqual(cookies, undefined);
+      const cookieHeader = cookies!.map((c) => c.split(';')[0]).join('; ');
+
+      const callbackUrl = new URL(OIDC_REDIRECT_URL);
+      callbackUrl.searchParams.set('code', '123456');
+      callbackUrl.searchParams.set('state', 'tampered-state');
+
+      const response = await request(app)
+        .post('/auth/oidc/callback/test')
+        .set('Accept', 'application/json')
+        .set('Cookie', cookieHeader)
+        .send({ callbackUrl: callbackUrl.toString() });
+
+      assert.notStrictEqual(response.status, 204);
       assert.strictEqual(
         response.body.error,
         ApiErrorCode.OidcAuthorizationFailed
