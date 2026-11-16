@@ -1711,5 +1711,6 @@
   "components.UserList.searchUsers": "Sök…",
   "components.Settings.SettingsMain.hideRequested": "Dölj begärd media",
   "components.Settings.SettingsMain.hideRequestedTip": "Dölj media som har begärts från Upptäck-sidorna men inte från sökresultaten",
-  "components.Login.demoModeInfo": "Demoläget är aktiverat. Använd demouppgifterna för att logga in."
+  "components.Login.demoModeInfo": "Demoläget är aktiverat. Använd demouppgifterna för att logga in.",
+  "components.RequestModal.noSeasonsAvailable": "Alla valda säsonger är begärda eller tillgängliga redan."
 }

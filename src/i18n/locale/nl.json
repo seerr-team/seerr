@@ -1711,5 +1711,6 @@
   "components.UserList.searchUsers": "Zoek…",
   "components.Settings.SettingsMain.hideRequested": "Verberg Aangevraagde Media",
   "components.Settings.SettingsMain.hideRequestedTip": "Verberg media die aangevraagd is op de ontdek paginas, maar niet van de zoekresultaten",
-  "components.Login.demoModeInfo": "De demomodus is ingeschakeld. Gebruik de demo-inloggegevens om in te loggen."
+  "components.Login.demoModeInfo": "De demomodus is ingeschakeld. Gebruik de demo-inloggegevens om in te loggen.",
+  "components.RequestModal.noSeasonsAvailable": "Alle geselecteerde seizoenen zijn al aangevraagd of beschikbaar."
 }

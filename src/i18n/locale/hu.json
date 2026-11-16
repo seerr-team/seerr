@@ -1711,5 +1711,6 @@
   "components.Settings.SettingsMain.hideRequested": "A kért média elrejtése",
   "components.Settings.SettingsMain.hideRequestedTip": "A felfedező oldalakról kért médiaelemek elrejtése a keresési találatok között",
   "components.Settings.Notifications.NotificationsNtfy.tagsPlaceholder": "megfigyelés,figyelmeztetés",
-  "components.Login.demoModeInfo": "A demó mód engedélyezve van. A demóhoz tartozó bejelentkezési adatokkal jelentkezzen be."
+  "components.Login.demoModeInfo": "A demó mód engedélyezve van. A demóhoz tartozó bejelentkezési adatokkal jelentkezzen be.",
+  "components.RequestModal.noSeasonsAvailable": "Az összes kiválasztott évad már korábban kérve vagy elérhető."
 }

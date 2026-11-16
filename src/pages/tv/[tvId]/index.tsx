@@ -9,7 +9,7 @@ interface TvPageProps {
 }
 
 const TvPage: NextPage<TvPageProps> = ({ tv }) => {
-  return <TvDetails tv={tv} />;
+  return <TvDetails key={tv?.id} tv={tv} />;
 };
 
 export const getServerSideProps: GetServerSideProps<TvPageProps> = async (

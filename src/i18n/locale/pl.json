@@ -1711,5 +1711,6 @@
   "components.Settings.Notifications.NotificationsNtfy.tagsPlaceholder": "oczy,ostrzeżenie",
   "components.Settings.SettingsMain.hideRequested": "Ukryj poproszone media",
   "components.Settings.SettingsMain.hideRequestedTip": "Ukryj media, o które poproszono w zakładce Odkryj, lecz nie z wyników wyszukiwania",
-  "components.UserList.searchUsers": "Wyszukaj…"
+  "components.UserList.searchUsers": "Wyszukaj…",
+  "components.RequestModal.noSeasonsAvailable": "Wszystkie wybrane sezony zostały już poproszone lub są dostępne."
 }
