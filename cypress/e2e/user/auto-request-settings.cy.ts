@@ -7,6 +7,21 @@ const visitUserEditPage = (email: string): void => {
 describe('Auto Request Settings', () => {
   beforeEach(() => {
     cy.loginAsAdmin();
+
+    cy.request({ url: '/api/v1/user', qs: { q: Cypress.expose('USER_EMAIL') } })
+      .its('body.results.0.id')
+      .then((id) => {
+        cy.request('POST', `/api/v1/user/${id}/settings/permissions`, {
+          permissions: 32,
+        });
+        cy.request(`/api/v1/user/${id}/settings/main`).then(({ body }) => {
+          cy.request('POST', `/api/v1/user/${id}/settings/main`, {
+            ...body,
+            watchlistSyncMovies: false,
+            watchlistSyncTv: false,
+          });
+        });
+      });
   });
 
   it('should not see watchlist sync settings on an account without permissions', () => {
@@ -30,7 +45,9 @@ describe('Auto Request Settings', () => {
 
     cy.get('#autorequest').should('not.be.checked').click();
 
-    cy.intercept('/api/v1/user/*/settings/permissions').as('userPermissions');
+    cy.intercept('POST', '/api/v1/user/*/settings/permissions').as(
+      'userPermissions'
+    );
 
     cy.contains('Save Changes').click();
 
@@ -50,7 +67,7 @@ describe('Auto Request Settings', () => {
     cy.get('#watchlistSyncMovies').should('not.be.checked').click();
     cy.get('#watchlistSyncTv').should('not.be.checked').click();
 
-    cy.intercept('/api/v1/user/*/settings/main').as('userMain');
+    cy.intercept('POST', '/api/v1/user/*/settings/main').as('userMain');
 
     cy.contains('Save Changes').click();
 
@@ -70,5 +87,7 @@ describe('Auto Request Settings', () => {
     cy.get('#autorequest').should('be.checked').click();
 
     cy.contains('Save Changes').click();
+
+    cy.wait('@userPermissions');
   });
 });
