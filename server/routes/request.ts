@@ -62,6 +62,9 @@ requestRoutes.get<Record<string, unknown>, RequestResultsResponse>(
             MediaRequestStatus.APPROVED,
           ];
           break;
+        case 'declined':
+          statusFilter = [MediaRequestStatus.DECLINED];
+          break;
         case 'failed':
           statusFilter = [MediaRequestStatus.FAILED];
           break;

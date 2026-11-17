@@ -6541,6 +6541,7 @@ paths:
                 failed,
                 deleted,
                 completed,
+                declined,
               ]
         - in: query
           name: sort
