@@ -31,7 +31,7 @@ type BaseProps<P> = {
   ) => void;
 };
 
-type ButtonProps<P extends React.ElementType> = {
+export type ButtonProps<P extends React.ElementType> = {
   as?: P;
 } & MergeElementProps<P, BaseProps<P>>;
 
@@ -112,7 +112,7 @@ function Button<P extends ElementTypes = 'button'>(
         {...(props as React.ComponentProps<'button'>)}
         ref={ref as ForwardedRef<HTMLButtonElement>}
       >
-        <span className="flex items-center">{children}</span>
+        <span className="flex max-w-full items-center">{children}</span>
       </button>
     );
   }

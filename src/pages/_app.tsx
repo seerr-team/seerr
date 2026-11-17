@@ -264,6 +264,7 @@ CoreApp.getInitialProps = async (initialProps) => {
     youtubeUrl: '',
     versionCheck: true,
     plexClientIdentifier: '',
+    openIdProviders: [],
   };
 
   if (ctx.res) {
@@ -297,7 +298,11 @@ CoreApp.getInitialProps = async (initialProps) => {
         );
         user = response.data;
 
-        if (router.pathname.match(/(setup|login)/)) {
+        if (
+          router.pathname.match(/(setup|login)/) &&
+          // if code is set, we are in the callback of an OpenID Connect flow
+          router.query.code == null
+        ) {
           ctx.res.writeHead(307, {
             Location: '/',
           });
