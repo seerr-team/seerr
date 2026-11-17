@@ -18,7 +18,7 @@ import { EventSubscriber, In } from 'typeorm';
 
 @EventSubscriber()
 export class MediaSubscriber implements EntitySubscriberInterface<Media> {
-  private async updateChildRequestStatus(
+  private async completePendingRequests(
     manager: EntityManager,
     event: Media,
     is4k: boolean
@@ -26,17 +26,20 @@ export class MediaSubscriber implements EntitySubscriberInterface<Media> {
     const requestRepository = manager.getRepository(MediaRequest);
 
     const requests = await requestRepository.find({
-      where: { media: { id: event.id } },
+      where: {
+        media: { id: event.id },
+        status: MediaRequestStatus.PENDING,
+        is4k,
+      },
     });
 
+    // Not APPROVED, as that would send it to *arr
     for (const request of requests) {
-      if (
-        request.is4k === is4k &&
-        request.status === MediaRequestStatus.PENDING
-      ) {
-        request.status = MediaRequestStatus.APPROVED;
-        await requestRepository.save(request);
-      }
+      request.status = MediaRequestStatus.COMPLETED;
+      request.seasons.forEach((season) => {
+        season.status = MediaRequestStatus.COMPLETED;
+      });
+      await requestRepository.save(request);
     }
   }
 
@@ -142,56 +145,6 @@ export class MediaSubscriber implements EntitySubscriberInterface<Media> {
       return;
     }
 
-    try {
-      if (
-        event.entity.status === MediaStatus.AVAILABLE &&
-        event.databaseEntity?.status === MediaStatus.PENDING
-      ) {
-        await withNestedTransaction(event.manager, async (manager) => {
-          await this.updateChildRequestStatus(
-            manager,
-            event.entity as Media,
-            false
-          );
-        });
-      }
-    } catch (e) {
-      logger.error(
-        'Error while updating child request status in beforeUpdate subscriber',
-        {
-          label: 'Media',
-          mediaId: event.entity.id,
-          is4k: false,
-          errorMessage: e instanceof Error ? e.message : String(e),
-        }
-      );
-    }
-
-    try {
-      if (
-        event.entity.status4k === MediaStatus.AVAILABLE &&
-        event.databaseEntity?.status4k === MediaStatus.PENDING
-      ) {
-        await withNestedTransaction(event.manager, async (manager) => {
-          await this.updateChildRequestStatus(
-            manager,
-            event.entity as Media,
-            true
-          );
-        });
-      }
-    } catch (e) {
-      logger.error(
-        'Error while updating child request status in beforeUpdate subscriber',
-        {
-          label: 'Media',
-          mediaId: event.entity.id,
-          is4k: true,
-          errorMessage: e instanceof Error ? e.message : String(e),
-        }
-      );
-    }
-
     // Manually load related seasons into databaseEntity
     // for seasonStatusCheck in afterUpdate
     const seasons = await event.manager
@@ -207,6 +160,57 @@ export class MediaSubscriber implements EntitySubscriberInterface<Media> {
   public async afterUpdate(event: UpdateEvent<Media>): Promise<void> {
     if (!event.entity || !event.databaseEntity) {
       return;
+    }
+
+    // After the update so request subscribers read the media as available
+    try {
+      if (
+        event.entity.status === MediaStatus.AVAILABLE &&
+        event.databaseEntity.status === MediaStatus.PENDING
+      ) {
+        await withNestedTransaction(event.manager, async (manager) => {
+          await this.completePendingRequests(
+            manager,
+            event.entity as Media,
+            false
+          );
+        });
+      }
+    } catch (e) {
+      logger.error(
+        'Error while completing pending requests in afterUpdate subscriber',
+        {
+          label: 'Media',
+          mediaId: event.entity.id,
+          is4k: false,
+          errorMessage: e instanceof Error ? e.message : String(e),
+        }
+      );
+    }
+
+    try {
+      if (
+        event.entity.status4k === MediaStatus.AVAILABLE &&
+        event.databaseEntity.status4k === MediaStatus.PENDING
+      ) {
+        await withNestedTransaction(event.manager, async (manager) => {
+          await this.completePendingRequests(
+            manager,
+            event.entity as Media,
+            true
+          );
+        });
+      }
+    } catch (e) {
+      logger.error(
+        'Error while completing pending requests in afterUpdate subscriber',
+        {
+          label: 'Media',
+          mediaId: event.entity.id,
+          is4k: true,
+          errorMessage: e instanceof Error ? e.message : String(e),
+        }
+      );
     }
 
     const validStatuses = [
