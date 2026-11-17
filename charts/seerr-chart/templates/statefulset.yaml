@@ -5,6 +5,10 @@ metadata:
   labels:
     {{- include "seerr.labels" . | nindent 4 }}
 spec:
+  {{- if gt (int .Values.replicaCount) 1 }}
+  {{- fail "replicaCount must be 0 or 1; Seerr does not support multiple replicas" }}
+  {{- end }}
+  replicas: {{ .Values.replicaCount | int }}
   serviceName: {{ include "seerr.fullname" . }}
   selector:
     matchLabels:

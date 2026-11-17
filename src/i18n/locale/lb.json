@@ -887,7 +887,6 @@
   "components.Settings.SettingsMain.validationApplicationUrl": "",
   "components.Settings.SettingsMain.validationApplicationUrlTrailingSlash": "",
   "components.Settings.SettingsMain.validationUrl": "",
-  "components.Settings.SettingsMain.validationUrlTrailingSlash": "",
   "components.Settings.SettingsMain.youtubeUrl": "",
   "components.Settings.SettingsNetwork.apiRequestTimeoutTip": "",
   "components.Settings.SettingsNetwork.csrfProtection": "",

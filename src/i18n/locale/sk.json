@@ -611,7 +611,6 @@
   "components.Settings.SettingsMain.locale": "",
   "components.Settings.SettingsMain.originallanguage": "",
   "components.Settings.SettingsMain.toastApiKeyFailure": "",
-  "components.Settings.SettingsMain.validationUrlTrailingSlash": "",
   "components.Settings.SettingsNetwork.csrfProtectionHoverTip": "",
   "components.Settings.SettingsNetwork.csrfProtectionTip": "",
   "components.Settings.SettingsNetwork.dnsCacheHoverTip": "",

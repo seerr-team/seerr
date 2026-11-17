@@ -578,6 +578,7 @@
   "components.RequestModal.cancel": "Cancel Request",
   "components.RequestModal.edit": "Edit Request",
   "components.RequestModal.errorediting": "Something went wrong while editing the request.",
+  "components.RequestModal.noSeasonsAvailable": "All of the selected seasons are already requested or available.",
   "components.RequestModal.numberofepisodes": "# of Episodes",
   "components.RequestModal.pending4krequest": "Pending 4K Request",
   "components.RequestModal.pendingapproval": "Your request is pending approval.",

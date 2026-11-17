@@ -1088,7 +1088,6 @@
   "components.Settings.Notifications.pgpPassword": "",
   "components.Settings.OverrideRuleModal.editrule": "",
   "components.Settings.SettingsMain.validationUrl": "",
-  "components.Settings.SettingsMain.validationUrlTrailingSlash": "",
   "components.Settings.SettingsNetwork.dnsCacheForceMinTtl": "",
   "components.Settings.metadataProviderSettings": "",
   "components.UserProfile.UserSettings.menuLinkedAccounts": "",

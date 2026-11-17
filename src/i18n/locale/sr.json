@@ -675,7 +675,6 @@
   "components.Settings.SettingsMain.validationApplicationUrl": "",
   "components.Settings.SettingsMain.validationApplicationUrlTrailingSlash": "",
   "components.Settings.SettingsMain.validationUrl": "",
-  "components.Settings.SettingsMain.validationUrlTrailingSlash": "",
   "components.Settings.SettingsNetwork.csrfProtection": "",
   "components.Settings.SettingsNetwork.dnsCacheTip": "",
   "components.Settings.SettingsNetwork.networkDisclaimer": "",

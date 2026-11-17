@@ -149,7 +149,7 @@ const NotificationsSlack = () => {
         return (
           <Form className="section">
             <div className="form-row">
-              <label htmlFor="isDefault" className="checkbox-label">
+              <label htmlFor="enabled" className="checkbox-label">
                 {intl.formatMessage(messages.agentenabled)}
                 <span className="label-required">*</span>
               </label>
@@ -166,7 +166,7 @@ const NotificationsSlack = () => {
               </div>
             </div>
             <div className="form-row">
-              <label htmlFor="name" className="text-label">
+              <label htmlFor="webhookUrl" className="text-label">
                 {intl.formatMessage(messages.webhookUrl)}
                 <span className="label-required">*</span>
                 <span className="label-tip">

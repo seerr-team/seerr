@@ -1,8 +1,17 @@
 import ImageProxy from '@server/lib/imageproxy';
+import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { Router } from 'express';
 
 const router = Router();
+
+const MAX_CACHE_SIZE = 1024 * 1024 * 1024;
+
+const isAllowedSegment = (segment: string) =>
+  segment !== '.' &&
+  segment !== '..' &&
+  (/^[\w.-]+$/.test(segment) ||
+    /^w\d+_filter\(duotone,[\da-f]{6},[\da-f]{6}\)$/i.test(segment));
 
 // Delay the initialization of ImageProxy instances until the proxy (if any) is properly configured
 let _tmdbImageProxy: ImageProxy;
@@ -13,6 +22,7 @@ function initTmdbImageProxy() {
         maxRequests: 20,
         maxRPS: 50,
       },
+      maxCacheSize: MAX_CACHE_SIZE,
     });
   }
   return _tmdbImageProxy;
@@ -25,6 +35,7 @@ function initTvdbImageProxy() {
         maxRequests: 20,
         maxRPS: 50,
       },
+      maxCacheSize: MAX_CACHE_SIZE,
     });
   }
   return _tvdbImageProxy;
@@ -34,12 +45,24 @@ router.get<{
   type: string;
   path: string[];
 }>('/:type/*path', async (req, res, next) => {
-  const imagePath = '/' + req.params.path.join('/');
+  if (!getSettings().main.cacheImages) {
+    return next({ status: 404, message: 'Image caching is disabled.' });
+  }
 
-  if (imagePath.startsWith('//') || imagePath.includes('://')) {
-    logger.error('Invalid URL for image proxy', { imagePath });
+  const joinedPath = '/' + req.params.path.join('/');
+
+  if (joinedPath.startsWith('//') || joinedPath.includes('://')) {
+    logger.error('Invalid URL for image proxy', { imagePath: joinedPath });
     return next({ status: 403, message: 'Invalid URL for image proxy.' });
   }
+
+  const segments = joinedPath.split('/').filter((segment) => segment !== '');
+
+  if (!segments.every(isAllowedSegment)) {
+    return next({ status: 400, message: 'Invalid image path.' });
+  }
+
+  const imagePath = '/' + segments.join('/');
 
   try {
     let imageData;

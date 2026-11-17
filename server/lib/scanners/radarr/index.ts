@@ -21,11 +21,15 @@ class RadarrScanner
   extends BaseScanner<RadarrMovie>
   implements RunnableScanner<SyncStatus>
 {
+  protected declineRequestsOnStatusReset = true;
   private servers: RadarrSettings[];
   private currentServer: RadarrSettings;
   private radarrApi: RadarrAPI;
   private scannedTmdbIds: Set<number> = new Set();
   private scanned4kTmdbIds: Set<number> = new Set();
+  // Distinct from the scanned sets, which also include unmonitored titles.
+  private processingTmdbIds: Set<number> = new Set();
+  private processing4kTmdbIds: Set<number> = new Set();
   private didScanStandard = false;
   private didScan4k = false;
   private serverReturnedEmpty = false;
@@ -50,6 +54,8 @@ class RadarrScanner
     const sessionId = this.startRun();
     this.scannedTmdbIds.clear();
     this.scanned4kTmdbIds.clear();
+    this.processingTmdbIds.clear();
+    this.processing4kTmdbIds.clear();
     this.didScanStandard = false;
     this.didScan4k = false;
     this.serverReturnedEmpty = false;
@@ -129,6 +135,15 @@ class RadarrScanner
         this.didScan4k = false;
       }
 
+      await this.resolveStatusResets((media, is4k) => {
+        const scanComplete = is4k ? this.didScan4k : this.didScanStandard;
+        const processingIds = is4k
+          ? this.processing4kTmdbIds
+          : this.processingTmdbIds;
+
+        return scanComplete && !processingIds.has(media.tmdbId);
+      });
+
       await this.cleanupOrphanedMovies();
       this.log('Radarr scan complete', 'info');
     } catch (e) {
@@ -146,6 +161,15 @@ class RadarrScanner
       this.scannedTmdbIds.add(radarrMovie.tmdbId);
     }
 
+    const processing = !radarrMovie.hasFile && radarrMovie.monitored;
+    if (processing) {
+      if (server4k) {
+        this.processing4kTmdbIds.add(radarrMovie.tmdbId);
+      } else {
+        this.processingTmdbIds.add(radarrMovie.tmdbId);
+      }
+    }
+
     try {
       await this.processMovie(radarrMovie.tmdbId, {
         is4k: server4k,
@@ -153,7 +177,7 @@ class RadarrScanner
         externalServiceId: radarrMovie.id,
         externalServiceSlug: radarrMovie.titleSlug,
         title: radarrMovie.title,
-        processing: !radarrMovie.hasFile && radarrMovie.monitored,
+        processing,
         hasFile: radarrMovie.hasFile,
       });
     } catch (e) {

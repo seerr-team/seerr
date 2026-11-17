@@ -1491,7 +1491,6 @@
   "components.Settings.SettingsMain.apikeyCopied": "API-ключ скопирован в буфер.",
   "components.Settings.SettingsMain.hideAvailableTip": "Скрывает доступный контент со страниц \"Найти что-то новое\", но не из результатов поиска",
   "components.Settings.SettingsMain.validationUrl": "Требуется ввести корректный URL",
-  "components.Settings.SettingsMain.validationUrlTrailingSlash": "URL не должен оканчиваться на слеш",
   "components.Settings.SettingsMain.youtubeUrl": "URL YouTube",
   "components.Settings.SettingsMain.youtubeUrlTip": "Базовый URL для YouTube видео, если вы используете свой экземпляр YouTube.",
   "components.Settings.SettingsNetwork.dnsCache": "Кеш DNS",
