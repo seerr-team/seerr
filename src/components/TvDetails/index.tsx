@@ -366,14 +366,14 @@ const TvDetails = ({ tv }: TvDetailsProps) => {
 
   function getAvailable4kMediaServerName() {
     if (settings.currentSettings.mediaServerType === MediaServerType.EMBY) {
-      return intl.formatMessage(messages.play, { mediaServerName: 'Emby' });
+      return intl.formatMessage(messages.play4k, { mediaServerName: 'Emby' });
     }
 
     if (settings.currentSettings.mediaServerType === MediaServerType.PLEX) {
       return intl.formatMessage(messages.play4k, { mediaServerName: 'Plex' });
     }
 
-    return intl.formatMessage(messages.play, { mediaServerName: 'Jellyfin' });
+    return intl.formatMessage(messages.play4k, { mediaServerName: 'Jellyfin' });
   }
 
   const onClickWatchlistBtn = async (): Promise<void> => {
