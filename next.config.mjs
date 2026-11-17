@@ -1,8 +1,10 @@
-import type { NextConfig } from 'next';
-
-const nextConfig: NextConfig = {
+/**
+ * @type {import('next').NextConfig}
+ */
+const nextConfig = {
   env: {
     commitTag: process.env.COMMIT_TAG || 'local',
+    unsafeDoNotUseDemo: process.env.UNSAFE_DO_NOT_USE_DEMO,
   },
   images: {
     remotePatterns: [

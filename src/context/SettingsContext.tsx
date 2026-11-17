@@ -14,6 +14,7 @@ const defaultSettings = {
   applicationUrl: '',
   hideAvailable: false,
   hideBlocklisted: false,
+  hideRequested: false,
   localLogin: true,
   mediaServerLogin: true,
   movie4kEnabled: false,
@@ -31,6 +32,7 @@ const defaultSettings = {
   emailEnabled: false,
   newPlexLogin: true,
   youtubeUrl: '',
+  versionCheck: true,
   plexClientIdentifier: '',
 };
 

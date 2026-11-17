@@ -68,11 +68,12 @@ const LinkJellyfinModal = ({
 
   return (
     <Transition
+      as="div"
       appear
       show={show}
       enter="transition ease-in-out duration-300 transform opacity-0"
       enterFrom="opacity-0"
-      enterTo="opacuty-100"
+      enterTo="opacity-100"
       leave="transition ease-in-out duration-300 transform opacity-100"
       leaveFrom="opacity-100"
       leaveTo="opacity-0"
@@ -172,20 +173,23 @@ const LinkJellyfinModal = ({
                     <div className="error">{errors.password}</div>
                   )}
                 </div>
-                <div className="mt-4">
-                  <Button
-                    buttonType="ghost"
-                    type="button"
-                    onClick={() => {
-                      setError(null);
-                      onSwitchToQuickConnect();
-                    }}
-                    className="w-full gap-2"
-                  >
-                    <QrCodeIcon />
-                    <span>{intl.formatMessage(messages.quickConnect)}</span>
-                  </Button>
-                </div>
+                {settings.currentSettings.mediaServerType ===
+                  MediaServerType.JELLYFIN && (
+                  <div className="mt-4">
+                    <Button
+                      buttonType="ghost"
+                      type="button"
+                      onClick={() => {
+                        setError(null);
+                        onSwitchToQuickConnect();
+                      }}
+                      className="w-full gap-2"
+                    >
+                      <QrCodeIcon />
+                      <span>{intl.formatMessage(messages.quickConnect)}</span>
+                    </Button>
+                  </div>
+                )}
               </Form>
             </Modal>
           );

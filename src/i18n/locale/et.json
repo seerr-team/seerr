@@ -1003,7 +1003,6 @@
   "components.Settings.SettingsMain.validationApplicationUrl": "Pead sisestama kehtiva URL-i",
   "components.Settings.SettingsMain.validationApplicationUrlTrailingSlash": "URL ei tohi lõppeda kaldkriipsuga",
   "components.Settings.SettingsMain.validationUrl": "Pead sisestama kehtiva URL-i",
-  "components.Settings.SettingsMain.validationUrlTrailingSlash": "URL ei tohi lõppeda kaldkriipsuga",
   "components.Settings.SettingsMain.youtubeUrl": "YouTube'i URL",
   "components.Settings.SettingsMain.youtubeUrlTip": "YouTube'i videote baas-URL, kui kasutatakse ise hostitud (self-hosted) YouTube'i rakendust.",
   "components.Settings.SettingsNetwork.apiRequestTimeout": "API-päringu aegumine",

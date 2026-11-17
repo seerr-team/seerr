@@ -10,9 +10,8 @@
 import { pipeline } from '@huggingface/transformers';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { fetchIssues, issueText } from './utils.mjs';
+import { EMBEDDING, fetchIssues, issueText } from './utils.mjs';
 
-const MODEL_NAME = process.env.EMBEDDING_MODEL || 'Xenova/all-MiniLM-L6-v2';
 const OUTPUT_PATH = 'issue_index.json';
 const INCLUDE_CLOSED_DAYS = 90;
 const MAX_ISSUES = 5000;
@@ -56,8 +55,8 @@ async function main() {
     return;
   }
 
-  console.log(`Loading model: ${MODEL_NAME}`);
-  const extractor = await pipeline('feature-extraction', MODEL_NAME, {
+  console.log(`Loading model: ${EMBEDDING.model}`);
+  const extractor = await pipeline('feature-extraction', EMBEDDING.model, {
     dtype: 'fp32',
   });
 
@@ -68,7 +67,7 @@ async function main() {
   for (let i = 0; i < texts.length; i += BATCH_SIZE) {
     const batch = texts.slice(i, i + BATCH_SIZE);
     const output = await extractor(batch, {
-      pooling: 'mean',
+      pooling: EMBEDDING.pooling,
       normalize: true,
     });
 
@@ -96,7 +95,7 @@ async function main() {
   const indexData = {
     issues: issueMetadata,
     embeddings: allEmbeddings,
-    model: MODEL_NAME,
+    model: EMBEDDING.model,
     issue_count: issueMetadata.length,
     built_at: new Date().toISOString(),
   };

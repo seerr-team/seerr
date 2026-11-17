@@ -68,6 +68,8 @@ docker run -d \
   --health-timeout 3s \
   --health-interval 15s \
   --health-retries 3 \
+  --security-opt no-new-privileges \
+  --cap-drop ALL \
   ghcr.io/seerr-team/seerr:latest
 ```
 
@@ -123,6 +125,10 @@ services:
       timeout: 3s
       interval: 15s
       retries: 3
+    security_opt:
+      - no-new-privileges
+    cap_drop:
+      - ALL
     restart: unless-stopped
 ```
 
@@ -186,6 +192,8 @@ docker run -d `
   --health-timeout 3s `
   --health-interval 15s `
   --health-retries 3 `
+  --security-opt no-new-privileges `
+  --cap-drop ALL `
   ghcr.io/seerr-team/seerr:latest
 ```
 
@@ -224,6 +232,8 @@ docker run -d ^
   --health-timeout 3s ^
   --health-interval 15s ^
   --health-retries 3 ^
+  --security-opt no-new-privileges ^
+  --cap-drop ALL ^
   ghcr.io/seerr-team/seerr:latest
 ```
 
@@ -267,6 +277,10 @@ services:
       timeout: 3s
       interval: 15s
       retries: 3
+    security_opt:
+      - no-new-privileges
+    cap_drop:
+      - ALL
     restart: unless-stopped
 
 volumes:

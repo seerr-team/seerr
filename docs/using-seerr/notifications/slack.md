@@ -19,3 +19,7 @@ Please refer to the [Slack API documentation](https://api.slack.com/messaging/we
 ### Notification Language
 
 Sets the language for notifications sent to this Slack channel.
+
+### Embed Poster (optional)
+
+When enabled, the poster image of the requested movie or series is included in the notification when one is available.

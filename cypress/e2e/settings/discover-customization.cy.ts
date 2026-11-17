@@ -78,7 +78,6 @@ describe('Discover Customization', () => {
   it('can create a new discover option and remove it', () => {
     cy.visit('/');
     cy.intercept('/api/v1/settings/discover/*').as('discoverSlider');
-    cy.intercept('/api/v1/search/keyword*').as('searchKeyword');
 
     cy.get('[data-testid=discover-start-editing]').click();
 
@@ -88,15 +87,18 @@ describe('Discover Customization', () => {
 
     cy.get('#title').type(sliderTitle);
     // First confirm that an invalid keyword doesn't allow us to submit anything
-    cy.get('#data').type('invalidkeyword{enter}', { delay: 100 });
-    cy.wait('@searchKeyword');
+    cy.get('#data').type('invalidkeyword');
+    // Enter before the full query loads selects a stale option from a partial one
+    cy.contains('.react-select__menu-notice--no-options', 'No results.');
+    cy.get('#data').type('{enter}');
 
     cy.get('[data-testid=create-discover-option-form]')
       .find('button')
       .should('be.disabled');
 
     cy.get('#data').clear();
-    cy.get('#data').type('christmas{enter}', { delay: 100 });
+    cy.get('#data').type('christmas');
+    cy.contains('.react-select__option', /^christmas$/).click();
 
     // Confirming we have some results
     cy.contains('.slider-header', sliderTitle)

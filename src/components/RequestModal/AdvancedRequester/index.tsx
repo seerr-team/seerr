@@ -2,19 +2,29 @@
 import CachedImage from '@app/components/Common/CachedImage';
 import { SmallLoadingSpinner } from '@app/components/Common/LoadingSpinner';
 import SlideCheckbox from '@app/components/Common/SlideCheckbox';
+import useToasts from '@app/hooks/useToasts';
 import type { User } from '@app/hooks/useUser';
 import { Permission, useUser } from '@app/hooks/useUser';
 import globalMessages from '@app/i18n/globalMessages';
 import defineMessages from '@app/utils/defineMessages';
 import { formatBytes } from '@app/utils/numberHelpers';
-import { Listbox, Transition } from '@headlessui/react';
+import {
+  Label,
+  Listbox,
+  ListboxButton,
+  ListboxOption,
+  ListboxOptions,
+  Transition,
+} from '@headlessui/react';
 import { CheckIcon, ChevronDownIcon } from '@heroicons/react/24/solid';
 import type {
   ServiceCommonServer,
   ServiceCommonServerWithDetails,
 } from '@server/interfaces/api/serviceInterfaces';
 import type { UserResultsResponse } from '@server/interfaces/api/userInterfaces';
+import type { OverrideRulesResult } from '@server/lib/overrideRules';
 import { hasPermission } from '@server/lib/permissions';
+import axios from 'axios';
 import { isEqual } from 'lodash';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useIntl } from 'react-intl';
@@ -56,24 +66,29 @@ export type RequestOverrides = {
 
 interface AdvancedRequesterProps {
   type: 'movie' | 'tv';
+  tmdbId?: number;
   is4k: boolean;
   isAnime?: boolean;
   defaultOverrides?: RequestOverrides;
   requestUser?: User;
+  requestId?: number;
   quota?: { movie: { limit?: number }; tv: { limit?: number } };
   onChange: (overrides: RequestOverrides) => void;
 }
 
 const AdvancedRequester = ({
   type,
+  tmdbId,
   is4k = false,
   isAnime = false,
   defaultOverrides,
   requestUser,
+  requestId,
   quota,
   onChange,
 }: AdvancedRequesterProps) => {
   const intl = useIntl();
+  const { addToast } = useToasts();
   const { user: currentUser, hasPermission: currentHasPermission } = useUser();
   const { data, error } = useSWR<ServiceCommonServer[]>(
     `/api/v1/service/${type === 'movie' ? 'radarr' : 'sonarr'}`,
@@ -321,6 +336,68 @@ const AdvancedRequester = ({
     selectedTags,
     ignoreQuota,
     isIgnoreQuotaVisible,
+  ]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (tmdbId && serverData?.server.id === selectedServer) {
+        try {
+          const { data: override } = await axios.post<OverrideRulesResult>(
+            '/api/v1/overrideRule/advancedRequest',
+            {
+              mediaType: type,
+              is4k,
+              requestUser:
+                selectedUser?.id ?? requestUser?.id ?? currentUser?.id,
+              tmdbId,
+              tags: selectedTags.length > 0 ? selectedTags : undefined,
+              serviceId: selectedServer ?? undefined,
+              requestId: requestId ?? undefined,
+            }
+          );
+          if (cancelled) {
+            return;
+          }
+          if (!defaultOverrides?.folder && override.rootFolder) {
+            setSelectedFolder(override.rootFolder);
+          }
+          if (!defaultOverrides?.profile && override.profileId) {
+            setSelectedProfile(override.profileId);
+          }
+          if (
+            !defaultOverrides?.tags &&
+            override.tags &&
+            !isEqual(override.tags, selectedTags)
+          ) {
+            setSelectedTags(override.tags);
+          }
+        } catch {
+          if (cancelled) {
+            return;
+          }
+          addToast(intl.formatMessage(globalMessages.error), {
+            appearance: 'error',
+            autoDismiss: true,
+          });
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    tmdbId,
+    type,
+    is4k,
+    serverData?.server.id,
+    selectedServer,
+    selectedUserId,
+    requestUser?.id,
+    currentUser?.id,
+    defaultOverrides?.folder,
+    defaultOverrides?.profile,
+    defaultOverrides?.tags,
   ]);
 
   if (!data && !error) {
@@ -619,12 +696,10 @@ const AdvancedRequester = ({
             >
               {({ open }) => (
                 <>
-                  <Listbox.Label>
-                    {intl.formatMessage(messages.requestas)}
-                  </Listbox.Label>
+                  <Label>{intl.formatMessage(messages.requestas)}</Label>
                   <div className="relative">
                     <span className="inline-block w-full rounded-md shadow-sm">
-                      <Listbox.Button className="focus:shadow-outline-blue relative w-full cursor-default rounded-md border border-gray-700 bg-gray-800 py-2 pl-3 pr-10 text-left text-white transition duration-150 ease-in-out focus:border-blue-300 focus:outline-none sm:text-sm sm:leading-5">
+                      <ListboxButton className="focus:shadow-outline-blue relative w-full cursor-default rounded-md border border-gray-700 bg-gray-800 py-2 pl-3 pr-10 text-left text-white transition duration-150 ease-in-out focus:border-blue-300 focus:outline-none sm:text-sm sm:leading-5">
                         <span className="flex items-center">
                           <CachedImage
                             type="avatar"
@@ -647,10 +722,11 @@ const AdvancedRequester = ({
                         <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 text-gray-500">
                           <ChevronDownIcon className="h-5 w-5" />
                         </span>
-                      </Listbox.Button>
+                      </ListboxButton>
                     </span>
 
                     <Transition
+                      as="div"
                       show={open}
                       enter="transition-opacity ease-in duration-300"
                       enterFrom="opacity-0"
@@ -660,12 +736,12 @@ const AdvancedRequester = ({
                       leaveTo="opacity-0"
                       className="mt-1 w-full rounded-md border border-gray-700 bg-gray-800 shadow-lg"
                     >
-                      <Listbox.Options
+                      <ListboxOptions
                         static
                         className="shadow-xs max-h-60 overflow-auto rounded-md py-1 text-base leading-6 focus:outline-none sm:text-sm sm:leading-5"
                       >
                         {filteredUserData?.map((user) => (
-                          <Listbox.Option key={user.id} value={user}>
+                          <ListboxOption key={user.id} value={user}>
                             {({ selected, active }) => (
                               <div
                                 className={`${
@@ -708,9 +784,9 @@ const AdvancedRequester = ({
                                 )}
                               </div>
                             )}
-                          </Listbox.Option>
+                          </ListboxOption>
                         ))}
-                      </Listbox.Options>
+                      </ListboxOptions>
                     </Transition>
                   </div>
                 </>

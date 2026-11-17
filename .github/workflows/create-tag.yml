@@ -16,22 +16,23 @@ jobs:
   determine-tag-version:
     name: Determine tag version
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
     outputs:
       tag_version: ${{ steps.git-cliff.outputs.tag_version }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-        with:
-          fetch-depth: 0
-          persist-credentials: false
+      - parallel:
+          - name: Checkout
+            uses: actions/checkout@v7.0.1
+            with:
+              fetch-depth: 0
+              persist-credentials: false
 
-      - name: Install git-cliff
-        uses: taiki-e/install-action@25435dc8dd3baed7417e0c96d3fe89013a5b2e09 # v2.81.3
-        with:
-          tool: git-cliff
+          - name: Install git-cliff
+            uses: taiki-e/install-action@v2.90.1
+            with:
+              tool: git-cliff
 
       - name: Get tag version
         id: git-cliff
@@ -46,7 +47,7 @@ jobs:
   create-tag:
     name: Create tag
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: write
     needs: determine-tag-version
@@ -55,25 +56,26 @@ jobs:
       TAG_VERSION: ${{ needs.determine-tag-version.outputs.tag_version }}
     steps:
       - name: Checkout
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        uses: actions/checkout@v7.0.1
         with:
           ssh-key: '${{ secrets.COMMIT_KEY }}'
 
-      - name: Pnpm Setup
-        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
+      - parallel:
+          - name: Pnpm Setup
+            uses: pnpm/action-setup@v6.1.1
 
-      - name: Set up Node.js
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
-        with:
-          node-version-file: 'package.json'
-          # For workflows with elevated privileges we recommend disabling automatic caching.
-          # https://github.com/actions/setup-node
-          package-manager-cache: false
+          - name: Set up Node.js
+            uses: actions/setup-node@v7.1.0
+            with:
+              node-version-file: 'package.json'
+              # For workflows with elevated privileges we recommend disabling automatic caching.
+              # https://github.com/actions/setup-node
+              package-manager-cache: false
 
-      - name: Configure git
-        run: |
-          git config --global user.name "${{ github.actor }}"
-          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+          - name: Configure git
+            run: |
+              git config --global user.name "${{ github.actor }}"
+              git config --global user.email "${{ github.actor }}@users.noreply.github.com"
 
       - name: Bump package.json
         run: npm version ${TAG_VERSION} --no-commit-hooks --no-git-tag-version

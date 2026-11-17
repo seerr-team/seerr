@@ -31,6 +31,6 @@ Seerr is a stateful application and it is not designed to have multiple replicas
 - replacing `Deployment` with `StatefulSet`
 - removing `replicaCount` value
 
-If `replicaCount` value was used - remove it. Helm update should work fine after that.
+If `replicaCount` value was used - remove it (re-added in 3.11.0, limited to `0` or `1`). Helm update should work fine after that.
 
 {{ template "chart.valuesSection" . }}

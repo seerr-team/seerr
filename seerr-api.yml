@@ -61,6 +61,24 @@ components:
         userId:
           type: number
           example: 1
+    WatchlistRequest:
+      type: object
+      required:
+        - tmdbId
+        - mediaType
+      properties:
+        tmdbId:
+          type: number
+          example: 1
+        mediaType:
+          type: string
+          enum:
+            - movie
+            - tv
+        ratingKey:
+          type: string
+        title:
+          type: string
     Watchlist:
       type: object
       properties:
@@ -232,6 +250,9 @@ components:
         hideAvailable:
           type: boolean
           example: false
+        hideRequested:
+          type: boolean
+          example: false
         partialRequestsEnabled:
           type: boolean
           example: false
@@ -248,6 +269,9 @@ components:
           type: number
           example: 32
         enableSpecialEpisodes:
+          type: boolean
+          example: false
+        versionCheck:
           type: boolean
           example: false
     NetworkSettings:
@@ -1551,6 +1575,8 @@ components:
               type: string
             topic:
               type: string
+            tags:
+              type: string
             authMethodUsernamePassword:
               type: boolean
             username:
@@ -2151,10 +2177,18 @@ paths:
   /status:
     get:
       summary: Get Seerr status
-      description: Returns the current Seerr status in a JSON object.
+      description: Returns the current Seerr status in a JSON object. updateAvailable and commitsBehind are omitted when checkUpdateAvailable is false.
       security: []
       tags:
         - public
+      parameters:
+        - in: query
+          name: checkUpdateAvailable
+          description: If false, updateAvailable and commitsBehind will be omitted from the response. Defaults to the versionCheck setting.
+          required: false
+          example: false
+          schema:
+            type: boolean
       responses:
         '200':
           description: Returned status
@@ -2310,21 +2344,6 @@ paths:
       description: Returns a list of Jellyfin libraries in a JSON array.
       tags:
         - settings
-      parameters:
-        - in: query
-          name: sync
-          description: Syncs the current libraries with the current Jellyfin server
-          schema:
-            type: string
-            nullable: true
-        - in: query
-          name: enable
-          explode: false
-          allowReserved: true
-          description: Comma separated list of libraries to enable. Any libraries not passed will be disabled!
-          schema:
-            type: string
-            nullable: true
       responses:
         '200':
           description: 'Jellyfin libraries returned'
@@ -2334,6 +2353,60 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/JellyfinLibrary'
+  /settings/jellyfin/library/{libraryId}:
+    put:
+      summary: Update a single Jellyfin library
+      description: Updates a single Jellyfin library with the provided values.
+      tags:
+        - settings
+      parameters:
+        - in: path
+          name: libraryId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - enabled
+              properties:
+                enabled:
+                  type: boolean
+                  example: true
+      responses:
+        '200':
+          description: 'Jellyfin library returned'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JellyfinLibrary'
+        '400':
+          description: 'Invalid request body'
+        '404':
+          description: 'Library does not exist'
+  /settings/jellyfin/library/sync:
+    post:
+      summary: Sync Jellyfin libraries
+      description: Syncs the current libraries with the current Jellyfin server. Enabled flags are preserved.
+      tags:
+        - settings
+      responses:
+        '200':
+          description: 'Jellyfin libraries returned'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/JellyfinLibrary'
+        '404':
+          description: 'No libraries found'
+        '501':
+          description: 'Automatic library grouping is not supported'
   /settings/jellyfin/users:
     get:
       summary: Get Jellyfin Users
@@ -2465,21 +2538,56 @@ paths:
       description: Returns a list of Plex libraries in a JSON array.
       tags:
         - settings
+      responses:
+        '200':
+          description: 'Plex libraries returned'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PlexLibrary'
+  /settings/plex/library/{libraryId}:
+    put:
+      summary: Update a single Plex library
+      description: Updates a single Plex library with the provided values.
+      tags:
+        - settings
       parameters:
-        - in: query
-          name: sync
-          description: Syncs the current libraries with the current Plex server
+        - in: path
+          name: libraryId
+          required: true
           schema:
             type: string
-            nullable: true
-        - in: query
-          name: enable
-          explode: false
-          allowReserved: true
-          description: Comma separated list of libraries to enable. Any libraries not passed will be disabled!
-          schema:
-            type: string
-            nullable: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - enabled
+              properties:
+                enabled:
+                  type: boolean
+                  example: true
+      responses:
+        '200':
+          description: 'Plex library returned'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlexLibrary'
+        '400':
+          description: 'Invalid request body'
+        '404':
+          description: 'Library does not exist'
+  /settings/plex/library/sync:
+    post:
+      summary: Sync Plex libraries
+      description: Syncs the current libraries with the current Plex server. Enabled flags are preserved.
+      tags:
+        - settings
       responses:
         '200':
           description: 'Plex libraries returned'
@@ -4967,9 +5075,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Watchlist'
+              $ref: '#/components/schemas/WatchlistRequest'
       responses:
-        '200':
+        '201':
           description: Watchlist data returned
           content:
             application/json:
@@ -6640,6 +6748,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MediaRequest'
+        '409':
+          description: Only pending requests can be modified
     delete:
       summary: Delete request
       description: Removes a request. If the user has the `MANAGE_REQUESTS` permission, any request can be removed. Otherwise, only pending requests can be removed.
@@ -6680,6 +6790,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MediaRequest'
+        '409':
+          description: Only failed requests can be retried
   /request/{requestId}/{status}:
     post:
       summary: Update a request's status
@@ -6711,6 +6823,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MediaRequest'
+        '400':
+          description: Status must be approve or decline
+        '409':
+          description: Only pending requests can be approved or declined
   /movie/{movieId}:
     get:
       summary: Get movie details
@@ -8140,6 +8256,70 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/OverrideRule'
+  /overrideRule/advancedRequest:
+    post:
+      summary: Advanced override rule request
+      description: Processes an advanced override rule request.
+      tags:
+        - overriderule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - mediaType
+                - tmdbId
+              properties:
+                mediaType:
+                  type: string
+                tmdbId:
+                  type: number
+                  example: 1
+                is4k:
+                  type: boolean
+                  example: false
+                requestId:
+                  type: number
+                  nullable: true
+                requestUser:
+                  type: number
+                  nullable: true
+                tags:
+                  type: array
+                  items:
+                    type: number
+                  nullable: true
+                serviceId:
+                  type: number
+                  nullable: true
+      responses:
+        '200':
+          description: Advanced override rule request processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rootFolder:
+                    type: string
+                    nullable: true
+                  profileId:
+                    type: number
+                    nullable: true
+                  tags:
+                    type: array
+                    items:
+                      type: number
+                    nullable: true
+        '403':
+          description: User does not have permission to modify the request user
+        '404':
+          description: User, media or request not found
+        '500':
+          description: Unable to evaluate override rules
+
 security:
   - cookieAuth: []
   - apiKey: []

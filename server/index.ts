@@ -1,6 +1,6 @@
 import csurf from '@dr.pogodin/csurf';
 import PlexAPI from '@server/api/plexapi';
-import dataSource, { getRepository, isPgsql } from '@server/datasource';
+import dataSource, { getRepository } from '@server/datasource';
 import DiscoverSlider from '@server/entity/DiscoverSlider';
 import { Session } from '@server/entity/Session';
 import { User } from '@server/entity/User';
@@ -29,8 +29,11 @@ import { getAppVersion } from '@server/utils/appVersion';
 import createCustomProxyAgent, {
   setForceIpv4First,
 } from '@server/utils/customProxyAgent';
+import { isPgsql } from '@server/utils/dbType';
+import { initDemoData } from '@server/utils/demoMode';
 import { initializeDnsCache } from '@server/utils/dnsCache';
 import restartFlag from '@server/utils/restartFlag';
+import '@server/utils/userAgent';
 import { getClientIp } from '@supercharge/request-ip';
 import { TypeormStore } from 'connect-typeorm/out';
 import cookieParser from 'cookie-parser';
@@ -120,7 +123,17 @@ app
         });
 
         const plexapi = new PlexAPI({ plexToken: admin.plexToken });
-        await plexapi.syncLibraries();
+
+        try {
+          await plexapi.syncLibraries();
+        } catch {
+          // Leave the existing libraries untouched so the migration retries on
+          // the next startup instead of discarding the user's configuration
+          logger.warn(
+            'Failed to migrate Plex libraries; will retry on next startup',
+            { label: 'Settings' }
+          );
+        }
       }
     }
 
@@ -241,6 +254,13 @@ app
       };
       next();
     });
+
+    // Init demo mode and catch some API routes
+    if (process.env.UNSAFE_DO_NOT_USE_DEMO === 'true') {
+      logger.info('Demo mode enabled, seeding database with demo data');
+      await initDemoData(server);
+    }
+
     server.use('/api/v1', routes);
 
     // Do not set cookies so CDNs can cache them
@@ -253,10 +273,11 @@ app
         err: { status: number; message: string; errors: string[] },
         _req: Request,
         res: Response,
-        // We must provide a next function for the function signature here even though its not used
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        _next: NextFunction
+        next: NextFunction
       ) => {
+        if (res.headersSent) {
+          return next(err);
+        }
         // format error
         res.status(err.status || 500).json({
           message: err.message,
@@ -267,19 +288,27 @@ app
 
     const port = Number(process.env.PORT) || 5055;
     const host = process.env.HOST;
+    let httpServer;
     if (host) {
-      server.listen(port, host, () => {
+      httpServer = server.listen(port, host, () => {
         logger.info(`Server ready on ${host} port ${port}`, {
           label: 'Server',
         });
       });
     } else {
-      server.listen(port, () => {
+      httpServer = server.listen(port, () => {
         logger.info(`Server ready on port ${port}`, {
           label: 'Server',
         });
       });
     }
+    httpServer.on('error', (err) => {
+      logger.error('Failed to start server', {
+        label: 'Server',
+        message: err.message,
+      });
+      process.exit(1);
+    });
   })
   .catch((err) => {
     logger.error(err.stack);

@@ -23,6 +23,8 @@ const messages = defineMessages(
     embedPoster: 'Embed Poster',
     url: 'Server root URL',
     topic: 'Topic',
+    tags: 'Tags',
+    tagsPlaceholder: 'eyes,warning',
     usernamePasswordAuth: 'Username + Password authentication',
     username: 'Username',
     password: 'Password',
@@ -100,6 +102,7 @@ const NotificationsNtfy = () => {
         types: data?.types,
         url: data?.options.url,
         topic: data?.options.topic,
+        tags: data?.options.tags ?? '',
         authMethodUsernamePassword: data?.options.authMethodUsernamePassword,
         username: data?.options.username,
         password: data?.options.password,
@@ -118,6 +121,7 @@ const NotificationsNtfy = () => {
             options: {
               url: values.url,
               topic: values.topic,
+              tags: values.tags,
               authMethodUsernamePassword: values.authMethodUsernamePassword,
               username: values.username,
               password: values.password,
@@ -171,6 +175,7 @@ const NotificationsNtfy = () => {
               options: {
                 url: values.url,
                 topic: values.topic,
+                tags: values.tags,
                 authMethodUsernamePassword: values.authMethodUsernamePassword,
                 username: values.username,
                 password: values.password,
@@ -250,6 +255,21 @@ const NotificationsNtfy = () => {
                   typeof errors.topic === 'string' && (
                     <div className="error">{errors.topic}</div>
                   )}
+              </div>
+            </div>
+            <div className="form-row">
+              <label htmlFor="tags" className="text-label">
+                {intl.formatMessage(messages.tags)}
+              </label>
+              <div className="form-input-area">
+                <div className="form-input-field">
+                  <Field
+                    id="tags"
+                    name="tags"
+                    type="text"
+                    placeholder={intl.formatMessage(messages.tagsPlaceholder)}
+                  />
+                </div>
               </div>
             </div>
             <div className="form-row">

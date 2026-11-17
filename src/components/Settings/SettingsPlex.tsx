@@ -41,6 +41,9 @@ const messages = defineMessages('components.Settings', {
   toastPlexRefresh: 'Retrieving server list from Plex…',
   toastPlexRefreshSuccess: 'Plex server list retrieved successfully!',
   toastPlexRefreshFailure: 'Failed to retrieve Plex server list.',
+  toastPlexSyncFailure: 'Failed to sync Plex libraries.',
+  invalidurlerror: 'Unable to connect to {mediaServerName} server.',
+  toggleLibraryFailure: 'Failed to update library.',
   toastPlexConnecting: 'Attempting to connect to Plex…',
   toastPlexConnectingSuccess: 'Plex connection established successfully!',
   toastPlexConnectingFailure: 'Failed to connect to Plex.',
@@ -66,7 +69,7 @@ const messages = defineMessages('components.Settings', {
   validationPortRequired: 'You must provide a valid port number',
   webAppUrl: '<WebAppLink>Web App</WebAppLink> URL',
   webAppUrlTip:
-    'Optionally direct users to the web app on your server instead of the "hosted" web app',
+    'Optionally direct users to the web app on your server instead of https://app.plex.tv/desktop',
   tautulliSettings: 'Tautulli Settings',
   tautulliSettingsDescription:
     'Optionally configure the settings for your Tautulli server. Seerr fetches watch history data for your Plex media from Tautulli.',
@@ -108,10 +111,10 @@ interface PresetServerDisplay {
   message?: string;
 }
 interface SettingsPlexProps {
-  onComplete?: () => void;
+  isSetupSettings?: boolean;
 }
 
-const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
+const SettingsPlex = ({ isSetupSettings }: SettingsPlexProps) => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isRefreshingPresets, setIsRefreshingPresets] = useState(false);
   const [availableServers, setAvailableServers] = useState<PlexDevice[] | null>(
@@ -122,12 +125,17 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
     error,
     mutate: revalidate,
   } = useSWR<PlexSettings>('/api/v1/settings/plex');
-  const { data: dataTautulli, mutate: revalidateTautulli } =
-    useSWR<TautulliSettings>('/api/v1/settings/tautulli');
+  const {
+    data: dataTautulli,
+    error: errorTautulli,
+    mutate: revalidateTautulli,
+  } = useSWR<TautulliSettings>(
+    isSetupSettings ? null : '/api/v1/settings/tautulli'
+  );
   const { data: dataSync, mutate: revalidateSync } = useSWR<SyncStatus>(
     '/api/v1/settings/plex/sync',
     {
-      refreshInterval: 1000,
+      refreshInterval: (latestData) => (latestData?.running ? 1000 : 10000),
     }
   );
   const intl = useIntl();
@@ -240,19 +248,24 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
   const syncLibraries = async () => {
     setIsSyncing(true);
 
-    const params: { sync: boolean; enable?: string } = {
-      sync: true,
-    };
-
-    if (activeLibraries.length > 0) {
-      params.enable = activeLibraries.join(',');
+    try {
+      await axios.post('/api/v1/settings/plex/library/sync');
+    } catch (e) {
+      addToast(
+        e?.response?.data?.message === 'CONNECTION_ERROR'
+          ? intl.formatMessage(messages.invalidurlerror, {
+              mediaServerName: 'Plex',
+            })
+          : intl.formatMessage(messages.toastPlexSyncFailure),
+        {
+          autoDismiss: true,
+          appearance: 'error',
+        }
+      );
+    } finally {
+      setIsSyncing(false);
+      revalidate();
     }
-
-    await axios.get('/api/v1/settings/plex/library', {
-      params,
-    });
-    setIsSyncing(false);
-    revalidate();
   };
 
   const refreshPresetServers = async () => {
@@ -311,34 +324,26 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
 
   const toggleLibrary = async (libraryId: string) => {
     setIsSyncing(true);
-    if (activeLibraries.includes(libraryId)) {
-      const params: { enable?: string } = {};
-
-      if (activeLibraries.length > 1) {
-        params.enable = activeLibraries
-          .filter((id) => id !== libraryId)
-          .join(',');
-      }
-
-      await axios.get('/api/v1/settings/plex/library', {
-        params,
+    try {
+      await axios.put(`/api/v1/settings/plex/library/${libraryId}`, {
+        enabled: !activeLibraries.includes(libraryId),
       });
-    } else {
-      await axios.get('/api/v1/settings/plex/library', {
-        params: {
-          enable: [...activeLibraries, libraryId].join(','),
-        },
+    } catch {
+      addToast(intl.formatMessage(messages.toggleLibraryFailure), {
+        autoDismiss: true,
+        appearance: 'error',
       });
+    } finally {
+      setIsSyncing(false);
+      revalidate();
     }
-
-    if (onComplete) {
-      onComplete();
-    }
-    setIsSyncing(false);
-    revalidate();
   };
 
-  if ((!data || !dataTautulli) && !error) {
+  if (
+    (!data || (!isSetupSettings && !dataTautulli)) &&
+    !error &&
+    !errorTautulli
+  ) {
     return <LoadingSpinner />;
   }
   return (
@@ -354,7 +359,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
         <p className="description">
           {intl.formatMessage(messages.plexsettingsDescription)}
         </p>
-        {!!onComplete && (
+        {isSetupSettings && (
           <div className="section">
             <Alert
               title={intl.formatMessage(messages.settingUpPlexDescription, {
@@ -597,7 +602,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
                       inputMode="url"
                       id="webAppUrl"
                       name="webAppUrl"
-                      placeholder="https://app.plex.tv/desktop"
+                      placeholder="https://your-server-fqdn.com/web/index.html"
                     />
                   </div>
                   {errors.webAppUrl &&
@@ -738,7 +743,7 @@ const SettingsPlex = ({ onComplete }: SettingsPlexProps) => {
           </div>
         </div>
       </div>
-      {!onComplete && (
+      {!isSetupSettings && (
         <>
           <div className="mb-6 mt-10">
             <h3 className="heading">

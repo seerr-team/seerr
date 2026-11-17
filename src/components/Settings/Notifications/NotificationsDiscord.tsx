@@ -212,7 +212,7 @@ const NotificationsDiscord = () => {
               </div>
             </div>
             <div className="form-row">
-              <label htmlFor="name" className="text-label">
+              <label htmlFor="webhookUrl" className="text-label">
                 {intl.formatMessage(messages.webhookUrl)}
                 <span className="label-required">*</span>
                 <span className="label-tip">

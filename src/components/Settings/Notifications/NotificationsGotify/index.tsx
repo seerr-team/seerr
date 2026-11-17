@@ -18,6 +18,7 @@ const messages = defineMessages(
   'components.Settings.Notifications.NotificationsGotify',
   {
     agentenabled: 'Enable Agent',
+    embedPoster: 'Embed Poster',
     url: 'Server URL',
     token: 'Application Token',
     priority: 'Priority',
@@ -92,6 +93,7 @@ const NotificationsGotify = () => {
     <Formik
       initialValues={{
         enabled: data?.enabled,
+        embedPoster: data?.embedPoster,
         types: data?.types,
         url: data?.options.url,
         token: data?.options.token,
@@ -103,6 +105,7 @@ const NotificationsGotify = () => {
         try {
           await axios.post('/api/v1/settings/notifications/gotify', {
             enabled: values.enabled,
+            embedPoster: values.embedPoster,
             types: values.types,
             options: {
               url: values.url,
@@ -188,6 +191,14 @@ const NotificationsGotify = () => {
               </label>
               <div className="form-input-area">
                 <Field type="checkbox" id="enabled" name="enabled" />
+              </div>
+            </div>
+            <div className="form-row">
+              <label htmlFor="embedPoster" className="checkbox-label">
+                {intl.formatMessage(messages.embedPoster)}
+              </label>
+              <div className="form-input-area">
+                <Field type="checkbox" id="embedPoster" name="embedPoster" />
               </div>
             </div>
             <div className="form-row">

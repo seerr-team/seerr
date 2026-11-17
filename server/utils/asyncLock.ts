@@ -37,14 +37,14 @@ class AsyncLock {
     setImmediate(() => this.ee.emit(key));
   };
 
-  public dispatch = async (
+  public dispatch = async <T>(
     key: string | number,
-    callback: () => Promise<void>
-  ) => {
+    callback: () => Promise<T>
+  ): Promise<T> => {
     const skey = String(key);
     await this.acquire(skey);
     try {
-      await callback();
+      return await callback();
     } finally {
       this.release(skey);
     }

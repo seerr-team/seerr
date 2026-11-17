@@ -98,6 +98,7 @@ const JellyfinLogin = ({ revalidate, serverType }: JellyfinLoginProps) => {
             let errorMessage = messages.loginerror;
             switch (e?.response?.data?.message) {
               case ApiErrorCode.InvalidUrl:
+              case ApiErrorCode.ConnectionError:
                 errorMessage = messages.invalidurlerror;
                 break;
               case ApiErrorCode.InvalidCredentials:
@@ -217,17 +218,19 @@ const JellyfinLogin = ({ revalidate, serverType }: JellyfinLoginProps) => {
         }}
       </Formik>
 
-      <div className="mt-4">
-        <Button
-          buttonType="ghost"
-          type="button"
-          onClick={() => setShowQuickConnect(true)}
-          className="w-full"
-        >
-          <QrCodeIcon />
-          <span>{intl.formatMessage(messages.quickconnect)}</span>
-        </Button>
-      </div>
+      {serverType === MediaServerType.JELLYFIN && (
+        <div className="mt-4">
+          <Button
+            buttonType="ghost"
+            type="button"
+            onClick={() => setShowQuickConnect(true)}
+            className="w-full"
+          >
+            <QrCodeIcon />
+            <span>{intl.formatMessage(messages.quickconnect)}</span>
+          </Button>
+        </div>
+      )}
 
       {showQuickConnect && (
         <JellyfinQuickConnectModal
