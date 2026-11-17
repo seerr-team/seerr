@@ -1148,7 +1148,7 @@ describe('AvailabilitySync', () => {
         if (key === 'plex-house-s6-rk') {
           return fakePlexEpisodes(21);
         }
-        return [];
+        return undefined as unknown as PlexMetadata[];
       };
 
       // Sonarr: only season 6 has files
