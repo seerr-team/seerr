@@ -71,9 +71,9 @@ export interface CacheResponse {
     'tmdb' | 'tvdb' | 'avatar',
     { size: number; imageCount: number }
   >;
-  dnsCache: {
-    stats: DnsStats | undefined;
-    entries: DnsEntries | undefined;
+  dnsCache?: {
+    stats: DnsStats;
+    entries: DnsEntries;
   };
 }
 

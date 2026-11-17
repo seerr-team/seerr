@@ -103,9 +103,6 @@ importers:
       https-proxy-agent:
         specifier: ^7.0.6
         version: 7.0.6
-      humanize-duration:
-        specifier: ^3.33.2
-        version: 3.33.2
       ip-address:
         specifier: ^10.7.5
         version: 10.7.5
@@ -290,9 +287,6 @@ importers:
       '@types/express-session':
         specifier: 1.18.2
         version: 1.18.2
-      '@types/humanize-duration':
-        specifier: ^3.27.4
-        version: 3.27.4
       '@types/js-yaml':
         specifier: ^4.0.9
         version: 4.0.9
@@ -2482,9 +2476,6 @@ packages:
   '@types/http-errors@2.0.4':
     resolution: {integrity: sha512-D0CFMMtydbJAegzOyHjtiKPLlvnm3iTZyZRSZoLq2mRhDdmLfIWOCYPfQJ4cu2erKghU++QvjcUjp/5h7hESpA==}
 
-  '@types/humanize-duration@3.27.4':
-    resolution: {integrity: sha512-yaf7kan2Sq0goxpbcwTQ+8E9RP6HutFBPv74T/IA/ojcHKhuKVlk2YFYyHhWZeLvZPzzLE3aatuQB4h0iqyyUA==}
-
   '@types/js-yaml@4.0.9':
     resolution: {integrity: sha512-k4MGaQl5TGo/iipqb2UDG2UwjXziSWkh0uysQelTlJpX1qGlpUZYm8PnO4DxG1qBomtJUdYJ6qR6xdIah10JLg==}
 
@@ -4515,9 +4506,6 @@ packages:
   human-signals@2.1.0:
     resolution: {integrity: sha512-B4FFZ6q/T2jhhksgkbEW3HBvWIfDW85snkQgawt07S7J5QXTk6BkNV+0yAeZrM5QpMAdYlocGoljn0sJ/WQkFw==}
     engines: {node: '>=10.17.0'}
-
-  humanize-duration@3.33.2:
-    resolution: {integrity: sha512-K7Ny/ULO1hDm2nnhvAY+SJV1skxFb61fd073SG1IWJl+D44ULrruCuTyjHKjBVVcSuTlnY99DKtgEG39CM5QOQ==}
 
   husky@9.1.7:
     resolution: {integrity: sha512-5gs5ytaNjBrh5Ow3zrvdUUY+0VxIuWVL4i9irt6friV+BqdCfmV11CQTWMiBYWHbXhco+J1kHfTOUkePhCDvMA==}
@@ -9558,8 +9546,6 @@ snapshots:
 
   '@types/http-errors@2.0.4': {}
 
-  '@types/humanize-duration@3.27.4': {}
-
   '@types/js-yaml@4.0.9': {}
 
   '@types/json-schema@7.0.15': {}
@@ -12004,8 +11990,6 @@ snapshots:
 
   human-signals@2.1.0:
     optional: true
-
-  humanize-duration@3.33.2: {}
 
   husky@9.1.7: {}
 
