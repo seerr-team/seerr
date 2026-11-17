@@ -252,15 +252,17 @@ class AvailabilitySync {
           let plexSeasonsMap: Map<number, boolean> = new Map();
           let plexSeasonsMap4k: Map<number, boolean> = new Map();
 
-          if (this.mediaHasAvailableTier(media, false)) {
-            ({ existsInPlex, seasonsMap: plexSeasonsMap = new Map() } =
-              await this.mediaExistsInPlex(media, false));
-          }
-          if (this.mediaHasAvailableTier(media, true)) {
-            ({
-              existsInPlex: existsInPlex4k,
-              seasonsMap: plexSeasonsMap4k = new Map(),
-            } = await this.mediaExistsInPlex(media, true));
+          if (mediaServerType === MediaServerType.PLEX) {
+            if (this.mediaHasAvailableTier(media, false)) {
+              ({ existsInPlex, seasonsMap: plexSeasonsMap = new Map() } =
+                await this.mediaExistsInPlex(media, false));
+            }
+            if (this.mediaHasAvailableTier(media, true)) {
+              ({
+                existsInPlex: existsInPlex4k,
+                seasonsMap: plexSeasonsMap4k = new Map(),
+              } = await this.mediaExistsInPlex(media, true));
+            }
           }
 
           //jellyfin
@@ -939,6 +941,13 @@ class AvailabilitySync {
 
     try {
       const plexMedia = await this.plexClient?.getMetadata(ratingKey);
+      // Empty successful Metadata responses are unverified — only HTTP 404
+      // confirms the rating key is missing.
+      if (!plexMedia) {
+        this.plexRatingKeyProbeCache[ratingKey] = 'error';
+        return 'error';
+      }
+
       this.plexMetadataCache[ratingKey] = plexMedia;
 
       if (media.mediaType === 'tv') {
@@ -946,9 +955,8 @@ class AvailabilitySync {
           (await this.plexClient?.getChildrenMetadata(ratingKey)) ?? [];
       }
 
-      const result = plexMedia ? 'exists' : 'missing';
-      this.plexRatingKeyProbeCache[ratingKey] = result;
-      return result;
+      this.plexRatingKeyProbeCache[ratingKey] = 'exists';
+      return 'exists';
     } catch (ex) {
       if (this.isPlexNotFound(ex)) {
         this.plexRatingKeyProbeCache[ratingKey] = 'missing';
