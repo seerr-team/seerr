@@ -39,6 +39,8 @@ interface TitleCardProps {
   userScore?: number;
   mediaType: MediaType;
   status?: MediaStatus;
+  // false = available on the shared server, but not requested by the viewer
+  requestedByUser?: boolean;
   canExpand?: boolean;
   inProgress?: boolean;
   isAddedToWatchlist?: number | boolean;
@@ -62,6 +64,7 @@ const TitleCard = ({
   year,
   title,
   status,
+  requestedByUser,
   mediaType,
   isAddedToWatchlist = false,
   inProgress = false,
@@ -73,6 +76,8 @@ const TitleCard = ({
   const { user, hasPermission } = useUser();
   const [isUpdating, setIsUpdating] = useState(false);
   const [currentStatus, setCurrentStatus] = useState(status);
+  const [currentRequestedByUser, setCurrentRequestedByUser] =
+    useState(requestedByUser);
   const [showDetail, setShowDetail] = useState(false);
   const [showRequestModal, setShowRequestModal] = useState(false);
   const { addToast } = useToasts();
@@ -90,10 +95,18 @@ const TitleCard = ({
     setCurrentStatus(status);
   }, [status]);
 
-  const requestComplete = useCallback((newStatus: MediaStatus) => {
-    setCurrentStatus(newStatus);
-    setShowRequestModal(false);
-  }, []);
+  useEffect(() => {
+    setCurrentRequestedByUser(requestedByUser);
+  }, [requestedByUser]);
+
+  const requestComplete = useCallback(
+    (newStatus: MediaStatus, requestedByUserResult = true) => {
+      setCurrentStatus(newStatus);
+      setCurrentRequestedByUser(requestedByUserResult);
+      setShowRequestModal(false);
+    },
+    []
+  );
 
   const requestUpdating = useCallback(
     (status: boolean) => setIsUpdating(status),
@@ -462,6 +475,7 @@ const TitleCard = ({
                   <StatusBadgeMini
                     status={currentStatus}
                     inProgress={inProgress}
+                    requestedByUser={currentRequestedByUser}
                     shrink
                   />
                 </div>

@@ -88,6 +88,38 @@ class Media {
         });
       }
 
+      if (user && relatedMedia.length > 0) {
+        const ownRequestRows = await mediaRepository
+          .createQueryBuilder('media')
+          .select('media.id', 'id')
+          .addSelect('request.is4k', 'is4k')
+          .distinct(true)
+          .innerJoin('media.requests', 'request')
+          .where('media.id IN (:...mediaIds)', {
+            mediaIds: relatedMedia.map((m) => m.id),
+          })
+          .andWhere('request.requestedBy = :userId', { userId: user.id })
+          .andWhere('request.status IN (:...statuses)', {
+            statuses: [
+              MediaRequestStatus.APPROVED,
+              MediaRequestStatus.COMPLETED,
+            ],
+          })
+          .getRawMany<{ id: number; is4k: boolean }>();
+
+        const ownRequestIds = new Set(
+          ownRequestRows.filter((row) => !row.is4k).map((row) => row.id)
+        );
+        const ownRequestIds4k = new Set(
+          ownRequestRows.filter((row) => row.is4k).map((row) => row.id)
+        );
+
+        relatedMedia.forEach((m) => {
+          m.requestedByUser = ownRequestIds.has(m.id);
+          m.requestedByUser4k = ownRequestIds4k.has(m.id);
+        });
+      }
+
       return relatedMedia;
     } catch (e) {
       logger.error(e.message);
@@ -221,6 +253,8 @@ class Media {
   public serviceUrl?: string;
   public serviceUrl4k?: string;
   public hasActiveRequest?: boolean;
+  public requestedByUser?: boolean;
+  public requestedByUser4k?: boolean;
   public downloadStatus?: DownloadingItem[] = [];
   public downloadStatus4k?: DownloadingItem[] = [];
 

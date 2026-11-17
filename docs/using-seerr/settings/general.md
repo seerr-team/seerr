@@ -79,6 +79,18 @@ Requested media will still appear in search results, however, so it is possible 
 
 This setting is **disabled** by default.
 
+## Other Users' Availability
+
+Controls how media that another user requested or is already available appears to a user who hasn't personally requested it themselves, everywhere availability is displayed: the "Discover" home page, media detail pages, and season lists on TV detail pages.
+
+- **Show as Available to Everyone**: media shows as available to everyone, same as today. There's no distinction between what a specific user requested and what's available on the shared server.
+- **Show with a Distinct Badge**: media only available or requested by another user shows the normal "Available" badge in purple instead of green, so a user can tell the difference between what they requested and what someone else did.
+- **Show as Not Requested**: media only available or requested by another user shows exactly as if no one had ever requested it, with no badge or indication anyone has it. "Available" then only ever means "available to you."
+
+This is useful in shared-server setups where per-user tagging or library filtering is configured, so each user's home screen can reflect what they've actually requested rather than everything anyone has requested.
+
+This setting is **"Show as Available to Everyone"** by default.
+
 ## Allow Partial Series Requests
 
 When enabled, users will be able to submit requests for specific seasons of TV series. If disabled, users will only be able to submit requests for all unavailable seasons.

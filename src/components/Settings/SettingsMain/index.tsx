@@ -65,6 +65,12 @@ const messages = defineMessages('components.Settings.SettingsMain', {
   hideRequested: 'Hide Requested Media',
   hideRequestedTip:
     'Hide media that has been requested from the discover pages but not search results',
+  otherUserAvailability: 'Other Users’ Availability',
+  otherUserAvailabilityTip:
+    "Control how media that another user requested or is already available appears to a user who hasn't requested it themselves",
+  otherUserAvailabilityShow: 'Show as Available to Everyone',
+  otherUserAvailabilityDistinguish: 'Show with a Distinct Badge',
+  otherUserAvailabilityHide: 'Show as Not Requested',
   cacheImages: 'Enable Image Caching',
   cacheImagesTip:
     'Cache externally sourced images (requires a significant amount of disk space)',
@@ -170,6 +176,7 @@ const SettingsMain = () => {
             hideAvailable: data?.hideAvailable,
             hideBlocklisted: data?.hideBlocklisted,
             hideRequested: data?.hideRequested,
+            otherUserAvailability: data?.otherUserAvailability ?? 'show',
             locale: data?.locale ?? 'en',
             discoverRegion: data?.discoverRegion,
             originalLanguage: data?.originalLanguage,
@@ -194,6 +201,7 @@ const SettingsMain = () => {
                 hideAvailable: values.hideAvailable,
                 hideBlocklisted: values.hideBlocklisted,
                 hideRequested: values.hideRequested,
+                otherUserAvailability: values.otherUserAvailability,
                 locale: values.locale,
                 discoverRegion: values.discoverRegion,
                 streamingRegion: values.streamingRegion,
@@ -558,6 +566,41 @@ const SettingsMain = () => {
                         setFieldValue('hideRequested', !values.hideRequested);
                       }}
                     />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label htmlFor="otherUserAvailability" className="text-label">
+                    <span className="mr-2">
+                      {intl.formatMessage(messages.otherUserAvailability)}
+                    </span>
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.otherUserAvailabilityTip)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <div className="form-input-field">
+                      <Field
+                        as="select"
+                        id="otherUserAvailability"
+                        name="otherUserAvailability"
+                      >
+                        <option value="show">
+                          {intl.formatMessage(
+                            messages.otherUserAvailabilityShow
+                          )}
+                        </option>
+                        <option value="distinguish">
+                          {intl.formatMessage(
+                            messages.otherUserAvailabilityDistinguish
+                          )}
+                        </option>
+                        <option value="hide">
+                          {intl.formatMessage(
+                            messages.otherUserAvailabilityHide
+                          )}
+                        </option>
+                      </Field>
+                    </div>
                   </div>
                 </div>
                 <div className="form-row">
