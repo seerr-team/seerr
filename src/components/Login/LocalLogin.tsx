@@ -5,7 +5,7 @@ import useSettings from '@app/hooks/useSettings';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowLeftOnRectangleIcon } from '@heroicons/react/24/outline';
 import { ExclamationTriangleIcon } from '@heroicons/react/24/solid';
-import { MediaServerType } from '@server/constants/server';
+import { MediaServerType, ServerType } from '@server/constants/server';
 import axios from 'axios';
 import { Field, Form, Formik } from 'formik';
 import Link from 'next/link';
@@ -133,8 +133,8 @@ const LocalLogin = ({ revalidate }: LocalLoginProps) => {
                         mediaServerName:
                           settings.currentSettings.mediaServerType ===
                           MediaServerType.JELLYFIN
-                            ? 'Jellyfin'
-                            : 'Emby',
+                            ? ServerType.JELLYFIN
+                            : ServerType.EMBY,
                       })}
                     </div>
                   )}
