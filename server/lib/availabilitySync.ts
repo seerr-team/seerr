@@ -1008,18 +1008,17 @@ class AvailabilitySync {
       }
 
       try {
-        const episodes = await this.plexClient?.getChildrenMetadata(
-          season.ratingKey
-        );
+        const episodes =
+          (await this.plexClient?.getChildrenMetadata(season.ratingKey)) ?? [];
         const episodeVerified =
-          Array.isArray(episodes) &&
-          (episodes.length === 0 ||
-            episodes.every((episode) => episode.Media?.length));
+          episodes.length === 0 ||
+          episodes.every((episode) => episode.Media?.length);
         if (!episodeVerified) {
           verified = false;
         }
-        const episodeVersions =
-          episodes?.flatMap((episode) => episode.Media ?? []) ?? [];
+        const episodeVersions = episodes.flatMap(
+          (episode) => episode.Media ?? []
+        );
         const seasonHasTier = this.seasonHasTieredEpisodes(
           episodeVersions,
           is4k
@@ -1176,6 +1175,7 @@ class AvailabilitySync {
       }
 
       const cacheKey = `${is4k ? '4k' : 'std'}-${seasonMeta.ratingKey}`;
+      const otherCacheKey = `${is4k ? 'std' : '4k'}-${seasonMeta.ratingKey}`;
 
       if (cacheKey in this.plexEpisodeExistsCache) {
         const cached = this.plexEpisodeExistsCache[cacheKey];
@@ -1186,15 +1186,15 @@ class AvailabilitySync {
       }
 
       try {
-        const episodes = await this.plexClient?.getChildrenMetadata(
-          seasonMeta.ratingKey
+        const episodes =
+          (await this.plexClient?.getChildrenMetadata(seasonMeta.ratingKey)) ??
+          [];
+        const episodeVersions = episodes.flatMap(
+          (episode) => episode.Media ?? []
         );
-        const episodeVersions =
-          episodes?.flatMap((episode) => episode.Media ?? []) ?? [];
         const episodeVerified =
-          Array.isArray(episodes) &&
-          (episodes.length === 0 ||
-            episodes.every((episode) => episode.Media?.length));
+          episodes.length === 0 ||
+          episodes.every((episode) => episode.Media?.length);
         const seasonExists = this.seasonHasTieredEpisodes(
           episodeVersions,
           is4k
@@ -1203,6 +1203,12 @@ class AvailabilitySync {
           exists: seasonExists,
           verified: episodeVerified,
         };
+        if (!(otherCacheKey in this.plexEpisodeExistsCache)) {
+          this.plexEpisodeExistsCache[otherCacheKey] = {
+            exists: this.seasonHasTieredEpisodes(episodeVersions, !is4k),
+            verified: episodeVerified,
+          };
+        }
         if (seasonExists || !episodeVerified) {
           return true;
         }
