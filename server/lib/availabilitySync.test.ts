@@ -1012,6 +1012,95 @@ describe('AvailabilitySync', () => {
         'Show should be PARTIALLY_AVAILABLE when some seasons are available and some are unknown'
       );
     });
+
+    it('should not probe or clear retained Plex rating keys during a Jellyfin sync', async () => {
+      configureJellyfin();
+      configureSonarr([{ syncEnabled: true }]);
+
+      const mediaRepository = getRepository(Media);
+      const media = new Media();
+      media.tmdbId = 1413;
+      media.mediaType = MediaType.TV;
+      media.status = MediaStatus.AVAILABLE;
+      media.jellyfinMediaId = 'jellyfin-retain-plex-id';
+      media.ratingKey = 'retained-plex-rk';
+      media.plexRatingKeys = ['retained-plex-rk'];
+      media.externalServiceId = 413;
+      media.seasons = [
+        new Season({
+          seasonNumber: 1,
+          status: MediaStatus.AVAILABLE,
+          status4k: MediaStatus.UNKNOWN,
+        }),
+      ];
+      await mediaRepository.save(media);
+
+      let plexMetadataCalls = 0;
+      getMetadataImpl = async () => {
+        plexMetadataCalls += 1;
+        throw new Error('404');
+      };
+
+      getItemDataImpl = async (id: string) => {
+        if (id === 'jellyfin-retain-plex-id') {
+          return fakeJellyfinShow('jellyfin-retain-plex-id', '1413');
+        }
+        return undefined;
+      };
+
+      getSeasonsImpl = async (seriesID: string) => {
+        if (seriesID === 'jellyfin-retain-plex-id') {
+          return [fakeJellyfinSeason(1, 'jellyfin-retain-plex-s1-id')];
+        }
+        return [];
+      };
+
+      getEpisodesImpl = async (_seriesID: string, seasonID: string) => {
+        if (seasonID === 'jellyfin-retain-plex-s1-id') {
+          return fakeJellyfinEpisodes(10);
+        }
+        return [];
+      };
+
+      getSeriesByIdImpl = async (id: number) => {
+        if (id === 413) {
+          return {
+            tvdbId: 1413,
+            id: 413,
+            title: 'Retained Plex Keys',
+            titleSlug: 'retained-plex-keys',
+            monitored: true,
+            statistics: {
+              episodeFileCount: 10,
+              totalEpisodeCount: 10,
+              episodeCount: 10,
+              percentOfEpisodes: 100,
+              sizeOnDisk: 0,
+              seasonCount: 1,
+            },
+            seasons: fakeSonarrSeasons(1, { 1: 10 }),
+          } as unknown as SonarrSeries;
+        }
+        throw new Error('404');
+      };
+
+      await availabilitySync.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 1413 },
+        relations: ['seasons'],
+      });
+
+      assert.strictEqual(
+        plexMetadataCalls,
+        0,
+        'Jellyfin sync must not probe Plex for retained rating keys'
+      );
+      assert.deepStrictEqual(updated.plexRatingKeys, ['retained-plex-rk']);
+      assert.strictEqual(updated.ratingKey, 'retained-plex-rk');
+      assert.strictEqual(updated.status, MediaStatus.AVAILABLE);
+      assert.strictEqual(updated.seasons[0].status, MediaStatus.AVAILABLE);
+    });
   });
 
   describe('TV season availability - Plex', () => {
@@ -1727,6 +1816,55 @@ describe('AvailabilitySync', () => {
       assert.strictEqual(updated.seasons[0].status, MediaStatus.AVAILABLE);
       assert.strictEqual(updated.status, MediaStatus.AVAILABLE);
       assert.deepStrictEqual(updated.plexRatingKeys, ['plex-error-rk']);
+    });
+
+    it('should treat an empty successful Plex metadata response as unverified, not missing', async () => {
+      configurePlex();
+      const settings = getSettings();
+      settings.sonarr = [];
+      settings.radarr = [];
+
+      const mediaRepository = getRepository(Media);
+      const media = new Media();
+      media.tmdbId = 2016;
+      media.mediaType = MediaType.TV;
+      media.status = MediaStatus.AVAILABLE;
+      media.ratingKey = 'plex-empty-meta-rk';
+      media.plexRatingKeys = ['plex-empty-meta-rk'];
+      media.seasons = [
+        new Season({
+          seasonNumber: 1,
+          status: MediaStatus.AVAILABLE,
+          status4k: MediaStatus.UNKNOWN,
+        }),
+      ];
+      await mediaRepository.save(media);
+
+      getMetadataImpl = async () => undefined as unknown as PlexMetadata;
+
+      await availabilitySync.run();
+
+      const updated = await mediaRepository.findOneOrFail({
+        where: { tmdbId: 2016 },
+        relations: ['seasons'],
+      });
+
+      assert.strictEqual(
+        updated.status,
+        MediaStatus.AVAILABLE,
+        'Empty successful Metadata must not mark the show deleted'
+      );
+      assert.strictEqual(
+        updated.seasons[0].status,
+        MediaStatus.AVAILABLE,
+        'Empty successful Metadata must not mark seasons deleted'
+      );
+      assert.deepStrictEqual(
+        updated.plexRatingKeys,
+        ['plex-empty-meta-rk'],
+        'Empty successful Metadata must not drop the rating key'
+      );
+      assert.strictEqual(updated.ratingKey, 'plex-empty-meta-rk');
     });
   });
 
