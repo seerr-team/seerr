@@ -29,7 +29,7 @@ import type { MovieDetails } from '@server/models/Movie';
 import type { TvDetails } from '@server/models/Tv';
 import axios from 'axios';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { FormattedRelativeTime, useIntl } from 'react-intl';
 import useSWR, { mutate } from 'swr';
@@ -315,6 +315,9 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
     NonFunctionProperties<MediaRequest>
   >(`/api/v1/request/${request.id}`, {
     fallbackData: request,
+    revalidateOnMount: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
     refreshInterval: refreshIntervalHelper(
       {
         downloadStatus: request.media.downloadStatus,
@@ -323,6 +326,10 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
       15000
     ),
   });
+
+  useEffect(() => {
+    revalidate(request, false);
+  }, [request, revalidate]);
 
   const [isRetrying, setRetrying] = useState(false);
   const [updatingType, setUpdatingType] = useState<
@@ -379,6 +386,7 @@ const RequestItem = ({ request, revalidateList }: RequestItemProps) => {
     try {
       const result = await axios.post(`/api/v1/request/${request.id}/retry`);
       revalidate(result.data);
+      revalidateList();
     } catch {
       addToast(intl.formatMessage(messages.failedretry), {
         autoDismiss: true,
