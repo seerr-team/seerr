@@ -8,11 +8,15 @@ import LanguagePicker from '@app/components/Layout/LanguagePicker';
 import JellyfinLogin from '@app/components/Login/JellyfinLogin';
 import LocalLogin from '@app/components/Login/LocalLogin';
 import PlexLoginButton from '@app/components/Login/PlexLoginButton';
+import PlexPinEntry from '@app/components/Login/PlexPinEntry';
+import PlexProfileSelector from '@app/components/Login/PlexProfileSelector';
 import useSettings from '@app/hooks/useSettings';
 import { useUser } from '@app/hooks/useUser';
 import defineMessages from '@app/utils/defineMessages';
 import { Transition } from '@headlessui/react';
 import { XCircleIcon } from '@heroicons/react/24/solid';
+import type { PlexProfile } from '@server/api/plextv';
+import { ApiErrorCode } from '@server/constants/error';
 import { MediaServerType } from '@server/constants/server';
 import axios from 'axios';
 import { useRouter } from 'next/dist/client/router';
@@ -29,6 +33,13 @@ const messages = defineMessages('components.Login', {
   signinwithjellyfin: 'Use your {mediaServerName} account',
   signinwithoverseerr: 'Use your {applicationTitle} account',
   orsigninwith: 'Or sign in with',
+  authFailed: 'Authentication failed',
+  invalidPin: 'Invalid PIN. Please try again.',
+  accessDenied: 'Access denied.',
+  profileUserExists:
+    'A profile user already exists for this Plex account. Please contact your administrator to resolve this duplicate.',
+  couldNotLoadProfiles:
+    "We couldn't load your Plex profiles. Please try signing in again.",
 });
 
 const Login = () => {
@@ -39,36 +50,194 @@ const Login = () => {
 
   const [error, setError] = useState('');
   const [isProcessing, setProcessing] = useState(false);
-  const [authToken, setAuthToken] = useState<string | undefined>(undefined);
+  const [authToken, setAuthToken] = useState<string | undefined>();
   const [mediaServerLogin, setMediaServerLogin] = useState(
     settings.currentSettings.mediaServerLogin
   );
+  const [profiles, setProfiles] = useState<PlexProfile[]>([]);
+  const [mainUserId, setMainUserId] = useState<number | null>(null);
+  const [showProfileSelector, setShowProfileSelector] = useState(false);
+  const [showPinEntry, setShowPinEntry] = useState(false);
+  const [pinProfileId, setPinProfileId] = useState<string | null>(null);
+  const [pinProfileName, setPinProfileName] = useState<string | null>(null);
+  const [pinProfileThumb, setPinProfileThumb] = useState<string | null>(null);
+  const [pinIsProtected, setPinIsProtected] = useState<boolean>(false);
+  const [pinIsMainUser, setPinIsMainUser] = useState<boolean>(false);
+  const [pinError, setPinError] = useState<string | null>(null);
 
   // Effect that is triggered when the `authToken` comes back from the Plex OAuth
-  // We take the token and attempt to sign in. If we get a success message, we will
-  // ask swr to revalidate the user which _should_ come back with a valid user.
   useEffect(() => {
     const login = async () => {
       setProcessing(true);
       try {
         const response = await axios.post('/api/v1/auth/plex', { authToken });
-
-        if (response.data?.id) {
-          revalidate();
+        switch (response.data?.status) {
+          case 'REQUIRES_PIN': {
+            const rawUserId = response.data.mainUserId;
+            const numericUserId = Number(rawUserId);
+            if (
+              rawUserId == null ||
+              Number.isNaN(numericUserId) ||
+              numericUserId <= 0
+            ) {
+              setError(intl.formatMessage(messages.couldNotLoadProfiles));
+              break;
+            }
+            setMainUserId(numericUserId);
+            setPinProfileId(response.data.profileId);
+            setPinProfileName(response.data.profileName);
+            setPinProfileThumb(response.data.profileThumb ?? null);
+            setPinIsProtected(response.data.isProtected ?? true);
+            setPinIsMainUser(response.data.isMainUser ?? true);
+            setPinError(null);
+            setShowPinEntry(true);
+            break;
+          }
+          case 'REQUIRES_PROFILE': {
+            setProfiles(response.data.profiles);
+            const rawUserId = response.data.mainUserId;
+            const numericUserId = Number(rawUserId);
+            if (
+              rawUserId == null ||
+              Number.isNaN(numericUserId) ||
+              numericUserId <= 0
+            ) {
+              setError(intl.formatMessage(messages.couldNotLoadProfiles));
+              break;
+            }
+            setMainUserId(numericUserId);
+            setShowProfileSelector(true);
+            break;
+          }
+          default:
+            if (response.data?.id) {
+              revalidate();
+            }
+            break;
         }
       } catch (e) {
-        setError(e.response?.data?.message);
+        const code = e?.response?.data?.error as string | undefined;
+        const httpStatus = e?.response?.status;
+        let msg: string;
+
+        switch (code) {
+          case ApiErrorCode.NewPlexLoginDisabled:
+            msg = intl.formatMessage(messages.accessDenied);
+            break;
+          case ApiErrorCode.ProfileUserExists:
+            msg = intl.formatMessage(messages.profileUserExists);
+            break;
+          default:
+            msg =
+              httpStatus === 403
+                ? intl.formatMessage(messages.accessDenied)
+                : (e?.response?.data?.message ??
+                  intl.formatMessage(messages.authFailed));
+        }
+        setError(msg);
         setAuthToken(undefined);
+      } finally {
         setProcessing(false);
       }
     };
     if (authToken) {
       login();
     }
-  }, [authToken, revalidate]);
+  }, [authToken, revalidate, intl]);
 
-  // Effect that is triggered whenever `useUser`'s user changes. If we get a new
-  // valid user, we redirect the user to the home page as the login was successful.
+  const handleSubmitProfile = async (profileId: string, pin?: string) => {
+    setProcessing(true);
+    setError('');
+
+    try {
+      const payload = {
+        profileId,
+        mainUserId,
+        ...(pin && { pin }),
+        ...(authToken && { authToken }),
+      };
+
+      const response = await axios.post(
+        '/api/v1/auth/plex/profile/select',
+        payload
+      );
+
+      if (response.data?.status === 'REQUIRES_PIN') {
+        const profile = profiles.find((p) => p.id === profileId);
+        setShowProfileSelector(false);
+        setShowPinEntry(true);
+        setPinProfileId(profileId);
+        setPinProfileName(
+          response.data.profileName ||
+            profile?.title ||
+            profile?.username ||
+            'Profile'
+        );
+        setPinProfileThumb(
+          response.data.profileThumb ?? profile?.thumb ?? null
+        );
+        setPinIsProtected(
+          response.data.isProtected ?? profile?.protected ?? false
+        );
+        setPinIsMainUser(
+          response.data.isMainUser ?? profile?.isMainUser ?? false
+        );
+        setPinError(null);
+      } else {
+        setShowProfileSelector(false);
+        setShowPinEntry(false);
+        setPinError(null);
+        setPinProfileId(null);
+        setPinProfileName(null);
+        setPinProfileThumb(null);
+        setPinIsProtected(false);
+        setPinIsMainUser(false);
+        revalidate();
+      }
+    } catch (e) {
+      const code = e?.response?.data?.error as string | undefined;
+      const httpStatus = e?.response?.status;
+      let msg: string;
+
+      switch (code) {
+        case ApiErrorCode.NewPlexLoginDisabled:
+          msg = intl.formatMessage(messages.accessDenied);
+          setPinError(null);
+          setError(msg);
+          break;
+        case ApiErrorCode.InvalidPin:
+          msg = intl.formatMessage(messages.invalidPin);
+          setPinError(msg);
+          setError('');
+          break;
+        case ApiErrorCode.ProfileUserExists:
+          msg = intl.formatMessage(messages.profileUserExists);
+          setPinError(null);
+          setError(msg);
+          break;
+        default:
+          if (httpStatus === 401) {
+            msg = intl.formatMessage(messages.invalidPin);
+            setPinError(msg);
+            setError('');
+          } else if (httpStatus === 403) {
+            msg = intl.formatMessage(messages.accessDenied);
+            setPinError(null);
+            setError(msg);
+          } else {
+            msg =
+              e?.response?.data?.message ??
+              intl.formatMessage(messages.authFailed);
+            setPinError(null);
+            setError(msg);
+          }
+      }
+      throw e;
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   useEffect(() => {
     if (user) {
       router.push('/');
@@ -197,41 +366,83 @@ const Login = () => {
               </div>
             </Transition>
             <div className="px-10 py-8">
-              <SwitchTransition mode="out-in">
-                <CSSTransition
-                  key={mediaServerLogin ? 'ms' : 'local'}
-                  nodeRef={loginRef}
-                  timeout={{ enter: 300, exit: 150 }}
-                  onEntered={() => {
-                    document
-                      .querySelector<HTMLInputElement>('#email, #username')
-                      ?.focus();
+              {showPinEntry && pinProfileId && pinProfileName ? (
+                <PlexPinEntry
+                  profileName={pinProfileName}
+                  profileThumb={pinProfileThumb}
+                  isProtected={pinIsProtected}
+                  isMainUser={pinIsMainUser}
+                  error={pinError}
+                  onSubmit={(pin) => {
+                    return handleSubmitProfile(pinProfileId, pin);
                   }}
-                  classNames={{
-                    enter: 'opacity-0',
-                    enterActive: 'transition-opacity duration-300 opacity-100',
-                    exit: 'opacity-100',
-                    exitActive: 'transition-opacity duration-150 opacity-0',
+                  onCancel={() => {
+                    setShowPinEntry(false);
+                    setPinProfileId(null);
+                    setPinProfileName(null);
+                    setPinProfileThumb(null);
+                    setPinIsProtected(false);
+                    setPinIsMainUser(false);
+                    setPinError(null);
+                    setError('');
+                    if (profiles.length > 1) {
+                      setShowProfileSelector(true);
+                    } else {
+                      setAuthToken(undefined);
+                    }
                   }}
-                >
-                  <div ref={loginRef} className="button-container">
-                    {isJellyfin &&
-                    (mediaServerLogin ||
-                      !settings.currentSettings.localLogin) ? (
-                      <JellyfinLogin
-                        serverType={settings.currentSettings.mediaServerType}
-                        revalidate={revalidate}
-                      />
-                    ) : (
-                      settings.currentSettings.localLogin && (
-                        <LocalLogin revalidate={revalidate} />
-                      )
-                    )}
-                  </div>
-                </CSSTransition>
-              </SwitchTransition>
+                />
+              ) : showProfileSelector ? (
+                <PlexProfileSelector
+                  profiles={profiles}
+                  onProfileSelected={(profileId) =>
+                    handleSubmitProfile(profileId)
+                  }
+                  onBack={() => {
+                    setShowProfileSelector(false);
+                    setAuthToken(undefined);
+                  }}
+                />
+              ) : (
+                <SwitchTransition mode="out-in">
+                  <CSSTransition
+                    key={mediaServerLogin ? 'ms' : 'local'}
+                    nodeRef={loginRef}
+                    timeout={{ enter: 300, exit: 150 }}
+                    onEntered={() => {
+                      document
+                        .querySelector<HTMLInputElement>('#email, #username')
+                        ?.focus();
+                    }}
+                    classNames={{
+                      enter: 'opacity-0',
+                      enterActive:
+                        'transition-opacity duration-300 opacity-100',
+                      exit: 'opacity-100',
+                      exitActive: 'transition-opacity duration-150 opacity-0',
+                    }}
+                  >
+                    <div ref={loginRef} className="button-container">
+                      {isJellyfin &&
+                      (mediaServerLogin ||
+                        !settings.currentSettings.localLogin) ? (
+                        <JellyfinLogin
+                          serverType={settings.currentSettings.mediaServerType}
+                          revalidate={revalidate}
+                        />
+                      ) : (
+                        settings.currentSettings.localLogin && (
+                          <LocalLogin revalidate={revalidate} />
+                        )
+                      )}
+                    </div>
+                  </CSSTransition>
+                </SwitchTransition>
+              )}
 
-              {additionalLoginOptions.length > 0 &&
+              {!showProfileSelector &&
+                !showPinEntry &&
+                additionalLoginOptions.length > 0 &&
                 (loginFormVisible ? (
                   <div className="flex items-center py-5">
                     <div className="flex-grow border-t border-gray-600" />
@@ -246,13 +457,15 @@ const Login = () => {
                   </h2>
                 ))}
 
-              <div
-                className={`flex w-full flex-wrap gap-2 ${
-                  !loginFormVisible ? 'flex-col' : ''
-                }`}
-              >
-                {additionalLoginOptions}
-              </div>
+              {!showProfileSelector && !showPinEntry && (
+                <div
+                  className={`flex w-full flex-wrap gap-2 ${
+                    !loginFormVisible ? 'flex-col' : ''
+                  }`}
+                >
+                  {additionalLoginOptions}
+                </div>
+              )}
             </div>
           </>
         </div>
