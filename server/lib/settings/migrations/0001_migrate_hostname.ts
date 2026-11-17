@@ -1,4 +1,4 @@
-import type { AllSettings } from '@server/lib/settings';
+import type { AllSettings } from '@server/interfaces/settings';
 
 const migrateHostname = (settings: any): AllSettings => {
   if (settings.jellyfin?.hostname) {

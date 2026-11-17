@@ -1,6 +1,6 @@
 import { IssueStatus, IssueType } from '@server/constants/issue';
 import { MediaStatus } from '@server/constants/media';
-import type { NotificationAgentWebhook } from '@server/lib/settings';
+import type { NotificationAgentWebhook } from '@server/interfaces/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import axios from 'axios';

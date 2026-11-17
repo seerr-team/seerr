@@ -1,5 +1,5 @@
 import SonarrAPI from '@server/api/servarr/sonarr';
-import type { SonarrSettings } from '@server/lib/settings';
+import type { SonarrSettings } from '@server/interfaces/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { Router } from 'express';

@@ -1,5 +1,5 @@
 import ExternalAPI from '@server/api/externalapi';
-import type { ProxySettings } from '@server/lib/settings';
+import type { ProxySettings } from '@server/interfaces/settings';
 import createCustomProxyAgent from '@server/utils/customProxyAgent';
 import axios, {
   type AxiosResponse,
