@@ -15,11 +15,13 @@ const movieRoutes = Router();
 
 movieRoutes.get('/:id', async (req, res, next) => {
   const tmdb = new TheMovieDb();
+  const mediaLocale = req.user?.settings?.mediaLocale || req.locale;
+  const requestedLanguage = (req.query.language as string) || mediaLocale;
 
   try {
     const tmdbMovie = await tmdb.getMovie({
       movieId: Number(req.params.id),
-      language: (req.query.language as string) ?? req.locale,
+      language: requestedLanguage,
     });
 
     const media = await Media.getMedia(tmdbMovie.id, MediaType.MOVIE);
@@ -40,10 +42,25 @@ movieRoutes.get('/:id', async (req, res, next) => {
       onUserWatchlist
     );
 
-    // TMDB issue where it doesnt fallback to English when no overview is available in requested locale.
+    // TMDB falls title back to original_title when a locale has no translation, but leaves
+    // overview empty.
     if (!data.overview) {
-      const tvEnglish = await tmdb.getMovie({ movieId: Number(req.params.id) });
-      data.overview = tvEnglish.overview;
+      const fallbackLanguage =
+        !req.locale || requestedLanguage === req.locale ? 'en' : req.locale;
+
+      if (fallbackLanguage !== requestedLanguage) {
+        const movieFallback = await tmdb.getMovie({
+          movieId: Number(req.params.id),
+          language: fallbackLanguage,
+        });
+        data.overview = movieFallback.overview;
+        if (data.title === data.originalTitle) {
+          data.title = movieFallback.title;
+        }
+        if (!data.tagline) {
+          data.tagline = movieFallback.tagline;
+        }
+      }
     }
 
     return res.status(200).json(data);
@@ -62,12 +79,13 @@ movieRoutes.get('/:id', async (req, res, next) => {
 
 movieRoutes.get('/:id/recommendations', async (req, res, next) => {
   const tmdb = new TheMovieDb();
+  const mediaLocale = req.user?.settings?.mediaLocale || req.locale;
 
   try {
     const results = await tmdb.getMovieRecommendations({
       movieId: Number(req.params.id),
       page: Number(req.query.page),
-      language: (req.query.language as string) ?? req.locale,
+      language: (req.query.language as string) || mediaLocale,
     });
 
     const media = await Media.getRelatedMedia(
@@ -108,12 +126,13 @@ movieRoutes.get('/:id/recommendations', async (req, res, next) => {
 
 movieRoutes.get('/:id/similar', async (req, res, next) => {
   const tmdb = new TheMovieDb();
+  const mediaLocale = req.user?.settings?.mediaLocale || req.locale;
 
   try {
     const results = await tmdb.getMovieSimilar({
       movieId: Number(req.params.id),
       page: Number(req.query.page),
-      language: (req.query.language as string) ?? req.locale,
+      language: (req.query.language as string) || mediaLocale,
     });
 
     const media = await Media.getRelatedMedia(

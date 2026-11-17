@@ -50,6 +50,7 @@ userSettingsRoutes.get<{ id: string }, UserSettingsGeneralResponse>(
         username: user.username,
         email: user.email,
         locale: user.settings?.locale,
+        mediaLocale: user.settings?.mediaLocale,
         discoverRegion: user.settings?.discoverRegion,
         streamingRegion: user.settings?.streamingRegion,
         originalLanguage: user.settings?.originalLanguage,
@@ -130,6 +131,7 @@ userSettingsRoutes.post<
       user.settings = new UserSettings({
         user: req.user,
         locale: req.body.locale,
+        mediaLocale: req.body.mediaLocale,
         discoverRegion: req.body.discoverRegion,
         streamingRegion: req.body.streamingRegion,
         originalLanguage: req.body.originalLanguage,
@@ -138,6 +140,7 @@ userSettingsRoutes.post<
       });
     } else {
       user.settings.locale = req.body.locale;
+      user.settings.mediaLocale = req.body.mediaLocale;
       user.settings.discoverRegion = req.body.discoverRegion;
       user.settings.streamingRegion = req.body.streamingRegion;
       user.settings.originalLanguage = req.body.originalLanguage;
@@ -150,6 +153,7 @@ userSettingsRoutes.post<
     return res.status(200).json({
       username: savedUser.username,
       locale: savedUser.settings?.locale,
+      mediaLocale: savedUser.settings?.mediaLocale,
       discoverRegion: savedUser.settings?.discoverRegion,
       streamingRegion: savedUser.settings?.streamingRegion,
       originalLanguage: savedUser.settings?.originalLanguage,
