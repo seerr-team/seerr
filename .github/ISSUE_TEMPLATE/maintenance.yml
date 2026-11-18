@@ -9,6 +9,9 @@ body:
       value: |
         Maintainers / contributors: use this for internal tasks (CI, workflows, tooling, refactors).
         If you're reporting a user-facing bug or requesting a feature, use the other templates.
+
+        > [!IMPORTANT]
+        > Our [AI policy](https://github.com/seerr-team/seerr/blob/develop/CONTRIBUTING.md#issues) applies to issues too. Write this issue yourself and disclose any AI use below. Issues that read as unreviewed AI output will be closed and locked.
   - type: dropdown
     id: area
     attributes:
@@ -28,6 +31,13 @@ body:
     attributes:
       label: Summary
       description: What needs doing and why?
+    validations:
+      required: true
+  - type: textarea
+    id: ai-disclosure
+    attributes:
+      label: AI Disclosure
+      description: How did you use AI to find or write up this issue, if at all? Write "None" if you didn't.
     validations:
       required: true
   - type: textarea
@@ -54,6 +64,13 @@ body:
       description: Have you searched existing issues to see if this has already been reported?
       options:
         - label: Yes, I have searched existing issues.
+          required: true
+  - type: checkboxes
+    id: ai-policy
+    attributes:
+      label: AI Policy
+      options:
+        - label: I have read the [AI policy](https://github.com/seerr-team/seerr/blob/develop/CONTRIBUTING.md#ai-assistance-notice) and this issue follows it.
           required: true
   - type: checkboxes
     id: terms

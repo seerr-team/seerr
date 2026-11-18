@@ -13,7 +13,7 @@ if (!bodyFile) {
   process.exit(2);
 }
 
-const body = readFileSync(resolve(bodyFile), 'utf8');
+const body = readFileSync(resolve(bodyFile), 'utf8').replace(/\r\n?/g, '\n');
 const issues = [];
 
 const MAINTAINER_PERMISSIONS = ['admin', 'write'];
@@ -33,7 +33,9 @@ const stripComments = (s) => {
 
 const stripFixesPlaceholder = (s) => s.replace(/-\s*Fixes\s*`?#XXXX`?/gi, '');
 
-const descriptionMatch = body.match(/## Description\s*\n([\s\S]*?)(?=\n## |$)/);
+const descriptionMatch = body.match(
+  /(?:^|\n) {0,3}## Description[ \t]*(?=\n|$)([\s\S]*?)(?=\n {0,3}## |$)/
+);
 const descriptionContent = descriptionMatch
   ? stripFixesPlaceholder(stripComments(descriptionMatch[1])).trim()
   : '';
@@ -45,7 +47,7 @@ if (!descriptionContent) {
 }
 
 const testingMatch = body.match(
-  /## How Has This Been Tested\?\s*\n([\s\S]*?)(?=\n## |$)/
+  /(?:^|\n) {0,3}## How Has This Been Tested\?[ \t]*(?=\n|$)([\s\S]*?)(?=\n {0,3}## |$)/
 );
 const testingContent = testingMatch
   ? stripComments(testingMatch[1]).trim()
@@ -55,7 +57,9 @@ if (!testingContent) {
   issues.push('**How Has This Been Tested?** section is empty.');
 }
 
-const checklistMatch = body.match(/## Checklist:\s*\n([\s\S]*?)$/);
+const checklistMatch = body.match(
+  /(?:^|\n) {0,3}## Checklist:[ \t]*\n([\s\S]*?)$/
+);
 const checklistContent = checklistMatch ? checklistMatch[1] : '';
 
 const totalBoxes = (checklistContent.match(/- \[[ x]\]/gi) || []).length;
@@ -75,11 +79,17 @@ if (
   issues.push('The **contribution guidelines** checkbox has not been checked.');
 }
 
-if (
-  !isMaintainer &&
-  !/- \[x\] Disclosed any use of AI/i.test(checklistContent)
-) {
-  issues.push('The **AI disclosure** checkbox has not been checked.');
+const aiMatch = body.match(
+  /(?:^|\n) {0,3}## AI Disclosure[ \t]*(?=\n|$)([\s\S]*?)(?=\n {0,3}## |$)/
+);
+const aiContent = aiMatch ? stripComments(aiMatch[1]).trim() : '';
+const legacyAiBox =
+  !aiMatch && /- \[x\] Disclosed any use of AI/i.test(checklistContent);
+
+if (!isMaintainer && !aiContent && !legacyAiBox) {
+  issues.push(
+    '**AI Disclosure** section is empty. Describe how you used AI, or write "None".'
+  );
 }
 
 if (/-\s*Fixes\s*`?#XXXX`?/i.test(body)) {

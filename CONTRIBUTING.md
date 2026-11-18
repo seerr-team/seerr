@@ -20,6 +20,8 @@ Depending on maintainer availability and how much review a change needs, it can 
 
 > [!IMPORTANT]
 >
+> Issues and comments are contributions as well, and this policy covers them.
+>
 > AI-driven contributions are not allowed and will be rejected, even if you reviewed and tested them. This is an open-source project maintained by volunteers, and our time goes to reviewing your work, not your AI's. We have no issue with contributors using AI tools as an aid, but the contribution has to be yours, and it is your responsibility to make sure it meets our quality standards.
 >
 > **We expect AI-assisted development, not AI-driven development.** Use AI as a tool to help you understand the codebase, debug, or scaffold something you then write yourself. If an AI wrote the change, reviewing it, testing it, and submitting it yourself does not make it AI-assisted. The approach and the implementation have to be yours, and you have to understand every line of it. Whether a PR is AI-assisted or AI-driven is the maintainers' call, based on how the contribution reads and how you handle review, and claiming you drove it doesn't override that. We have been increasingly receiving low-effort, fully AI-generated PRs and will not tolerate them. Contributors who repeatedly submit AI-driven work may be banned.
@@ -37,13 +39,21 @@ Depending on maintainer availability and how much review a change needs, it can 
 > **Read and follow the [Contributing Guide](CONTRIBUTING.md) before submitting.**
 > If your AI tool generates its own PR description format, it is your responsibility to rewrite it to follow our template before submitting, and rewrite means write the content yourself, not relabel the AI's output under our section headers. An incomplete PR template tells maintainers that insufficient review has been performed on the submission, regardless of the actual code quality. We may close such PRs without review.
 >
-> If you are using **any kind of AI assistance** to contribute to Seerr, it must be disclosed in the pull request.
+> If you are using **any kind of AI assistance** to contribute to Seerr, it must be disclosed in the pull request or issue.
+
+### Issues
+
+Write your issue yourself, using the issue form. Bypassing the form breaks this policy on its own. Moving AI output under the form's headings doesn't count as filling it in.
+
+For bug reports, describe what happened, how to reproduce it, your logs and your setup. Don't include a root cause or diagnosis that came from AI, as that's where wrong details creep in. If you found the cause yourself and understand it, put it under Additional Context.
+
+AI-generated issues will be closed and locked.
 
 ### Disclosure Requirements
 
-If you are using any kind of AI assistance while contributing to Seerr, **this must be disclosed in the pull request description**, along with the extent to which AI assistance was used (e.g., docs only vs. code generation).
+If you are using any kind of AI assistance while contributing to Seerr, **this must be disclosed in the AI Disclosure section of your pull request or issue**, along with the extent to which AI assistance was used (e.g., docs only vs. code generation).
 
-PR responses (comments, review replies) must be written in your own words, per the Expectations below. The one exception is AI-assisted translation, if you use AI to translate a response into English, disclose that here too.
+Issue comments and PR responses (comments, review replies) must be written in your own words, per the Expectations below. The one exception is AI-assisted translation, if you use AI to translate a response into English, disclose that here too.
 
 As a small exception, trivial tab-completion doesn't need to be disclosed, so long as it is limited to single keywords or short phrases.
 
