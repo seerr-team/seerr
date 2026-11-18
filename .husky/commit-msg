@@ -1,1 +1,7 @@
 [ -n "$HUSKY_BYPASS" ] || npx commitlint --edit $1
+
+ghsa=$(git remote get-url origin 2>/dev/null | sed -nE 's#.*/seerr-ghsa-([0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4})(\.git)?$#GHSA-\1#p')
+if [ -z "$HUSKY_BYPASS" ] && [ -n "$ghsa" ] && ! sed '1d;/^#/d' "$1" | grep -qE "$ghsa|^Disclosure: embargoed$"; then
+  echo "Name $ghsa in the commit body, as the advisory merge keeps only the body. Add 'Disclosure: embargoed' to hold the details for 3 days instead." >&2
+  exit 1
+fi
