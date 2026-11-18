@@ -139,6 +139,10 @@ const AdvancedRequester = ({
         revalidateOnFocus: false,
       }
     );
+  // rootFolders' freeSpace changes between fetches, so key on the settings alone
+  const serverSettingsKey = serverData
+    ? JSON.stringify(serverData.server)
+    : undefined;
 
   const [selectedUser, setSelectedUser] = useState<User | null>(
     requestUser ?? null
@@ -270,7 +274,7 @@ const AdvancedRequester = ({
         setSelectedTags(defaultTags);
       }
     }
-  }, [serverData]);
+  }, [serverSettingsKey]);
 
   useEffect(() => {
     if (defaultOverrides && defaultOverrides.server != null) {
@@ -390,7 +394,7 @@ const AdvancedRequester = ({
     tmdbId,
     type,
     is4k,
-    serverData?.server.id,
+    serverSettingsKey,
     selectedServer,
     selectedUserId,
     requestUser?.id,
