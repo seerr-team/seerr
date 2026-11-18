@@ -57,6 +57,7 @@ const MovieRequestModal = ({
   const [isUpdating, setIsUpdating] = useState(false);
   const [requestOverrides, setRequestOverrides] =
     useState<RequestOverrides | null>(null);
+  const [isAdvancedBusy, setIsAdvancedBusy] = useState(false);
   const { addToast } = useToasts();
   const { data, error } = useSWR<MovieDetails>(`/api/v1/movie/${tmdbId}`, {
     revalidateOnMount: true,
@@ -242,7 +243,7 @@ const MovieRequestModal = ({
               ? updateRequest()
               : cancelRequest()
         }
-        okDisabled={isUpdating}
+        okDisabled={isUpdating || isAdvancedBusy}
         okText={
           hasPermission(Permission.MANAGE_REQUESTS)
             ? intl.formatMessage(messages.approve)
@@ -304,6 +305,7 @@ const MovieRequestModal = ({
             onChange={(overrides) => {
               setRequestOverrides(overrides);
             }}
+            onBusyChange={setIsAdvancedBusy}
           />
         )}
       </Modal>
@@ -327,6 +329,7 @@ const MovieRequestModal = ({
       onOk={sendRequest}
       okDisabled={
         isUpdating ||
+        isAdvancedBusy ||
         (quota?.movie.restricted && !requestOverrides?.ignoreQuota)
       }
       title={intl.formatMessage(
@@ -374,6 +377,7 @@ const MovieRequestModal = ({
           onChange={(overrides) => {
             setRequestOverrides(overrides);
           }}
+          onBusyChange={setIsAdvancedBusy}
         />
       )}
     </Modal>
