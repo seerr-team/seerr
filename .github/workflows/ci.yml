@@ -126,6 +126,9 @@ jobs:
           - name: Formatting
             run: pnpm format:check
 
+          - name: Type checker
+            run: pnpm typecheck
+
           - name: Build
             run: pnpm build
 
