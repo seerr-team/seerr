@@ -11,6 +11,11 @@
 
 - Fixes #XXXX
 
+## AI Disclosure
+
+<!--- How did you use AI for this PR, if at all? Write "None" if you didn't. -->
+<!--- See our policy: https://github.com/seerr-team/seerr/blob/develop/CONTRIBUTING.md#disclosure-requirements -->
+
 ## How Has This Been Tested?
 
 <!--- Please describe in detail how you tested your changes. -->
@@ -25,7 +30,6 @@
 <!--- If you're unsure about any of these, don't hesitate to ask. We're here to help! -->
 
 - [ ] I have read and followed the contribution [guidelines](https://github.com/seerr-team/seerr/blob/develop/CONTRIBUTING.md).
-- [ ] Disclosed any use of AI (see our [policy](https://github.com/seerr-team/seerr/blob/develop/CONTRIBUTING.md#ai-assistance-notice))
 - [ ] I have updated the documentation accordingly.
 - [ ] All new and existing tests passed.
 - [ ] Successful build `pnpm build`

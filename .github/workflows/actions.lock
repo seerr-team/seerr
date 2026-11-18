@@ -89,7 +89,8 @@ workflows:
         - 'actions/checkout@v7.0.1'
         - 'actions/create-github-app-token@v3.3.0'
         - 'helm/chart-testing-action@v2.9.0'
-    '.github/workflows/seerr-labeller.yml': []
+    '.github/workflows/seerr-labeller.yml':
+        - 'actions/github-script@v9.0.0'
     '.github/workflows/stale.yml':
         - 'actions/stale@v11.0.0'
     '.github/workflows/test-docs.yml':
