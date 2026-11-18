@@ -27,7 +27,20 @@ body = """
     ## [unreleased]
 {% endif %}\
 
+{%- set embargoed = commits | filter(attribute="group", value="<!-- embargoed -->") | length %}
+{%- if version and embargoed > 0 %}
+{%- set one = embargoed == 1 %}
+{%- set disclosure = timestamp + 3 * 86400 %}
+> [!WARNING]
+> **This release fixes {% if one %}a security vulnerability{% else %}{{ embargoed }} security vulnerabilities{% endif %}. All users should update to {{ version | trim_start_matches(pat="v") }} as soon as possible.**
+>
+> To give everyone time to upgrade, full details will be published as {% if one %}a security advisory{% else %}security advisories{% endif %} on **{{ disclosure | date(format="%B %-d, %Y") }}**. Once published, the details will be public, so update now rather than waiting for the {% if one %}advisory{% else %}advisories{% endif %}.
+>
+> These release notes will be updated with {% if one %}a link to the advisory once it's{% else %}links to the advisories once they're{% endif %} published.
+{% endif %}
+
 {%- for group, commits in commits | group_by(attribute="group") %}
+    {%- if group == "<!-- embargoed -->" %}{% continue %}{% endif %}
     ### {{ group | striptags | trim | upper_first }}
     {%- for commit in commits | filter(attribute="scope") | sort(attribute="scope") %}
         {{ self::print_commit(commit=commit) }}
@@ -63,6 +76,9 @@ filter_unconventional = true
 split_commits = false
 filter_commits = true
 commit_preprocessors = [
+  { pattern = '(?ms)\A.*^Disclosure: embargoed$.*', replace = "security(embargoed): undisclosed fix" },
+  { pattern = '(?s)^Merge commit from fork.*?(GHSA(?:-[0-9a-z]{4}){3}).*', replace = "security: Patch [$1](https://github.com/seerr-team/seerr/security/advisories/$1)" },
+  { pattern = '(?s)^Merge commit from fork.*', replace = "security(embargoed): undisclosed fix" },
   { pattern = '.*\[skip ci\].*', replace = "" },
   { pattern = '.*\[ci skip\].*', replace = "" },
 ]
@@ -70,6 +86,8 @@ commit_parsers = [
   { message = '.*\(helm\).*', skip = true },
   { message = '^chore\(release\): prepare for', skip = true },
   { message = '^chore\(deps.*\)', skip = true },
+  { message = '^security\(embargoed\)', group = "<!-- embargoed -->" },
+  { message = '^security', group = "<!-- 0 -->🛡️ Security" },
   { body = ".*security", group = "<!-- 0 -->🛡️ Security" },
   { message = "^feat", group = "<!-- 1 -->🚀 Features" },
   { message = "^fix", group = "<!-- 2 -->🐛 Bug Fixes" },
