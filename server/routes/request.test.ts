@@ -891,7 +891,7 @@ describe('PUT /request/:requestId (advanced options)', () => {
 describe('GET /request', () => {
   it('filters requests by declined status', async () => {
     const declined = await seedRequest(MediaRequestStatus.DECLINED);
-    const pending = await seedRequest(MediaRequestStatus.PENDING);
+    await seedRequest(MediaRequestStatus.PENDING);
 
     const admin = await loginAs('admin@seerr.dev', 'test1234');
     const res = await admin.get('/request?filter=declined');
