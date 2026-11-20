@@ -114,7 +114,7 @@
     "@commitlint/cli": "20.5.0",
     "@commitlint/config-conventional": "20.5.0",
     "@eslint/js": "9.39.3",
-    "@next/eslint-plugin-next": "16.4.2",
+    "@next/eslint-plugin-next": "16.4.6",
     "@svgr/webpack": "8.1.0",
     "@tailwindcss/aspect-ratio": "^0.4.2",
     "@tailwindcss/forms": "^0.5.11",
