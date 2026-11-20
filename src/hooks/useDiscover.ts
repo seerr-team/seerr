@@ -4,6 +4,7 @@ import { MediaStatus } from '@server/constants/media';
 import { useEffect } from 'react';
 import { useIntl } from 'react-intl';
 import useSWRInfinite from 'swr/infinite';
+import { usePageCountRestoration } from './useScrollRestoration';
 import useSettings from './useSettings';
 import { Permission, useUser } from './useUser';
 
@@ -108,6 +109,8 @@ const useDiscover = <
   const fetchMore = () => {
     setSize(size + 1);
   };
+
+  usePageCountRestoration(size, setSize, isLoadingMore);
 
   let titles = (data ?? []).reduce((a, v) => {
     const results: T[] = [];

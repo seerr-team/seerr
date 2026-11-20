@@ -7,6 +7,7 @@ import { InteractionProvider } from '@app/context/InteractionContext';
 import { LanguageContext } from '@app/context/LanguageContext';
 import { SettingsProvider } from '@app/context/SettingsContext';
 import { UserContext } from '@app/context/UserContext';
+import useScrollRestoration from '@app/hooks/useScrollRestoration';
 import type { User } from '@app/hooks/useUser';
 import { Permission, useUser } from '@app/hooks/useUser';
 import '@app/styles/globals.css';
@@ -130,6 +131,7 @@ const CoreApp: Omit<NextAppComponentType, 'origGetInitialProps'> = ({
   let component: React.ReactNode;
   const [loadedMessages, setMessages] = useState<MessagesType>(messages);
   const [currentLocale, setLocale] = useState<AvailableLocale>(locale);
+  useScrollRestoration();
 
   useEffect(() => {
     loadLocaleData(currentLocale).then(setMessages);
