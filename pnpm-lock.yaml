@@ -60,7 +60,7 @@ importers:
         version: 2.14.1
       connect-typeorm:
         specifier: 2.0.0
-        version: 2.0.0(typeorm@0.3.31(babel-plugin-macros@3.1.0)(pg@8.23.0)(sqlite3@6.0.1)(ts-node@10.9.2(@swc/core@1.6.5(@swc/helpers@0.5.24))(@types/node@22.19.0)(typescript@5.4.5)))
+        version: 2.0.0(typeorm@0.3.31(babel-plugin-macros@3.1.0)(pg@8.23.1)(sqlite3@6.0.1)(ts-node@10.9.2(@swc/core@1.6.5(@swc/helpers@0.5.24))(@types/node@22.19.0)(typescript@5.4.5)))
       cookie-parser:
         specifier: 1.4.7
         version: 1.4.7
@@ -137,8 +137,8 @@ importers:
         specifier: 6.3.0
         version: 6.3.0
       pg:
-        specifier: 8.23.0
-        version: 8.23.0
+        specifier: 8.23.1
+        version: 8.23.1
       pug:
         specifier: 3.0.4
         version: 3.0.4
@@ -207,7 +207,7 @@ importers:
         version: 2.6.1
       typeorm:
         specifier: 0.3.31
-        version: 0.3.31(babel-plugin-macros@3.1.0)(pg@8.23.0)(sqlite3@6.0.1)(ts-node@10.9.2(@swc/core@1.6.5(@swc/helpers@0.5.24))(@types/node@22.19.0)(typescript@5.4.5))
+        version: 0.3.31(babel-plugin-macros@3.1.0)(pg@8.23.1)(sqlite3@6.0.1)(ts-node@10.9.2(@swc/core@1.6.5(@swc/helpers@0.5.24))(@types/node@22.19.0)(typescript@5.4.5))
       ua-parser-js:
         specifier: ^2.0.10
         version: 2.0.10
@@ -5576,8 +5576,8 @@ packages:
     resolution: {integrity: sha512-qTAAlrEsl8s4OiEQY69wDvcMIdQN6wdz5ojQiOy6YRMuynxenON0O5oCpJI6lshc6scgAY8qvJ2On/p+CXY0GA==}
     engines: {node: '>=4'}
 
-  pg@8.23.0:
-    resolution: {integrity: sha512-Ip2EQCngowJLGOfCwkFhPXU7/ljlhn6Rxlmy4XYfL2Y+vyRM59+8uR2xqRWKdYmbXmxCFOAmKxBuSUCdF34qLg==}
+  pg@8.23.1:
+    resolution: {integrity: sha512-aL96AHANtWjPLDOLqnhx+ngp9+UK7ETEU8VJrDCGvsSSi/mGLcWYsS6Herg7lmaBJe4uwrfqsa7gTEFaSizDoQ==}
     engines: {node: '>= 16.0.0'}
     peerDependencies:
       pg-native: '>=3.0.1'
@@ -10182,13 +10182,13 @@ snapshots:
 
   concat-map@0.0.1: {}
 
-  connect-typeorm@2.0.0(typeorm@0.3.31(babel-plugin-macros@3.1.0)(pg@8.23.0)(sqlite3@6.0.1)(ts-node@10.9.2(@swc/core@1.6.5(@swc/helpers@0.5.24))(@types/node@22.19.0)(typescript@5.4.5))):
+  connect-typeorm@2.0.0(typeorm@0.3.31(babel-plugin-macros@3.1.0)(pg@8.23.1)(sqlite3@6.0.1)(ts-node@10.9.2(@swc/core@1.6.5(@swc/helpers@0.5.24))(@types/node@22.19.0)(typescript@5.4.5))):
     dependencies:
       '@types/debug': 0.0.31
       '@types/express-session': 1.18.2
       debug: 4.4.3(supports-color@5.5.0)
       express-session: 1.19.0
-      typeorm: 0.3.31(babel-plugin-macros@3.1.0)(pg@8.23.0)(sqlite3@6.0.1)(ts-node@10.9.2(@swc/core@1.6.5(@swc/helpers@0.5.24))(@types/node@22.19.0)(typescript@5.4.5))
+      typeorm: 0.3.31(babel-plugin-macros@3.1.0)(pg@8.23.1)(sqlite3@6.0.1)(ts-node@10.9.2(@swc/core@1.6.5(@swc/helpers@0.5.24))(@types/node@22.19.0)(typescript@5.4.5))
     transitivePeerDependencies:
       - supports-color
 
@@ -12990,9 +12990,9 @@ snapshots:
 
   pg-int8@1.0.1: {}
 
-  pg-pool@3.14.0(pg@8.23.0):
+  pg-pool@3.14.0(pg@8.23.1):
     dependencies:
-      pg: 8.23.0
+      pg: 8.23.1
 
   pg-protocol@1.16.1: {}
 
@@ -13004,10 +13004,10 @@ snapshots:
       postgres-date: 1.0.7
       postgres-interval: 1.2.0
 
-  pg@8.23.0:
+  pg@8.23.1:
     dependencies:
       pg-connection-string: 2.14.1
-      pg-pool: 3.14.0(pg@8.23.0)
+      pg-pool: 3.14.0(pg@8.23.1)
       pg-protocol: 1.16.1
       pg-types: 2.2.0
       pgpass: 1.0.5
@@ -14345,7 +14345,7 @@ snapshots:
       possible-typed-array-names: 1.1.0
       reflect.getprototypeof: 1.0.10
 
-  typeorm@0.3.31(babel-plugin-macros@3.1.0)(pg@8.23.0)(sqlite3@6.0.1)(ts-node@10.9.2(@swc/core@1.6.5(@swc/helpers@0.5.24))(@types/node@22.19.0)(typescript@5.4.5)):
+  typeorm@0.3.31(babel-plugin-macros@3.1.0)(pg@8.23.1)(sqlite3@6.0.1)(ts-node@10.9.2(@swc/core@1.6.5(@swc/helpers@0.5.24))(@types/node@22.19.0)(typescript@5.4.5)):
     dependencies:
       '@sqltools/formatter': 1.2.5
       ansis: 4.5.0
@@ -14363,7 +14363,7 @@ snapshots:
       uuid: 11.1.1
       yargs: 17.7.3
     optionalDependencies:
-      pg: 8.23.0
+      pg: 8.23.1
       sqlite3: 6.0.1
       ts-node: 10.9.2(@swc/core@1.6.5(@swc/helpers@0.5.24))(@types/node@22.19.0)(typescript@5.4.5)
     transitivePeerDependencies:
