@@ -4,6 +4,10 @@ import globalMessages from '@server/i18n/globalMessages';
 import type { NotificationAgentSlack } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
+import {
+  getAvailableMediaServerName,
+  getAvailableMediaServerUrl,
+} from '@server/utils/mediaServerHelper';
 import axios from 'axios';
 import { Notification, hasNotificationType } from '..';
 import type { NotificationAgent, NotificationPayload } from './agent';
@@ -51,6 +55,11 @@ class SlackAgent
   extends BaseAgent<NotificationAgentSlack>
   implements NotificationAgent
 {
+  /**
+   * Returns this agent's notification settings
+   * Uses a cached copy when available
+   * @protected
+   */
   protected getSettings(): NotificationAgentSlack {
     if (this.settings) {
       return this.settings;
@@ -61,13 +70,23 @@ class SlackAgent
     return settings.notifications.agents.slack;
   }
 
+  /**
+   * Builds the Slack Embed for the Slack notification that will be sent
+   *
+   * For all notifications it has a button to take you to the media in Seerr
+   * For request notifications it includes a button that links to the media in the chosen media server
+   * @param type The type of notification being sent
+   * @param payload Notification context
+   * @returns The Slack embed payload
+   */
   public buildEmbed(
     type: Notification,
     payload: NotificationPayload
   ): SlackBlockEmbed {
     const settings = this.getSettings();
     const intl = getIntl(settings.options.locale);
-    const { applicationUrl, applicationTitle } = getSettings().main;
+    const { applicationUrl, applicationTitle, mediaServerType } =
+      getSettings().main;
     const embedPoster = settings.embedPoster;
 
     const fields: EmbedField[] = [];
@@ -192,25 +211,46 @@ class SlackAgent
           : undefined
       : undefined;
 
+    const actionElements: Element[] = [];
+
     if (url) {
+      actionElements.push({
+        action_id: 'open-in-seerr',
+        type: 'button',
+        url,
+        text: {
+          type: 'plain_text',
+          text: intl.formatMessage(
+            payload.issue ? globalMessages.viewIssue : globalMessages.viewMedia,
+            { applicationTitle }
+          ),
+        },
+      });
+    }
+
+    if (!payload.issue) {
+      const mediaServerName = getAvailableMediaServerName(mediaServerType);
+      const mediaServerUrl = getAvailableMediaServerUrl(payload);
+
+      if (mediaServerUrl) {
+        actionElements.push({
+          action_id: 'open-in-mediaServer',
+          type: 'button',
+          url: mediaServerUrl,
+          text: {
+            type: 'plain_text',
+            text: intl.formatMessage(globalMessages.playOn, {
+              mediaServerName,
+            }),
+          },
+        });
+      }
+    }
+
+    if (actionElements.length > 0) {
       blocks.push({
         type: 'actions',
-        elements: [
-          {
-            action_id: 'open-in-seerr',
-            type: 'button',
-            url,
-            text: {
-              type: 'plain_text',
-              text: intl.formatMessage(
-                payload.issue
-                  ? globalMessages.viewIssue
-                  : globalMessages.viewMedia,
-                { applicationTitle }
-              ),
-            },
-          },
-        ],
+        elements: actionElements,
       });
     }
 
@@ -220,6 +260,10 @@ class SlackAgent
     };
   }
 
+  /**
+   * Determines whether this agent is able to send Slack notifications
+   * Returns true only if the agent is enabled and a webhook URL is configured
+   */
   public shouldSend(): boolean {
     const settings = this.getSettings();
 
@@ -230,6 +274,16 @@ class SlackAgent
     return false;
   }
 
+  /**
+   * Sends a Slack notification to the configured Slack webhook
+   *
+   * Returns true when notifications are skipped, disabled/type not enabled, or when the webhook call succeeds
+   * Returns false only when the webhook call fails
+   *
+   * @param type The type of notification being sent
+   * @param payload Notification context
+   * @returns True if the notification was sent successfully, otherwise False
+   */
   public async send(
     type: Notification,
     payload: NotificationPayload

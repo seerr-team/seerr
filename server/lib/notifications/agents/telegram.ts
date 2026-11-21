@@ -8,6 +8,10 @@ import type { NotificationAgentTelegram } from '@server/lib/settings';
 import { NotificationAgentKey, getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import type { AvailableLocale } from '@server/types/languages';
+import {
+  getAvailableMediaServerName,
+  getAvailableMediaServerUrl,
+} from '@server/utils/mediaServerHelper';
 import axios from 'axios';
 import {
   Notification,
@@ -40,6 +44,11 @@ class TelegramAgent
 {
   private baseUrl = 'https://api.telegram.org/';
 
+  /**
+   * Returns this agent's notification settings.
+   * Uses a cached copy when available.
+   * @protected
+   */
   protected getSettings(): NotificationAgentTelegram {
     if (this.settings) {
       return this.settings;
@@ -50,6 +59,10 @@ class TelegramAgent
     return settings.notifications.agents.telegram;
   }
 
+  /**
+   * Determines whether this agent is able to send Telegram notifications
+   * Returns True only if Telegram notifications are enabled and the bot API token is filled in, else returns False
+   */
   public shouldSend(): boolean {
     const settings = this.getSettings();
 
@@ -60,10 +73,29 @@ class TelegramAgent
     return false;
   }
 
+  /**
+   * Escapes text for Telegram MarkdownV2
+   * Telegram requires some characters to be escaped to prevent any formatting issues
+   * @param text The unescaped input
+   * @returns Escaped text that is safe for MarkdownV2
+   * @private
+   */
   private escapeText(text: string | undefined): string {
-    return text ? text.replace(/[_*[\]()~>#+=|{}.!-]/gi, (x) => '\\' + x) : '';
+    return text
+      ? text.replace(/[_*[\]()~`\\>#+=|{}.!-]/gi, (x) => '\\' + x)
+      : '';
   }
 
+  /**
+   * Builds the Telegram notification payload that will be sent
+   *
+   * For all notifications it has a button to take you to the media in Seerr
+   * For request notifications it includes a button that links to the media in the chosen media server
+   * @param type The type of notification being sent
+   * @param payload Notification context
+   * @returns Telegram notification payload
+   * @private
+   */
   private getNotificationPayload(
     type: Notification,
     payload: NotificationPayload,
@@ -71,7 +103,7 @@ class TelegramAgent
   ): Partial<TelegramMessagePayload | TelegramPhotoPayload> {
     const intl = getIntl(locale);
     const settings = getSettings();
-    const { applicationUrl, applicationTitle } = settings.main;
+    const { applicationUrl, applicationTitle, mediaServerType } = settings.main;
     const { embedPoster } = settings.notifications.agents.telegram;
 
     /* eslint-disable no-useless-escape */
@@ -160,6 +192,17 @@ class TelegramAgent
         )
       )}\]\(${url}\)`;
     }
+
+    if (!payload.issue) {
+      const mediaServerName = getAvailableMediaServerName(mediaServerType);
+      const mediaServerUrl = getAvailableMediaServerUrl(payload);
+
+      if (mediaServerUrl) {
+        message += `\n\[${this.escapeText(
+          intl.formatMessage(globalMessages.playOn, { mediaServerName })
+        )}\]\(${mediaServerUrl.replace(/\)/g, '\\)')}\)`;
+      }
+    }
     /* eslint-enable */
 
     return embedPoster && payload.image
@@ -174,6 +217,13 @@ class TelegramAgent
         };
   }
 
+  /**
+   * Sends the Telegram notification for the provided type using the payload
+   *
+   * @param type The type of notification being sent
+   * @param payload Notification payload
+   * @returns True if the notification was sent successfully, otherwise False
+   */
   public async send(
     type: Notification,
     payload: NotificationPayload
