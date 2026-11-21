@@ -79,6 +79,7 @@ const TvRequestModal = ({
   const { data, error } = useSWR<TvDetails>(`/api/v1/tv/${tmdbId}`);
   const [requestOverrides, setRequestOverrides] =
     useState<RequestOverrides | null>(null);
+  const [isAdvancedBusy, setIsAdvancedBusy] = useState(false);
   const [selectedSeasons, setSelectedSeasons] = useState<number[]>(
     editRequest ? editingSeasons : []
   );
@@ -454,7 +455,8 @@ const TvRequestModal = ({
                   )
       }
       okDisabled={
-        editRequest
+        isAdvancedBusy ||
+        (editRequest
           ? false
           : !settings.currentSettings.partialRequestsEnabled &&
               quota?.tv.limit &&
@@ -463,7 +465,7 @@ const TvRequestModal = ({
             ? true
             : unrequestedSeasons.length === 0 ||
               (settings.currentSettings.partialRequestsEnabled &&
-                selectedSeasons.length === 0)
+                selectedSeasons.length === 0))
       }
       okButtonType={
         editRequest
@@ -747,6 +749,7 @@ const TvRequestModal = ({
           )}
           quota={quota}
           onChange={(overrides) => setRequestOverrides(overrides)}
+          onBusyChange={setIsAdvancedBusy}
           requestUser={editRequest?.requestedBy}
           requestId={editRequest?.id}
           defaultOverrides={

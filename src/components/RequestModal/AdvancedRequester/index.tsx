@@ -74,6 +74,7 @@ interface AdvancedRequesterProps {
   requestId?: number;
   quota?: { movie: { limit?: number }; tv: { limit?: number } };
   onChange: (overrides: RequestOverrides) => void;
+  onBusyChange?: (busy: boolean) => void;
 }
 
 const AdvancedRequester = ({
@@ -86,6 +87,7 @@ const AdvancedRequester = ({
   requestId,
   quota,
   onChange,
+  onBusyChange,
 }: AdvancedRequesterProps) => {
   const intl = useIntl();
   const { addToast } = useToasts();
@@ -126,19 +128,29 @@ const AdvancedRequester = ({
     currentHasPermission([Permission.MANAGE_REQUESTS]) &&
     ((type === 'movie' ? quota?.movie.limit : quota?.tv.limit) ?? 0) > 0;
 
-  const { data: serverData, isValidating } =
-    useSWR<ServiceCommonServerWithDetails>(
-      selectedServer !== null
-        ? `/api/v1/service/${
-            type === 'movie' ? 'radarr' : 'sonarr'
-          }/${selectedServer}`
-        : null,
-      {
-        refreshInterval: 0,
-        refreshWhenHidden: false,
-        revalidateOnFocus: false,
-      }
-    );
+  const {
+    data: serverData,
+    error: serverError,
+    isValidating,
+  } = useSWR<ServiceCommonServerWithDetails>(
+    selectedServer !== null
+      ? `/api/v1/service/${
+          type === 'movie' ? 'radarr' : 'sonarr'
+        }/${selectedServer}`
+      : null,
+    {
+      refreshInterval: 0,
+      refreshWhenHidden: false,
+      revalidateOnFocus: false,
+    }
+  );
+  // rootFolders' freeSpace changes between fetches, so key on the settings alone
+  const serverSettingsKey = serverData
+    ? JSON.stringify(serverData.server)
+    : undefined;
+  // selectedTags doesn't hold these yet when the override effect runs
+  const appliedDefaultTagsRef = useRef<number[] | null>(null);
+  const [isOverridePending, setIsOverridePending] = useState(false);
 
   const [selectedUser, setSelectedUser] = useState<User | null>(
     requestUser ?? null
@@ -267,10 +279,11 @@ const AdvancedRequester = ({
         !isEqual(defaultTags, selectedTags) &&
         (!applyOverrides || defaultOverrides.tags === null)
       ) {
+        appliedDefaultTagsRef.current = defaultTags;
         setSelectedTags(defaultTags);
       }
     }
-  }, [serverData]);
+  }, [serverSettingsKey]);
 
   useEffect(() => {
     if (defaultOverrides && defaultOverrides.server != null) {
@@ -340,8 +353,11 @@ const AdvancedRequester = ({
 
   useEffect(() => {
     let cancelled = false;
+    const baseTags = appliedDefaultTagsRef.current ?? selectedTags;
+    appliedDefaultTagsRef.current = null;
     (async () => {
       if (tmdbId && serverData?.server.id === selectedServer) {
+        setIsOverridePending(true);
         try {
           const { data: override } = await axios.post<OverrideRulesResult>(
             '/api/v1/overrideRule/advancedRequest',
@@ -351,7 +367,7 @@ const AdvancedRequester = ({
               requestUser:
                 selectedUser?.id ?? requestUser?.id ?? currentUser?.id,
               tmdbId,
-              tags: selectedTags.length > 0 ? selectedTags : undefined,
+              tags: baseTags.length > 0 ? baseTags : undefined,
               serviceId: selectedServer ?? undefined,
               requestId: requestId ?? undefined,
             }
@@ -368,7 +384,7 @@ const AdvancedRequester = ({
           if (
             !defaultOverrides?.tags &&
             override.tags &&
-            !isEqual(override.tags, selectedTags)
+            !isEqual(override.tags, baseTags)
           ) {
             setSelectedTags(override.tags);
           }
@@ -380,17 +396,22 @@ const AdvancedRequester = ({
             appearance: 'error',
             autoDismiss: true,
           });
+        } finally {
+          if (!cancelled) {
+            setIsOverridePending(false);
+          }
         }
       }
     })();
     return () => {
       cancelled = true;
+      setIsOverridePending(false);
     };
   }, [
     tmdbId,
     type,
     is4k,
-    serverData?.server.id,
+    serverSettingsKey,
     selectedServer,
     selectedUserId,
     requestUser?.id,
@@ -399,6 +420,18 @@ const AdvancedRequester = ({
     defaultOverrides?.profile,
     defaultOverrides?.tags,
   ]);
+
+  const isBusy =
+    isOverridePending ||
+    (!data && !error) ||
+    (selectedServer !== null &&
+      serverData?.server.id !== selectedServer &&
+      !serverError);
+
+  useEffect(() => {
+    onBusyChange?.(isBusy);
+    return () => onBusyChange?.(false);
+  }, [isBusy]);
 
   if (!data && !error) {
     return (
@@ -474,14 +507,15 @@ const AdvancedRequester = ({
                   onChange={(e) => setSelectedProfile(Number(e.target.value))}
                   onBlur={(e) => setSelectedProfile(Number(e.target.value))}
                   className="border-gray-700 bg-gray-800"
-                  disabled={isValidating || !serverData}
+                  disabled={isValidating || isOverridePending || !serverData}
                 >
-                  {(isValidating || !serverData) && (
+                  {(isValidating || isOverridePending || !serverData) && (
                     <option value="">
                       {intl.formatMessage(globalMessages.loading)}
                     </option>
                   )}
                   {!isValidating &&
+                    !isOverridePending &&
                     serverData &&
                     serverData.profiles
                       .toSorted((a, b) =>
@@ -525,14 +559,15 @@ const AdvancedRequester = ({
                   onChange={(e) => setSelectedFolder(e.target.value)}
                   onBlur={(e) => setSelectedFolder(e.target.value)}
                   className="border-gray-700 bg-gray-800"
-                  disabled={isValidating || !serverData}
+                  disabled={isValidating || isOverridePending || !serverData}
                 >
-                  {(isValidating || !serverData) && (
+                  {(isValidating || isOverridePending || !serverData) && (
                     <option value="">
                       {intl.formatMessage(globalMessages.loading)}
                     </option>
                   )}
                   {!isValidating &&
+                    !isOverridePending &&
                     serverData &&
                     serverData.rootFolders.map((folder) => (
                       <option
@@ -583,14 +618,15 @@ const AdvancedRequester = ({
                       setSelectedLanguage(parseInt(e.target.value))
                     }
                     className="border-gray-700 bg-gray-800"
-                    disabled={isValidating || !serverData}
+                    disabled={isValidating || isOverridePending || !serverData}
                   >
-                    {(isValidating || !serverData) && (
+                    {(isValidating || isOverridePending || !serverData) && (
                       <option value="">
                         {intl.formatMessage(globalMessages.loading)}
                       </option>
                     )}
                     {!isValidating &&
+                      !isOverridePending &&
                       serverData &&
                       serverData.languageProfiles?.map((language) => (
                         <option
@@ -628,9 +664,9 @@ const AdvancedRequester = ({
                   value: tag.id,
                 }))}
                 isMulti
-                isDisabled={isValidating || !serverData}
+                isDisabled={isValidating || isOverridePending || !serverData}
                 placeholder={
-                  isValidating || !serverData
+                  isValidating || isOverridePending || !serverData
                     ? intl.formatMessage(globalMessages.loading)
                     : intl.formatMessage(messages.selecttags)
                 }
