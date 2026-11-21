@@ -1,0 +1,51 @@
+import { MediaStatus } from '@server/constants/media';
+import { DbAwareColumn, resolveDbType } from '@server/utils/DbColumnHelper';
+import {
+  Column,
+  Entity,
+  Index,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  Unique,
+  UpdateDateColumn,
+} from 'typeorm';
+import Season from './Season';
+
+@Entity()
+@Unique(['season', 'episodeNumber'])
+class Episode {
+  @PrimaryGeneratedColumn()
+  public id: number;
+
+  @Column()
+  public episodeNumber: number;
+
+  @Column({ type: 'int', default: MediaStatus.UNKNOWN })
+  public status: MediaStatus;
+
+  @Column({ type: 'int', default: MediaStatus.UNKNOWN })
+  public status4k: MediaStatus;
+
+  @Index()
+  @ManyToOne(() => Season, (season: Season) => season.episodes, {
+    onDelete: 'CASCADE',
+  })
+  public season: Promise<Season>;
+
+  @DbAwareColumn({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
+  public createdAt: Date;
+
+  @UpdateDateColumn({
+    type: resolveDbType('datetime'),
+    default: () => 'CURRENT_TIMESTAMP',
+  })
+  public updatedAt: Date;
+
+  constructor(init?: Partial<Episode>) {
+    if (init) {
+      Object.assign(this, init);
+    }
+  }
+}
+
+export default Episode;
