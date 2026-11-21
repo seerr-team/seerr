@@ -888,6 +888,21 @@ describe('PUT /request/:requestId (advanced options)', () => {
   });
 });
 
+describe('GET /request', () => {
+  it('filters requests by declined status', async () => {
+    const declined = await seedRequest(MediaRequestStatus.DECLINED);
+    await seedRequest(MediaRequestStatus.PENDING);
+
+    const admin = await loginAs('admin@seerr.dev', 'test1234');
+    const res = await admin.get('/request?filter=declined');
+
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.body.pageInfo.results, 1);
+    assert.strictEqual(res.body.results[0].id, declined.id);
+    assert.strictEqual(res.body.results[0].status, MediaRequestStatus.DECLINED);
+  });
+});
+
 describe('GET /request/:requestId', () => {
   it('omits notification settings from requestedBy and modifiedBy', async () => {
     const pending = await seedRequest();
