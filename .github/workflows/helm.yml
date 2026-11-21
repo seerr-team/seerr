@@ -35,7 +35,7 @@ jobs:
               persist-credentials: false
 
           - name: Install helm
-            uses: azure/setup-helm@v5.0.1
+            uses: azure/setup-helm@v5.1.0
 
           - name: Install Oras
             uses: oras-project/setup-oras@v2.0.3
@@ -101,7 +101,7 @@ jobs:
               persist-credentials: false
 
           - name: Install helm
-            uses: azure/setup-helm@v5.0.1
+            uses: azure/setup-helm@v5.1.0
 
           - name: Install Oras
             uses: oras-project/setup-oras@v2.0.3
