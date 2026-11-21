@@ -25,6 +25,8 @@ import { useIntl } from 'react-intl';
 import useSWR, { mutate } from 'swr';
 import * as Yup from 'yup';
 
+type CustomCssResponse = { css: string };
+
 const messages = defineMessages('components.Settings.SettingsMain', {
   general: 'General',
   generalsettings: 'General Settings',
@@ -59,6 +61,7 @@ const messages = defineMessages('components.Settings.SettingsMain', {
   toastApiKeyFailure: 'Something went wrong while generating a new API key.',
   toastSettingsSuccess: 'Settings saved successfully!',
   toastSettingsFailure: 'Something went wrong while saving settings.',
+  toastCustomCssFailure: 'Settings saved, but custom CSS could not be updated.',
   hideAvailable: 'Hide Available Media',
   hideAvailableTip:
     'Hide available media from the discover pages but not search results',
@@ -80,6 +83,12 @@ const messages = defineMessages('components.Settings.SettingsMain', {
   versionCheck: 'Version Check',
   versionCheckTip: 'Automatically check for new versions on GitHub.',
   validationUrl: 'You must provide a valid URL',
+  customCss: 'Custom CSS',
+  customCssTip:
+    'Override :root design tokens using space-separated RGB channels (e.g. 20 184 166).',
+  customCssLoadError:
+    'Failed to load custom CSS. Saving other settings will not overwrite it.',
+  validationCustomCss: 'Custom CSS must be 512KB or less',
 });
 
 const SettingsMain = () => {
@@ -92,6 +101,11 @@ const SettingsMain = () => {
     error,
     mutate: revalidate,
   } = useSWR<MainSettings>('/api/v1/settings/main');
+  const {
+    data: customCssData,
+    error: customCssError,
+    mutate: revalidateCustomCss,
+  } = useSWR<CustomCssResponse>('/api/v1/settings/custom.css');
   const { data: userData } = useSWR<UserSettingsGeneralResponse>(
     currentUser ? `/api/v1/user/${currentUser.id}/settings/main` : null
   );
@@ -123,6 +137,10 @@ const SettingsMain = () => {
         (value) => (value ?? 0) <= 250
       ),
     youtubeUrl: Yup.string().url(intl.formatMessage(messages.validationUrl)),
+    customCss: Yup.string().max(
+      512 * 1024,
+      intl.formatMessage(messages.validationCustomCss)
+    ),
   });
 
   const regenerate = async () => {
@@ -142,7 +160,7 @@ const SettingsMain = () => {
     }
   };
 
-  if (!data && !error) {
+  if ((!data && !error) || (!customCssData && !customCssError)) {
     return <LoadingSpinner />;
   }
 
@@ -183,6 +201,7 @@ const SettingsMain = () => {
             cacheImages: data?.cacheImages,
             youtubeUrl: data?.youtubeUrl,
             versionCheck: data?.versionCheck,
+            customCss: customCssData?.css ?? '',
           }}
           enableReinitialize
           validationSchema={MainSettingsSchema}
@@ -208,29 +227,50 @@ const SettingsMain = () => {
                 youtubeUrl: values.youtubeUrl,
                 versionCheck: values?.versionCheck,
               });
-              mutate('/api/v1/settings/public');
-              mutate('/api/v1/status?checkUpdateAvailable=false');
-
-              if (setLocale) {
-                setLocale(
-                  (userData?.locale
-                    ? userData.locale
-                    : values.locale) as AvailableLocale
-                );
-              }
-
-              addToast(intl.formatMessage(messages.toastSettingsSuccess), {
-                autoDismiss: true,
-                appearance: 'success',
-              });
             } catch {
               addToast(intl.formatMessage(messages.toastSettingsFailure), {
                 autoDismiss: true,
                 appearance: 'error',
               });
-            } finally {
               revalidate();
+              return;
             }
+
+            if (setLocale) {
+              setLocale(
+                (userData?.locale
+                  ? userData.locale
+                  : values.locale) as AvailableLocale
+              );
+            }
+
+            if (!customCssError && customCssData !== undefined) {
+              try {
+                await axios.post('/api/v1/settings/custom.css', {
+                  css: values.customCss ?? '',
+                });
+                await revalidateCustomCss();
+                mutate('/api/v1/custom.css');
+              } catch {
+                addToast(intl.formatMessage(messages.toastCustomCssFailure), {
+                  autoDismiss: true,
+                  appearance: 'error',
+                });
+                revalidate();
+                mutate('/api/v1/settings/public');
+                mutate('/api/v1/status?checkUpdateAvailable=false');
+                return;
+              }
+            }
+
+            mutate('/api/v1/settings/public');
+            mutate('/api/v1/status?checkUpdateAvailable=false');
+
+            addToast(intl.formatMessage(messages.toastSettingsSuccess), {
+              autoDismiss: true,
+              appearance: 'success',
+            });
+            revalidate();
           }}
         >
           {({
@@ -645,6 +685,37 @@ const SettingsMain = () => {
                         setFieldValue('versionCheck', !values.versionCheck);
                       }}
                     />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <label htmlFor="customCss" className="text-label">
+                    {intl.formatMessage(messages.customCss)}
+                    <span className="label-tip">
+                      {intl.formatMessage(messages.customCssTip)}
+                    </span>
+                  </label>
+                  <div className="form-input-area">
+                    <div className="form-input-field">
+                      <Field
+                        as="textarea"
+                        id="customCss"
+                        name="customCss"
+                        rows={10}
+                        className="font-mono text-xs"
+                        disabled={!!customCssError}
+                      />
+                    </div>
+                    {customCssError ? (
+                      <div className="error">
+                        {intl.formatMessage(messages.customCssLoadError)}
+                      </div>
+                    ) : (
+                      errors.customCss &&
+                      touched.customCss &&
+                      typeof errors.customCss === 'string' && (
+                        <div className="error">{errors.customCss}</div>
+                      )
+                    )}
                   </div>
                 </div>
                 <div className="actions">

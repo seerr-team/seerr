@@ -274,6 +274,15 @@ components:
         versionCheck:
           type: boolean
           example: false
+    CustomCss:
+      type: object
+      required:
+        - css
+      properties:
+        css:
+          type: string
+          description: Custom CSS
+          example: ':root { --color-primary: 0 114 178; }'
     NetworkSettings:
       type: object
       properties:
@@ -2263,6 +2272,39 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MainSettings'
+  /settings/custom.css:
+    get:
+      summary: Get custom CSS
+      description: Retrieves custom CSS.
+      tags:
+        - settings
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomCss'
+    post:
+      summary: Update custom CSS
+      description: Updates custom CSS. Pass an empty string to remove it.
+      tags:
+        - settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomCss'
+      responses:
+        '200':
+          description: Custom CSS saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomCss'
+        '400':
+          description: Invalid custom CSS
   /settings/network:
     get:
       summary: Get network settings
@@ -3069,6 +3111,21 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SonarrSettings'
+  /custom.css:
+    get:
+      summary: Get custom CSS stylesheet
+      security: []
+      description: Returns the custom CSS stylesheet.
+      tags:
+        - settings
+      responses:
+        '200':
+          description: Custom CSS stylesheet
+          content:
+            text/css:
+              schema:
+                type: string
+                example: ':root { --color-primary: 0 114 178; }'
   /settings/public:
     get:
       summary: Get public settings
