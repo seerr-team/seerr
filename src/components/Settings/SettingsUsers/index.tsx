@@ -32,6 +32,8 @@ const messages = defineMessages('components.Settings.SettingsUsers', {
   mediaServerLogin: 'Enable {mediaServerName} Sign-In',
   mediaServerLoginTip:
     'Allow users to sign in using their {mediaServerName} account',
+  quickConnectOnly: 'Quick Connect Only',
+  quickConnectOnlyTip: 'Only allow users to sign in using Quick Connect',
   atLeastOneAuth: 'At least one authentication method must be selected.',
   newPlexLogin: 'Enable New {mediaServerName} Sign-In',
   newPlexLoginTip:
@@ -79,6 +81,9 @@ const SettingsUsers = () => {
     return <LoadingSpinner />;
   }
 
+  const isJellyfin =
+    settings.currentSettings.mediaServerType === MediaServerType.JELLYFIN ||
+    settings.currentSettings.mediaServerType === MediaServerType.EMBY;
   const mediaServerFormatValues = {
     mediaServerName:
       settings.currentSettings.mediaServerType === MediaServerType.JELLYFIN
@@ -109,6 +114,7 @@ const SettingsUsers = () => {
           initialValues={{
             localLogin: data?.localLogin,
             mediaServerLogin: data?.mediaServerLogin,
+            quickConnectOnly: data?.quickConnectOnly,
             newPlexLogin: data?.newPlexLogin,
             movieQuotaLimit: data?.defaultQuotas.movie.quotaLimit ?? 0,
             movieQuotaDays: data?.defaultQuotas.movie.quotaDays ?? 7,
@@ -123,6 +129,7 @@ const SettingsUsers = () => {
               await axios.post('/api/v1/settings/main', {
                 localLogin: values.localLogin,
                 mediaServerLogin: values.mediaServerLogin,
+                quickConnectOnly: values.quickConnectOnly,
                 newPlexLogin: values.newPlexLogin,
                 defaultQuotas: {
                   movie: {
@@ -196,13 +203,32 @@ const SettingsUsers = () => {
                           messages.mediaServerLoginTip,
                           mediaServerFormatValues
                         )}
-                        onChange={() =>
+                        onChange={() => {
                           setFieldValue(
                             'mediaServerLogin',
                             !values.mediaServerLogin
-                          )
-                        }
-                      />
+                          );
+                          setFieldValue('quickConnectOnly', false);
+                        }}
+                      >
+                        {values.mediaServerLogin && isJellyfin && (
+                          <LabeledCheckbox
+                            id="quickConnectOnly"
+                            label={intl.formatMessage(
+                              messages.quickConnectOnly
+                            )}
+                            description={intl.formatMessage(
+                              messages.quickConnectOnlyTip
+                            )}
+                            onChange={() =>
+                              setFieldValue(
+                                'quickConnectOnly',
+                                !values.quickConnectOnly
+                              )
+                            }
+                          />
+                        )}
+                      </LabeledCheckbox>
                       {!values.mediaServerLogin && values.localLogin && (
                         <div className="mt-4">
                           <Alert
