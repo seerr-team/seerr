@@ -66,6 +66,7 @@
     "https-proxy-agent": "^7.0.6",
     "ip-address": "^10.7.5",
     "js-yaml": "^4.3.2",
+    "liquidjs": "^10.27.0",
     "lodash": "4.18.1",
     "lru-cache": "11.2.1",
     "mime": "^4.1.0",
