@@ -44,7 +44,7 @@ export async function checkAvatarChanged(
 
     let headResponse;
     try {
-      headResponse = await axios.head(jellyfinAvatarUrl);
+      headResponse = await axios.head(jellyfinAvatarUrl, { timeout: 5000 });
       if (headResponse.status !== 200) {
         return { changed: false };
       }
