@@ -1,8 +1,6 @@
-import { getMetadataProvider } from '@server/api/metadata';
+import { getTvMetadataProvider } from '@server/api/metadata';
 import RottenTomatoes from '@server/api/rating/rottentomatoes';
 import TheMovieDb from '@server/api/themoviedb';
-import { ANIME_KEYWORD_ID } from '@server/api/themoviedb/constants';
-import type { TmdbKeyword } from '@server/api/themoviedb/interfaces';
 import { MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
@@ -21,11 +19,7 @@ tvRoutes.get('/:id', async (req, res, next) => {
     const tmdbTv = await tmdb.getTvShow({
       tvId: Number(req.params.id),
     });
-    const metadataProvider = tmdbTv.keywords.results.some(
-      (keyword: TmdbKeyword) => keyword.id === ANIME_KEYWORD_ID
-    )
-      ? await getMetadataProvider('anime')
-      : await getMetadataProvider('tv');
+    const metadataProvider = await getTvMetadataProvider(tmdbTv);
     const tv = await metadataProvider.getTvShow({
       tvId: Number(req.params.id),
       language: (req.query.language as string) ?? req.locale,
@@ -72,11 +66,7 @@ tvRoutes.get('/:id/season/:seasonNumber', async (req, res, next) => {
     const tmdbTv = await tmdb.getTvShow({
       tvId: Number(req.params.id),
     });
-    const metadataProvider = tmdbTv.keywords.results.some(
-      (keyword: TmdbKeyword) => keyword.id === ANIME_KEYWORD_ID
-    )
-      ? await getMetadataProvider('anime')
-      : await getMetadataProvider('tv');
+    const metadataProvider = await getTvMetadataProvider(tmdbTv);
 
     const season = await metadataProvider.getTvSeason({
       tvId: Number(req.params.id),
