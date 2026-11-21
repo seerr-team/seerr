@@ -125,6 +125,13 @@ const DiscoverSliderEdit = ({
     },
   });
 
+  // The Networks and Studios sliders keep a list in their data, which is
+  // edited inside the slider instead of being shown as a tag
+  const hasTagData =
+    !!slider.data &&
+    slider.type !== DiscoverSliderType.NETWORKS &&
+    slider.type !== DiscoverSliderType.STUDIOS;
+
   const getSliderTitle = (slider: Partial<DiscoverSlider>): string => {
     switch (slider.type) {
       case DiscoverSliderType.RECENTLY_ADDED:
@@ -197,7 +204,7 @@ const DiscoverSliderEdit = ({
       )}
       <div className="flex w-full flex-col rounded-t-lg border-l border-r border-t border-gray-800 bg-gray-900 p-4 text-gray-400 md:flex-row md:items-center md:space-x-2">
         <div
-          className={`${slider.data ? 'mb-4' : 'mb-0'} flex space-x-2 md:mb-0`}
+          className={`${hasTagData ? 'mb-4' : 'mb-0'} flex space-x-2 md:mb-0`}
         >
           <Bars3Icon className="h-6 w-6" />
           <div className="w-7/12 truncate md:w-full">
@@ -206,7 +213,7 @@ const DiscoverSliderEdit = ({
         </div>
         <div
           className={`pointer-events-none ${
-            slider.data ? 'mb-4' : ''
+            hasTagData ? 'mb-4' : ''
           } flex-1 md:mb-0`}
         >
           {(slider.type === DiscoverSliderType.TMDB_MOVIE_KEYWORD ||

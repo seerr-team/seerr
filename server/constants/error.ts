@@ -8,6 +8,10 @@ export enum ApiErrorCode {
   ConnectionError = 'CONNECTION_ERROR',
   SyncErrorGroupedFolders = 'SYNC_ERROR_GROUPED_FOLDERS',
   SyncErrorNoLibraries = 'SYNC_ERROR_NO_LIBRARIES',
+  InvalidNetworkList = 'INVALID_NETWORK_LIST',
+  TooManyNetworks = 'TOO_MANY_NETWORKS',
+  InvalidStudioList = 'INVALID_STUDIO_LIST',
+  TooManyStudios = 'TOO_MANY_STUDIOS',
   Unauthorized = 'UNAUTHORIZED',
   Unknown = 'UNKNOWN',
 }

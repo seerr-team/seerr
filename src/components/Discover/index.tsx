@@ -27,7 +27,12 @@ import {
   PencilIcon,
   PlusIcon,
 } from '@heroicons/react/24/solid';
-import { DiscoverSliderType } from '@server/constants/discover';
+import {
+  DiscoverSliderType,
+  MAX_DISCOVER_NETWORKS,
+  MAX_DISCOVER_STUDIOS,
+} from '@server/constants/discover';
+import { ApiErrorCode } from '@server/constants/error';
 import type DiscoverSlider from '@server/entity/DiscoverSlider';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
@@ -47,10 +52,52 @@ const messages = defineMessages('components.Discover', {
   resetsuccess: 'Sucessfully reset discover customization settings.',
   resetfailed:
     'Something went wrong resetting the discover customization settings.',
+  toomanynetworks: 'A network list can contain at most {maxNetworks} networks.',
+  invalidnetworklist: 'The list of networks is not valid.',
+  toomanystudios: 'A studio list can contain at most {maxStudios} studios.',
+  invalidstudiolist: 'The list of studios is not valid.',
   customizediscover: 'Customize Discover',
   stopediting: 'Stop Editing',
   createnewslider: 'Create New Slider',
 });
+
+// After a slider is created, edited or deleted on the server, merge the fresh
+// list into the local one so unsaved changes (order, enabled state and the
+// networks and studios lists) are not thrown away.
+const mergeRefreshedSliders = (
+  current: Partial<DiscoverSlider>[],
+  refreshed: DiscoverSlider[]
+): Partial<DiscoverSlider>[] => {
+  const refreshedById = new Map<number | undefined, DiscoverSlider>(
+    refreshed.map((slider) => [slider.id, slider])
+  );
+  const currentIds = new Set(current.map((slider) => slider.id));
+
+  // New sliders are created with order -1, so the server lists them first
+  const added = refreshed.filter((slider) => !currentIds.has(slider.id));
+
+  const kept = current.flatMap((slider) => {
+    const refreshedSlider = refreshedById.get(slider.id);
+
+    if (!refreshedSlider) {
+      return [];
+    }
+
+    // Built-in sliders cannot be edited elsewhere, so the local copy is newer
+    return [
+      refreshedSlider.isBuiltIn
+        ? slider
+        : {
+            ...slider,
+            title: refreshedSlider.title,
+            type: refreshedSlider.type,
+            data: refreshedSlider.data,
+          },
+    ];
+  });
+
+  return [...added, ...kept];
+};
 
 const Discover = () => {
   const intl = useIntl();
@@ -74,6 +121,29 @@ const Discover = () => {
 
   const hasChanged = () => !Object.is(discoverData, sliders);
 
+  // Used by the Networks and Studios sliders to change their list locally
+  const updateSliderData = (
+    sliderId: number | undefined,
+    data: string | null
+  ) =>
+    setSliders((currentSliders) =>
+      currentSliders.map((currentSlider) =>
+        currentSlider.id === sliderId
+          ? { ...currentSlider, data }
+          : currentSlider
+      )
+    );
+
+  const refreshSliders = async () => {
+    const refreshed = await mutate();
+
+    if (refreshed) {
+      setSliders((currentSliders) =>
+        mergeRefreshedSliders(currentSliders, refreshed)
+      );
+    }
+  };
+
   const updateSliders = async () => {
     try {
       await axios.post('/api/v1/settings/discover', sliders);
@@ -84,8 +154,31 @@ const Discover = () => {
       });
       setIsEditing(false);
       mutate();
-    } catch {
-      addToast(intl.formatMessage(messages.updatefailed), {
+    } catch (error) {
+      // A 400 carries an error code when the networks or studios list was
+      // rejected
+      const errorCode =
+        axios.isAxiosError(error) && error.response?.status === 400
+          ? error.response.data?.message
+          : undefined;
+
+      let toastMessage = intl.formatMessage(messages.updatefailed);
+
+      if (errorCode === ApiErrorCode.TooManyNetworks) {
+        toastMessage = intl.formatMessage(messages.toomanynetworks, {
+          maxNetworks: MAX_DISCOVER_NETWORKS,
+        });
+      } else if (errorCode === ApiErrorCode.InvalidNetworkList) {
+        toastMessage = intl.formatMessage(messages.invalidnetworklist);
+      } else if (errorCode === ApiErrorCode.TooManyStudios) {
+        toastMessage = intl.formatMessage(messages.toomanystudios, {
+          maxStudios: MAX_DISCOVER_STUDIOS,
+        });
+      } else if (errorCode === ApiErrorCode.InvalidStudioList) {
+        toastMessage = intl.formatMessage(messages.invalidstudiolist);
+      }
+
+      addToast(toastMessage, {
         appearance: 'error',
         autoDismiss: true,
       });
@@ -134,15 +227,7 @@ const Discover = () => {
                 </span>
               </div>
               <div className="p-4">
-                <CreateSlider
-                  onCreate={async () => {
-                    const newSliders = await mutate();
-
-                    if (newSliders) {
-                      setSliders(newSliders);
-                    }
-                  }}
-                />
+                <CreateSlider onCreate={refreshSliders} />
               </div>
             </div>
           )}
@@ -256,7 +341,13 @@ const Discover = () => {
             );
             break;
           case DiscoverSliderType.STUDIOS:
-            sliderComponent = <StudioSlider />;
+            sliderComponent = (
+              <StudioSlider
+                data={slider.data}
+                isEditing={isEditing}
+                onChange={(data) => updateSliderData(slider.id, data)}
+              />
+            );
             break;
           case DiscoverSliderType.POPULAR_TV:
             sliderComponent = (
@@ -283,7 +374,13 @@ const Discover = () => {
             );
             break;
           case DiscoverSliderType.NETWORKS:
-            sliderComponent = <NetworkSlider />;
+            sliderComponent = (
+              <NetworkSlider
+                data={slider.data}
+                isEditing={isEditing}
+                onChange={(data) => updateSliderData(slider.id, data)}
+              />
+            );
             break;
           case DiscoverSliderType.TMDB_MOVIE_KEYWORD:
             sliderComponent = (
@@ -405,17 +502,17 @@ const Discover = () => {
             <DiscoverSliderEdit
               key={`discover-slider-${slider.id}-edit`}
               slider={slider}
-              onDelete={async () => {
-                const newSliders = await mutate();
-
-                if (newSliders) {
-                  setSliders(newSliders);
-                }
-              }}
+              onDelete={refreshSliders}
               onEnable={() => {
-                const tempSliders = sliders.slice();
-                tempSliders[index].enabled = !tempSliders[index].enabled;
-                setSliders(tempSliders);
+                // Copy the slider instead of changing it, since the original
+                // object is shared with the SWR cache
+                setSliders(
+                  sliders.map((currentSlider, sliderIndex) =>
+                    sliderIndex === index
+                      ? { ...currentSlider, enabled: !currentSlider.enabled }
+                      : currentSlider
+                  )
+                );
               }}
               onPositionUpdate={(updatedItemId, position, hasClickedArrows) => {
                 const originalPosition = sliders.findIndex(

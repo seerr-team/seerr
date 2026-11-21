@@ -2,13 +2,13 @@ import CachedImage from '@app/components/Common/CachedImage';
 import Link from 'next/link';
 import { useState } from 'react';
 
-interface CompanyCardProps {
+interface BrandCardProps {
   name: string;
   image: string;
   url: string;
 }
 
-const CompanyCard = ({ image, url, name }: CompanyCardProps) => {
+const BrandCard = ({ image, url, name }: BrandCardProps) => {
   const [isHovered, setHovered] = useState(false);
 
   return (
@@ -50,4 +50,4 @@ const CompanyCard = ({ image, url, name }: CompanyCardProps) => {
   );
 };
 
-export default CompanyCard;
+export default BrandCard;
