@@ -94,10 +94,7 @@ class SonarrScanner
             'info'
           );
 
-          this.sonarrApi = new SonarrAPI({
-            apiKey: server.apiKey,
-            url: SonarrAPI.buildUrl(server, '/api/v3'),
-          });
+          this.sonarrApi = await SonarrAPI.fromSettings(server);
 
           this.items = await this.sonarrApi.getSeries();
 
@@ -297,10 +294,7 @@ class SonarrScanner
 
     for (const server of servers) {
       try {
-        const api = new SonarrAPI({
-          apiKey: server.apiKey,
-          url: SonarrAPI.buildUrl(server, '/api/v3'),
-        });
+        const api = await SonarrAPI.fromSettings(server);
         const series = await api.getLibrarySeriesByTvdbId(tvdbId);
 
         if (series.some((show) => show.tvdbId === tvdbId)) {

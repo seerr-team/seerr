@@ -610,10 +610,7 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
         }
 
         const tmdb = new TheMovieDb();
-        const sonarr = new SonarrAPI({
-          apiKey: sonarrSettings.apiKey,
-          url: SonarrAPI.buildUrl(sonarrSettings, '/api/v3'),
-        });
+        const sonarr = await SonarrAPI.fromSettings(sonarrSettings);
         const series = await tmdb.getTvShow({ tvId: media.tmdbId });
         const tvdbId = series.external_ids.tvdb_id ?? media.tvdbId;
 

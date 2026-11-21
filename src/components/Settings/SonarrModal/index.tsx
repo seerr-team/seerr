@@ -100,11 +100,31 @@ interface SonarrModalProps {
   onSave: () => void;
 }
 
+type TestedConnection = {
+  hostname: string;
+  port: number;
+  apiKey: string;
+  baseUrl?: string;
+  useSsl: boolean;
+};
+
 const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
   const intl = useIntl();
   const initialLoad = useRef(false);
   const { addToast } = useToasts();
   const [isValidated, setIsValidated] = useState(sonarr ? true : false);
+  const [testedConnection, setTestedConnection] =
+    useState<TestedConnection | null>(
+      sonarr
+        ? {
+            hostname: sonarr.hostname,
+            port: sonarr.port,
+            apiKey: sonarr.apiKey,
+            baseUrl: sonarr.baseUrl,
+            useSsl: sonarr.useSsl,
+          }
+        : null
+    );
   const [isTesting, setIsTesting] = useState(false);
   const [testResponse, setTestResponse] = useState<SonarrTestResponse>({
     profiles: [],
@@ -112,6 +132,20 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
     languageProfiles: null,
     tags: [],
   });
+
+  const isTestBoundToValues = (values: {
+    hostname?: string;
+    port?: number | string;
+    apiKey?: string;
+    baseUrl?: string;
+    ssl?: boolean;
+  }) =>
+    !!testedConnection &&
+    testedConnection.hostname === values.hostname &&
+    testedConnection.port === Number(values.port) &&
+    testedConnection.apiKey === values.apiKey &&
+    (testedConnection.baseUrl ?? '') === (values.baseUrl ?? '') &&
+    testedConnection.useSsl === !!values.ssl;
 
   const SonarrSettingsSchema = Yup.object().shape({
     name: Yup.string().required(
@@ -188,6 +222,13 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
           }
         );
 
+        setTestedConnection({
+          hostname,
+          port: Number(port),
+          apiKey,
+          baseUrl,
+          useSsl,
+        });
         setIsValidated(true);
         setTestResponse(response.data);
         if (initialLoad.current) {
@@ -197,6 +238,7 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
           });
         }
       } catch {
+        setTestedConnection(null);
         setIsValidated(false);
         if (initialLoad.current) {
           addToast(intl.formatMessage(messages.toastSonarrTestFailure), {
@@ -265,6 +307,10 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
         }}
         validationSchema={SonarrSettingsSchema}
         onSubmit={async (values) => {
+          if (!isValidated || !isTestBoundToValues(values)) {
+            return;
+          }
+
           try {
             const profileName = testResponse.profiles.find(
               (profile) => profile.id === Number(values.activeProfileId)
@@ -306,6 +352,8 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
               preventSearch: !values.enableSearch,
               tagRequests: values.tagRequests,
               monitorNewItems: values.monitorNewItems,
+              apiMajorVersion:
+                testResponse.apiMajorVersion ?? sonarr?.apiMajorVersion,
             };
             if (!sonarr) {
               await axios.post('/api/v1/settings/sonarr', submission);
@@ -357,9 +405,6 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
                     port: values.port,
                     useSsl: values.ssl,
                   });
-                  if (!values.baseUrl || values.baseUrl === '/') {
-                    setFieldValue('baseUrl', testResponse.urlBase);
-                  }
                 }
               }}
               secondaryDisabled={
@@ -369,7 +414,13 @@ const SonarrModal = ({ onClose, sonarr, onSave }: SonarrModalProps) => {
                 isTesting ||
                 isSubmitting
               }
-              okDisabled={!isValidated || isSubmitting || isTesting || !isValid}
+              okDisabled={
+                !isValidated ||
+                !isTestBoundToValues(values) ||
+                isSubmitting ||
+                isTesting ||
+                !isValid
+              }
               onOk={() => handleSubmit()}
               title={
                 !sonarr
