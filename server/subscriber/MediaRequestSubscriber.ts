@@ -6,7 +6,6 @@ import type {
 } from '@server/api/servarr/sonarr';
 import SonarrAPI from '@server/api/servarr/sonarr';
 import TheMovieDb from '@server/api/themoviedb';
-import { ANIME_KEYWORD_ID } from '@server/api/themoviedb/constants';
 import {
   MediaRequestStatus,
   MediaStatus,
@@ -18,6 +17,11 @@ import { MediaRequest } from '@server/entity/MediaRequest';
 import Season from '@server/entity/Season';
 import SeasonRequest from '@server/entity/SeasonRequest';
 import notificationManager, { Notification } from '@server/lib/notifications';
+import {
+  isAnimeMedia,
+  resolveService,
+  resolveServiceDefaults,
+} from '@server/lib/serviceDefaults';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { withNestedTransaction } from '@server/utils/nestedTransaction';
@@ -204,44 +208,33 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           return;
         }
 
-        let radarrSettings = settings.radarr.find(
-          (radarr) => radarr.isDefault && radarr.is4k === entity.is4k
+        const { service: radarrSettings, fellBack } = resolveService(
+          settings.radarr,
+          entity.is4k,
+          entity.serverId
         );
-        let useRequestOverrides = true;
+        const useRequestOverrides = !fellBack;
 
-        if (
-          entity.serverId !== null &&
-          entity.serverId >= 0 &&
-          radarrSettings?.id !== entity.serverId
-        ) {
-          const overrideServer = settings.radarr.find(
-            (radarr) =>
-              radarr.id === entity.serverId && radarr.is4k === entity.is4k
+        if (fellBack) {
+          logger.warn(
+            `Request server ID ${entity.serverId} is not a configured ${
+              entity.is4k ? '4K' : 'non-4K'
+            } Radarr server, falling back to the default server`,
+            {
+              label: 'Media Request',
+              requestId: entity.id,
+              mediaId: entity.media.id,
+            }
           );
-
-          if (overrideServer) {
-            radarrSettings = overrideServer;
-            logger.info(
-              `Request has an override server: ${radarrSettings.name}`,
-              {
-                label: 'Media Request',
-                requestId: entity.id,
-                mediaId: entity.media.id,
-              }
-            );
-          } else {
-            useRequestOverrides = false;
-            logger.warn(
-              `Request server ID ${entity.serverId} is not a configured ${
-                entity.is4k ? '4K' : 'non-4K'
-              } Radarr server, falling back to the default server`,
-              {
-                label: 'Media Request',
-                requestId: entity.id,
-                mediaId: entity.media.id,
-              }
-            );
-          }
+        } else if (radarrSettings && !radarrSettings.isDefault) {
+          logger.info(
+            `Request has an override server: ${radarrSettings.name}`,
+            {
+              label: 'Media Request',
+              requestId: entity.id,
+              mediaId: entity.media.id,
+            }
+          );
         }
 
         if (!radarrSettings) {
@@ -260,9 +253,14 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           return;
         }
 
-        let rootFolder = radarrSettings.activeDirectory;
-        let qualityProfile = radarrSettings.activeProfileId;
-        let tags = radarrSettings.tags ? [...radarrSettings.tags] : [];
+        const defaults = resolveServiceDefaults(
+          MediaType.MOVIE,
+          radarrSettings,
+          false
+        );
+        let rootFolder = defaults.rootFolder;
+        let qualityProfile = defaults.profileId;
+        let tags = defaults.tags;
 
         if (
           useRequestOverrides &&
@@ -527,44 +525,33 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           return;
         }
 
-        let sonarrSettings = settings.sonarr.find(
-          (sonarr) => sonarr.isDefault && sonarr.is4k === entity.is4k
+        const { service: sonarrSettings, fellBack } = resolveService(
+          settings.sonarr,
+          entity.is4k,
+          entity.serverId
         );
-        let useRequestOverrides = true;
+        const useRequestOverrides = !fellBack;
 
-        if (
-          entity.serverId !== null &&
-          entity.serverId >= 0 &&
-          sonarrSettings?.id !== entity.serverId
-        ) {
-          const overrideServer = settings.sonarr.find(
-            (sonarr) =>
-              sonarr.id === entity.serverId && sonarr.is4k === entity.is4k
+        if (fellBack) {
+          logger.warn(
+            `Request server ID ${entity.serverId} is not a configured ${
+              entity.is4k ? '4K' : 'non-4K'
+            } Sonarr server, falling back to the default server`,
+            {
+              label: 'Media Request',
+              requestId: entity.id,
+              mediaId: entity.media.id,
+            }
           );
-
-          if (overrideServer) {
-            sonarrSettings = overrideServer;
-            logger.info(
-              `Request has an override server: ${sonarrSettings.name}`,
-              {
-                label: 'Media Request',
-                requestId: entity.id,
-                mediaId: entity.media.id,
-              }
-            );
-          } else {
-            useRequestOverrides = false;
-            logger.warn(
-              `Request server ID ${entity.serverId} is not a configured ${
-                entity.is4k ? '4K' : 'non-4K'
-              } Sonarr server, falling back to the default server`,
-              {
-                label: 'Media Request',
-                requestId: entity.id,
-                mediaId: entity.media.id,
-              }
-            );
-          }
+        } else if (sonarrSettings && !sonarrSettings.isDefault) {
+          logger.info(
+            `Request has an override server: ${sonarrSettings.name}`,
+            {
+              label: 'Media Request',
+              requestId: entity.id,
+              mediaId: entity.media.id,
+            }
+          );
         }
 
         if (!sonarrSettings) {
@@ -624,9 +611,7 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           throw new Error('TVDB ID not found');
         }
 
-        const isAnime = series.keywords.results.some(
-          (keyword) => keyword.id === ANIME_KEYWORD_ID
-        );
+        const isAnime = isAnimeMedia(series);
 
         // seriesType only controls how Sonarr parses/numbers episodes
         // it is sent in the addSeries payload and must not gate anime routing
@@ -637,25 +622,15 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           seriesType = sonarrSettings.animeSeriesType ?? 'anime';
         }
 
-        let rootFolder =
-          isAnime && sonarrSettings.activeAnimeDirectory
-            ? sonarrSettings.activeAnimeDirectory
-            : sonarrSettings.activeDirectory;
-        let qualityProfile =
-          isAnime && sonarrSettings.activeAnimeProfileId
-            ? sonarrSettings.activeAnimeProfileId
-            : sonarrSettings.activeProfileId;
-        let languageProfile =
-          isAnime && sonarrSettings.activeAnimeLanguageProfileId
-            ? sonarrSettings.activeAnimeLanguageProfileId
-            : sonarrSettings.activeLanguageProfileId;
-        let tags = isAnime
-          ? sonarrSettings.animeTags
-            ? [...sonarrSettings.animeTags]
-            : []
-          : sonarrSettings.tags
-            ? [...sonarrSettings.tags]
-            : [];
+        const defaults = resolveServiceDefaults(
+          MediaType.TV,
+          sonarrSettings,
+          isAnime
+        );
+        let rootFolder = defaults.rootFolder;
+        let qualityProfile = defaults.profileId;
+        let languageProfile = defaults.languageProfileId;
+        let tags = defaults.tags;
 
         if (
           useRequestOverrides &&

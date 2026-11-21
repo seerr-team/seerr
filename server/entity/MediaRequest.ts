@@ -9,6 +9,12 @@ import type { MediaRequestBody } from '@server/interfaces/api/requestInterfaces'
 import notificationManager, { Notification } from '@server/lib/notifications';
 import overrideRules from '@server/lib/overrideRules';
 import { Permission } from '@server/lib/permissions';
+import {
+  isAnimeMedia,
+  resolveService,
+  servicesFor,
+  stripDefaultOverrides,
+} from '@server/lib/serviceDefaults';
 import { getSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { DbAwareColumn, resolveDbType } from '@server/utils/DbColumnHelper';
@@ -271,25 +277,20 @@ export class MediaRequest {
       isAdvanced && requestBody.serverId != null && requestBody.serverId >= 0;
 
     // An unknown serverId, or one for the other 4K type, falls back to the default server
+    const { fellBack } = resolveService(
+      servicesFor(requestBody.mediaType),
+      requestBody.is4k || false,
+      requestsServer ? requestBody.serverId : undefined
+    );
     const requestedServiceId =
-      requestsServer &&
-      (requestBody.mediaType === MediaType.MOVIE
-        ? settings.radarr
-        : settings.sonarr
-      ).some(
-        (server) =>
-          server.id === requestBody.serverId && server.is4k === requestBody.is4k
-      )
-        ? requestBody.serverId
-        : undefined;
+      requestsServer && !fellBack ? requestBody.serverId : undefined;
 
-    const useRequestedOptions =
-      isAdvanced && (!requestsServer || requestedServiceId !== undefined);
+    const useRequestedOptions = isAdvanced && !fellBack;
 
     let rootFolder = useRequestedOptions ? requestBody.rootFolder : undefined;
     let profileId = useRequestedOptions ? requestBody.profileId : undefined;
     let tags = useRequestedOptions ? requestBody.tags : undefined;
-    const languageProfileId = useRequestedOptions
+    let languageProfileId = useRequestedOptions
       ? requestBody.languageProfileId
       : undefined;
 
@@ -309,6 +310,21 @@ export class MediaRequest {
           tags: tags ? null : ruleResult.tags,
         }
       : ruleResult;
+
+    // After the rules, so a default an advanced requester sent still keeps a rule out
+    const chosen = stripDefaultOverrides({
+      mediaType: requestBody.mediaType,
+      is4k: requestBody.is4k || false,
+      serviceId: requestedServiceId,
+      isAnime: isAnimeMedia(tmdbMedia),
+      overrides: { rootFolder, profileId, languageProfileId, tags },
+      covered: ruleResult.covered,
+    });
+    rootFolder = chosen.rootFolder ?? undefined;
+    profileId = chosen.profileId ?? undefined;
+    languageProfileId = chosen.languageProfileId ?? undefined;
+    tags = chosen.tags ?? undefined;
+
     if (overrideRulesResult.rootFolder) {
       rootFolder = overrideRulesResult.rootFolder;
     }
@@ -568,17 +584,17 @@ export class MediaRequest {
   @Column({ default: false })
   public is4k: boolean;
 
-  @Column({ nullable: true })
-  public serverId: number;
+  @Column({ nullable: true, type: 'int' })
+  public serverId?: number | null;
 
-  @Column({ nullable: true })
-  public profileId: number;
+  @Column({ nullable: true, type: 'int' })
+  public profileId?: number | null;
 
-  @Column({ nullable: true })
-  public rootFolder: string;
+  @Column({ nullable: true, type: 'varchar' })
+  public rootFolder?: string | null;
 
-  @Column({ nullable: true })
-  public languageProfileId: number;
+  @Column({ nullable: true, type: 'int' })
+  public languageProfileId?: number | null;
 
   @Column({
     type: 'text',
@@ -609,7 +625,7 @@ export class MediaRequest {
       },
     },
   })
-  public tags?: number[];
+  public tags?: number[] | null;
 
   @Column({ default: false })
   public isAutoRequest: boolean;
