@@ -7,6 +7,7 @@ import { MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import Media from '@server/entity/Media';
 import { Watchlist } from '@server/entity/Watchlist';
+import { isTvRestricted } from '@server/lib/contentRating';
 import logger from '@server/logger';
 import { mapTvResult } from '@server/models/Search';
 import { mapSeasonWithEpisodes, mapTvDetails } from '@server/models/Tv';
@@ -21,6 +22,14 @@ tvRoutes.get('/:id', async (req, res, next) => {
     const tmdbTv = await tmdb.getTvShow({
       tvId: Number(req.params.id),
     });
+
+    if (isTvRestricted(req.user, tmdbTv)) {
+      return res.status(403).json({
+        status: 403,
+        message: 'Content restricted by parental controls.',
+      });
+    }
+
     const metadataProvider = tmdbTv.keywords.results.some(
       (keyword: TmdbKeyword) => keyword.id === ANIME_KEYWORD_ID
     )
@@ -72,6 +81,14 @@ tvRoutes.get('/:id/season/:seasonNumber', async (req, res, next) => {
     const tmdbTv = await tmdb.getTvShow({
       tvId: Number(req.params.id),
     });
+
+    if (isTvRestricted(req.user, tmdbTv)) {
+      return res.status(403).json({
+        status: 403,
+        message: 'Content restricted by parental controls.',
+      });
+    }
+
     const metadataProvider = tmdbTv.keywords.results.some(
       (keyword: TmdbKeyword) => keyword.id === ANIME_KEYWORD_ID
     )
@@ -197,6 +214,13 @@ tvRoutes.get('/:id/ratings', async (req, res, next) => {
     const tv = await tmdb.getTvShow({
       tvId: Number(req.params.id),
     });
+
+    if (isTvRestricted(req.user, tv)) {
+      return res.status(403).json({
+        status: 403,
+        message: 'Content restricted by parental controls.',
+      });
+    }
 
     const rtratings = await rtapi.getTVRatings(
       tv.name,

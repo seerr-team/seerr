@@ -1,4 +1,8 @@
 import TheMovieDb from '@server/api/themoviedb';
+import type {
+  TmdbMovieDetails,
+  TmdbTvDetails,
+} from '@server/api/themoviedb/interfaces';
 import {
   MediaRequestStatus,
   MediaStatus,
@@ -6,6 +10,7 @@ import {
 } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import type { MediaRequestBody } from '@server/interfaces/api/requestInterfaces';
+import { isMovieRestricted, isTvRestricted } from '@server/lib/contentRating';
 import notificationManager, { Notification } from '@server/lib/notifications';
 import overrideRules from '@server/lib/overrideRules';
 import { Permission } from '@server/lib/permissions';
@@ -40,6 +45,7 @@ export class QuotaRestrictedError extends Error {}
 export class DuplicateMediaRequestError extends Error {}
 export class NoSeasonsAvailableError extends Error {}
 export class BlocklistedMediaError extends Error {}
+export class ContentRatingRestrictedError extends Error {}
 
 type MediaRequestOptions = {
   isAutoRequest?: boolean;
@@ -170,6 +176,16 @@ export class MediaRequest {
       requestBody.mediaType === MediaType.MOVIE
         ? await tmdb.getMovie({ movieId: requestBody.mediaId })
         : await tmdb.getTvShow({ tvId: requestBody.mediaId });
+
+    if (
+      requestBody.mediaType === MediaType.MOVIE
+        ? isMovieRestricted(requestUser, tmdbMedia as TmdbMovieDetails)
+        : isTvRestricted(requestUser, tmdbMedia as TmdbTvDetails)
+    ) {
+      throw new ContentRatingRestrictedError(
+        'This content is restricted by your parental controls.'
+      );
+    }
 
     let media = await mediaRepository.findOne({
       where: {
