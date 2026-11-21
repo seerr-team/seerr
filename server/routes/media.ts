@@ -27,28 +27,30 @@ mediaRoutes.get('/', async (req, res, next) => {
   const pageSize = req.query.take ? Number(req.query.take) : 20;
   const skip = req.query.skip ? Number(req.query.skip) : 0;
 
-  let statusFilter = undefined;
+  let acceptedStatuses: MediaStatus[] | undefined;
 
   switch (req.query.filter) {
     case 'available':
-      statusFilter = MediaStatus.AVAILABLE;
+      acceptedStatuses = [MediaStatus.AVAILABLE];
       break;
     case 'partial':
-      statusFilter = MediaStatus.PARTIALLY_AVAILABLE;
+      acceptedStatuses = [MediaStatus.PARTIALLY_AVAILABLE];
       break;
     case 'allavailable':
-      statusFilter = In([
+      acceptedStatuses = [
         MediaStatus.AVAILABLE,
         MediaStatus.PARTIALLY_AVAILABLE,
-      ]);
+      ];
       break;
     case 'processing':
-      statusFilter = MediaStatus.PROCESSING;
+      acceptedStatuses = [MediaStatus.PROCESSING];
       break;
     case 'pending':
-      statusFilter = MediaStatus.PENDING;
+      acceptedStatuses = [MediaStatus.PENDING];
       break;
   }
+
+  const statusFilter = acceptedStatuses ? In(acceptedStatuses) : undefined;
 
   let sortFilter: FindOneOptions<Media>['order'] = {
     id: 'DESC',
@@ -75,12 +77,50 @@ mediaRoutes.get('/', async (req, res, next) => {
   }
 
   try {
-    const [media, mediaCount] = await mediaRepository.findAndCount({
-      order: sortFilter,
-      where: whereClause,
-      take: pageSize,
-      skip,
-    });
+    const mediaCount = await mediaRepository.count({ where: whereClause });
+
+    // This endpoint feeds the "Recently Added" slider, so availability has to
+    // be reported from the requesting user's point of view. The requested
+    // filter is then applied a second time: an item hidden from that user is no
+    // longer in the state the caller asked for, and without this pass the
+    // slider shows a restricted user exactly the titles the media server hides
+    // from them, merely flagged unavailable.
+    //
+    // Dropping them would leave a short page, so the library is walked further
+    // until the page is full. The walk is bounded, because a user who can see
+    // very little must not turn this endpoint into a full table scan; such a
+    // user gets a short page rather than an expensive one.
+    const results: Media[] = [];
+    const maxRowsScanned = pageSize * 10;
+    let offset = skip;
+    let rowsScanned = 0;
+
+    while (results.length < pageSize && rowsScanned < maxRowsScanned) {
+      const batch = await mediaRepository.find({
+        order: sortFilter,
+        where: whereClause,
+        take: pageSize,
+        skip: offset,
+      });
+
+      if (!batch.length) {
+        break;
+      }
+
+      offset += batch.length;
+      rowsScanned += batch.length;
+
+      const restricted = req.user
+        ? await Media.applySharingRestrictions(req.user, batch)
+        : batch;
+
+      results.push(
+        ...(acceptedStatuses
+          ? restricted.filter((item) => acceptedStatuses.includes(item.status))
+          : restricted)
+      );
+    }
+
     return res.status(200).json({
       pageInfo: {
         pages: Math.ceil(mediaCount / pageSize),
@@ -88,7 +128,7 @@ mediaRoutes.get('/', async (req, res, next) => {
         results: mediaCount,
         page: Math.ceil(skip / pageSize) + 1,
       },
-      results: media,
+      results: results.slice(0, pageSize),
     } as MediaResultsResponse);
   } catch (e) {
     next({ status: 500, message: e.message });

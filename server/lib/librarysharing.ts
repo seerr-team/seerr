@@ -1,0 +1,152 @@
+import { MediaType } from '@server/constants/media';
+import { MediaServerType } from '@server/constants/server';
+import type Media from '@server/entity/Media';
+import type { User } from '@server/entity/User';
+import { resolveVisibleJellyfinItemIds } from '@server/lib/jellyfinsharing';
+import {
+  grantLabelAccess,
+  resolveVisiblePlexRatingKeys,
+} from '@server/lib/plexsharing';
+import { getSettings } from '@server/lib/settings';
+import logger from '@server/logger';
+
+/**
+ * The set of media server item ids a restricted user is allowed to see, or
+ * `null` when the user is unrestricted and availability needs no filtering.
+ */
+export type VisibleMediaIds = Set<string> | null;
+
+interface CacheEntry {
+  expiresAt: number;
+  ids: VisibleMediaIds;
+}
+
+/**
+ * Resolving the visible ids costs a handful of media server requests, so the
+ * result is cached per user. Sharing rules change rarely, and a stale entry
+ * only delays a restriction by a few minutes.
+ */
+const CACHE_TTL_MS = 5 * 60 * 1000;
+const cache = new Map<number, CacheEntry>();
+
+/**
+ * Resolution takes several requests, so concurrent callers for the same user
+ * share the one in flight instead of each starting their own.
+ */
+const inFlight = new Map<number, Promise<VisibleMediaIds>>();
+
+export const clearLibrarySharingCache = (userId?: number): void => {
+  if (userId === undefined) {
+    cache.clear();
+    inFlight.clear();
+    return;
+  }
+
+  cache.delete(userId);
+  inFlight.delete(userId);
+};
+
+const resolve = async (user: User): Promise<VisibleMediaIds> => {
+  switch (getSettings().main.mediaServerType) {
+    case MediaServerType.PLEX:
+      return resolveVisiblePlexRatingKeys(user);
+    case MediaServerType.JELLYFIN:
+    case MediaServerType.EMBY:
+      return resolveVisibleJellyfinItemIds(user);
+    default:
+      return null;
+  }
+};
+
+export const getVisibleMediaIds = async (
+  user: User
+): Promise<VisibleMediaIds> => {
+  const cached = cache.get(user.id);
+
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.ids;
+  }
+
+  const pending = inFlight.get(user.id);
+
+  if (pending) {
+    return pending;
+  }
+
+  const resolution = resolve(user)
+    .then((ids) => {
+      cache.set(user.id, { ids, expiresAt: Date.now() + CACHE_TTL_MS });
+      return ids;
+    })
+    .catch((e) => {
+      logger.error('Failed to resolve media server sharing restrictions', {
+        label: 'Media Server Sharing',
+        userId: user.id,
+        errorMessage: e.message,
+      });
+      // Fail open: a transient error must not hide the whole library.
+      return null;
+    })
+    .finally(() => {
+      inFlight.delete(user.id);
+    });
+
+  inFlight.set(user.id, resolution);
+
+  return resolution;
+};
+
+/**
+ * Returns the identifiers a media item carries on the configured media server,
+ * for the regular and the 4K version.
+ */
+export const getMediaServerItemIds = (
+  media: Media
+): { id?: string | null; id4k?: string | null } => {
+  if (getSettings().main.mediaServerType === MediaServerType.PLEX) {
+    return { id: media.ratingKey, id4k: media.ratingKey4k };
+  }
+
+  return { id: media.jellyfinMediaId, id4k: media.jellyfinMediaId4k };
+};
+
+/**
+ * Grants the requester access to media that has just become available, when the
+ * owner opted into it.
+ *
+ * Both routes a request can take end up here: the library already held the
+ * media, or a download landed and the scanner made it available. Granting from
+ * only one of them leaves the requester without access on the other, which is
+ * the more common case since most requests are downloaded rather than already
+ * present.
+ *
+ * Never throws: a failed grant must not hold up the request it belongs to.
+ */
+export const grantLibraryAccessForRequest = async (
+  user: User | null | undefined,
+  ratingKey: string | null | undefined,
+  mediaType: MediaType,
+  requestId: number
+): Promise<void> => {
+  if (!getSettings().plex.grantLabelOnApproval || !user || !ratingKey) {
+    return;
+  }
+
+  try {
+    const granted = await grantLabelAccess(user, {
+      ratingKey,
+      type: mediaType === MediaType.MOVIE ? 'movie' : 'show',
+    });
+
+    if (granted) {
+      // The user's visible set just changed, so drop the cached copy.
+      clearLibrarySharingCache(user.id);
+    }
+  } catch (e) {
+    logger.error('Failed to grant media server library access for request', {
+      label: 'Media Request',
+      requestId,
+      errorMessage: e instanceof Error ? e.message : String(e),
+    });
+  }
+};
