@@ -10,7 +10,8 @@ export type AvailableCacheIds =
   | 'github'
   | 'plextv'
   | 'plexwatchlist'
-  | 'tvdb';
+  | 'tvdb'
+  | 'anilist';
 
 const DEFAULT_TTL = 300;
 
@@ -47,6 +48,9 @@ const PLEX_WATCHLIST_MAX_KEYS = 500;
 // Several keys per show, holding the largest payloads of any tier as the extended
 // series lookup carries every episode.
 const TVDB_MAX_KEYS = 500;
+
+// Seasonal pages plus one resolved list per season.
+const ANILIST_MAX_KEYS = 16;
 
 export interface CacheStats {
   hits: number;
@@ -249,6 +253,10 @@ class CacheManager {
     tvdb: new Cache('tvdb', 'The TVDB API', {
       stdTtl: 21600,
       max: TVDB_MAX_KEYS,
+    }),
+    anilist: new Cache('anilist', 'AniList API', {
+      stdTtl: 86400,
+      max: ANILIST_MAX_KEYS,
     }),
   };
 
