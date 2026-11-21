@@ -84,7 +84,12 @@ class Media {
         const activeIds = new Set(activeRequestMediaIds.map((row) => row.id));
 
         relatedMedia.forEach((m) => {
-          m.hasActiveRequest = activeIds.has(m.id);
+          m.hasActiveRequest =
+            activeIds.has(m.id) ||
+            m.status === MediaStatus.PENDING ||
+            m.status === MediaStatus.PROCESSING ||
+            m.status4k === MediaStatus.PENDING ||
+            m.status4k === MediaStatus.PROCESSING;
         });
       }
 
