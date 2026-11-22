@@ -70,7 +70,10 @@ class WatchlistSync {
       response.items.map((i) => ({
         tmdbId: i.tmdbId,
         mediaType: i.type === 'show' ? MediaType.TV : MediaType.MOVIE,
-      }))
+      })),
+      // Sync decides what already exists in the library, so it must see the
+      // real status rather than one downgraded by sharing restrictions.
+      { applySharingRestrictions: false }
     );
 
     const watchlistTmdbIds = response.items.map((i) => i.tmdbId);
