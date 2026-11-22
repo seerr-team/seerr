@@ -89,6 +89,10 @@ workflows:
         - 'actions/checkout@v7.0.1'
         - 'actions/create-github-app-token@v3.3.0'
         - 'helm/chart-testing-action@v2.9.0'
+    '.github/workflows/scorecard.yml':
+        - 'actions/checkout@v7.0.1'
+        - 'github/codeql-action@v4.39.3'
+        - 'ossf/scorecard-action@v2.6.0'
     '.github/workflows/seerr-labeller.yml':
         - 'actions/github-script@v9.0.0'
     '.github/workflows/stale.yml':
@@ -278,6 +282,11 @@ dependencies:
         commit: 'sha1-a9a95522b26fe6403f7bb24031f21fb573d0f5ff'
         owner_id: 24392180
         repo_id: 377964066
+    'ossf/scorecard-action@v2.6.0':
+        ref: 'v2.6.0'
+        commit: 'sha1-23f22cd43608bae7a1f1fa2603d7314dee9538a5'
+        owner_id: 67707773
+        repo_id: 421101922
     'pnpm/action-setup@v6.1.1':
         ref: 'v6.1.1'
         commit: 'sha1-73e46992e05b19abd31f2f3c20e0e7370d762115'
