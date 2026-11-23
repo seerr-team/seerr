@@ -663,9 +663,25 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
 
         if (!tvdbId) {
           const requestRepository = manager.getRepository(MediaRequest);
-          await mediaRepository.remove(media);
-          await requestRepository.remove(entity);
-          throw new Error('TVDB ID not found');
+          entity.status = MediaRequestStatus.FAILED;
+          await requestRepository.save(entity);
+
+          logger.warn(
+            'Could not resolve a TVDB ID for series request, marking status as FAILED',
+            {
+              label: 'Media Request',
+              requestId: entity.id,
+              mediaId: entity.media.id,
+              tmdbId: media.tmdbId,
+            }
+          );
+
+          MediaRequest.sendNotification(
+            entity,
+            media,
+            Notification.MEDIA_FAILED
+          );
+          return false;
         }
 
         const isAnime = series.keywords.results.some(

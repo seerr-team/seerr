@@ -1331,6 +1331,52 @@ describe('POST /request/:requestId/approve, season missing from Sonarr', () => {
     });
     assert.strictEqual(retried.status, MediaRequestStatus.APPROVED);
   });
+
+  it('fails the request instead of deleting the series when there is no TVDB ID', async (t) => {
+    // Neither TMDB nor the media row has a TVDB ID
+    const media = await getRepository(Media).save(
+      new Media({
+        mediaType: MediaType.TV,
+        tmdbId: 67890,
+        status: MediaStatus.AVAILABLE,
+        status4k: MediaStatus.UNKNOWN,
+        seasons: [
+          new Season({
+            seasonNumber: 1,
+            status: MediaStatus.AVAILABLE,
+            status4k: MediaStatus.UNKNOWN,
+          }),
+        ],
+      })
+    );
+    const requester = await seedUser('demo@seerr.dev');
+    const otherRequester = await seedUser('admin@seerr.dev');
+    const mediaRequest = await seedTvRequest(requester, [1, 2]);
+    const otherRequest = await seedTvRequest(otherRequester, [3]);
+
+    configureSonarr([{}]);
+    t.after(() => configureSonarr([]));
+
+    const admin = await loginAs('admin@seerr.dev', 'test1234');
+    const res = await admin.post(`/request/${mediaRequest.id}/approve`);
+
+    assert.strictEqual(res.status, 200);
+    await waitForNotification(Notification.MEDIA_FAILED);
+
+    const failed = await getRepository(MediaRequest).findOneOrFail({
+      where: { id: mediaRequest.id },
+    });
+    assert.strictEqual(failed.status, MediaRequestStatus.FAILED);
+
+    const keptMedia = await getRepository(Media).findOneOrFail({
+      where: { id: media.id },
+    });
+    assert.strictEqual(keptMedia.status, MediaStatus.AVAILABLE);
+
+    await getRepository(MediaRequest).findOneOrFail({
+      where: { id: otherRequest.id },
+    });
+  });
 });
 
 describe('POST /request/:requestId/retry', () => {
