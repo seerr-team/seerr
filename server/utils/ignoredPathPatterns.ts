@@ -32,7 +32,7 @@ export function sanitizeIgnoredPathPatterns(patterns: unknown[]): {
 
   for (const pattern of patterns) {
     if (typeof pattern !== 'string') {
-      rejected.add(String(pattern));
+      rejected.add(`<non-string: ${typeof pattern}>`);
       continue;
     }
 

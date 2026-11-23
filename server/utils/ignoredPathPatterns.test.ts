@@ -45,11 +45,15 @@ describe('ignoredPathPatterns', () => {
       '(',
       '(',
       42,
-      null,
+      { toString: null },
       'placeholders/',
     ]);
 
     assert.deepEqual(cleaned, ['placeholders/']);
-    assert.deepEqual(rejected, ['(', '42', 'null']);
+    assert.deepEqual(rejected, [
+      '(',
+      '<non-string: number>',
+      '<non-string: object>',
+    ]);
   });
 });
