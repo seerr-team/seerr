@@ -1711,5 +1711,6 @@
   "components.UserList.searchUsers": "Cerca…",
   "components.Settings.SettingsMain.hideRequested": "Amaga els continguts multimèdia sol·licitats",
   "components.Settings.SettingsMain.hideRequestedTip": "Amaga els continguts multimèdia que s'han sol·licitat des de les pàgines de descobriment però no els resultats de la cerca",
-  "components.Login.demoModeInfo": "El mode de demostració està activat. Fes servir les credencials de demostració per iniciar la sessió."
+  "components.Login.demoModeInfo": "El mode de demostració està activat. Fes servir les credencials de demostració per iniciar la sessió.",
+  "components.RequestModal.noSeasonsAvailable": "Totes les temporades seleccionades ja s'han sol·licitat o ja estan disponibles."
 }
