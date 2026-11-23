@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { afterEach, before, beforeEach, describe, it, mock } from 'node:test';
 
+import type { AddSeriesOptions } from '@server/api/servarr/sonarr';
 import SonarrAPI from '@server/api/servarr/sonarr';
 import TheMovieDb from '@server/api/themoviedb';
 import type {
@@ -1287,6 +1288,48 @@ describe('POST /request/:requestId/approve, season missing from Sonarr', () => {
       where: { id: mediaRequest.id },
     });
     assert.strictEqual(failed.status, MediaRequestStatus.FAILED);
+  });
+
+  it('sends the request to Sonarr on retry when a requested season has no row', async (t) => {
+    const requester = await seedUser('demo@seerr.dev');
+    const mediaRequest = await seedTvRequest(requester, [1, 2]);
+    mediaRequest.status = MediaRequestStatus.FAILED;
+    await getRepository(MediaRequest).save(mediaRequest);
+
+    // Sonarr never had season 2, so the scanner made no row for it
+    mediaRequest.media.tvdbId = 454109;
+    mediaRequest.media.status = MediaStatus.AVAILABLE;
+    mediaRequest.media.seasons = [
+      new Season({
+        seasonNumber: 1,
+        status: MediaStatus.AVAILABLE,
+        status4k: MediaStatus.UNKNOWN,
+      }),
+    ];
+    await getRepository(Media).save(mediaRequest.media);
+
+    configureSonarr([{}]);
+    t.after(() => configureSonarr([]));
+    const sentSeasons: number[][] = [];
+    t.mock.method(
+      SonarrAPI.prototype,
+      'addSeries',
+      async (options: AddSeriesOptions) => {
+        sentSeasons.push([...options.seasons].sort((a, b) => a - b));
+        return { id: 9, title: 'Test Show', titleSlug: 'test-show' };
+      }
+    );
+
+    const admin = await loginAs('admin@seerr.dev', 'test1234');
+    const res = await admin.post(`/request/${mediaRequest.id}/retry`);
+
+    assert.strictEqual(res.status, 200);
+    assert.deepStrictEqual(sentSeasons, [[1, 2]]);
+
+    const retried = await getRepository(MediaRequest).findOneOrFail({
+      where: { id: mediaRequest.id },
+    });
+    assert.strictEqual(retried.status, MediaRequestStatus.APPROVED);
   });
 });
 

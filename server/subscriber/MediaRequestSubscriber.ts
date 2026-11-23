@@ -183,6 +183,22 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
     }
   }
 
+  // A series can be AVAILABLE before a requested season Sonarr lacked has a row
+  private isRequestAvailable(entity: MediaRequest, media: Media): boolean {
+    const statusKey = entity.is4k ? 'status4k' : 'status';
+
+    return entity.type === MediaType.TV
+      ? entity.seasons.length > 0 &&
+          entity.seasons.every((rs) =>
+            media.seasons.some(
+              (s) =>
+                s.seasonNumber === rs.seasonNumber &&
+                s[statusKey] === MediaStatus.AVAILABLE
+            )
+          )
+      : media[statusKey] === MediaStatus.AVAILABLE;
+  }
+
   // Only a stale explicit serverId fails; no default with no override is a supported setup.
   private async handleUnresolvedServer(
     entity: MediaRequest,
@@ -214,20 +230,7 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
       return false;
     }
 
-    const statusKey = entity.is4k ? 'status4k' : 'status';
-    const isAvailable =
-      entity.type === MediaType.TV
-        ? entity.seasons.length > 0 &&
-          entity.seasons.every((rs) =>
-            media.seasons.some(
-              (s) =>
-                s.seasonNumber === rs.seasonNumber &&
-                s[statusKey] === MediaStatus.AVAILABLE
-            )
-          )
-        : media[statusKey] === MediaStatus.AVAILABLE;
-
-    if (isAvailable) {
+    if (this.isRequestAvailable(entity, media)) {
       logger.warn('Media already exists, marking request as COMPLETED', {
         label: 'Media Request',
         requestId: entity.id,
@@ -634,9 +637,7 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           throw new Error('Media data not found');
         }
 
-        if (
-          media[entity.is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE
-        ) {
+        if (this.isRequestAvailable(entity, media)) {
           logger.warn('Media already exists, marking request as COMPLETED', {
             label: 'Media Request',
             requestId: entity.id,
