@@ -25,10 +25,48 @@ const baseCacheDirectory = process.env.CONFIG_DIRECTORY
   ? `${process.env.CONFIG_DIRECTORY}/cache/images`
   : path.join(__dirname, '../../config/cache/images');
 
+// Every entry also costs a directory block and up to a block of file slack
+const ENTRY_OVERHEAD = 8192;
+
+class CacheIndex {
+  public totalSize = 0;
+  private sizesInWriteOrder = new Map<string, number>();
+
+  public set(cacheKey: string, size: number) {
+    this.delete(cacheKey);
+    this.sizesInWriteOrder.set(cacheKey, size);
+    this.totalSize += size;
+  }
+
+  public delete(cacheKey: string) {
+    this.totalSize -= this.sizesInWriteOrder.get(cacheKey) ?? 0;
+    this.sizesInWriteOrder.delete(cacheKey);
+  }
+
+  public evictOldest(maxSize: number): string[] {
+    const evicted: string[] = [];
+
+    for (const [cacheKey, size] of this.sizesInWriteOrder) {
+      if (this.totalSize <= maxSize) {
+        break;
+      }
+
+      this.sizesInWriteOrder.delete(cacheKey);
+      this.totalSize -= size;
+      evicted.push(cacheKey);
+    }
+
+    return evicted;
+  }
+}
+
 class ImageProxy {
+  private static cacheIndexes = new Map<string, Promise<CacheIndex>>();
+
   public static async clearCache(key: string) {
     let deletedImages = 0;
     const cacheDirectory = path.join(baseCacheDirectory, key);
+    const cacheIndex = await ImageProxy.cacheIndexes.get(key);
 
     try {
       const files = await promises.readdir(cacheDirectory);
@@ -49,6 +87,7 @@ class ImageProxy {
               await promises.rm(path.join(filePath), {
                 recursive: true,
               });
+              cacheIndex?.delete(file);
               deletedImages += 1;
             }
           }
@@ -132,6 +171,8 @@ class ImageProxy {
   private axios: AxiosInstance;
   private cacheVersion;
   private key;
+  private maxCacheSize;
+  private pendingWrites = new Map<string, Promise<ImageResponse | null>>();
 
   constructor(
     key: string,
@@ -140,10 +181,12 @@ class ImageProxy {
       cacheVersion?: number;
       rateLimitOptions?: rateLimitOptions;
       headers?: Record<string, string>;
+      maxCacheSize?: number;
     } = {}
   ) {
     this.cacheVersion = options.cacheVersion ?? 1;
     this.key = key;
+    this.maxCacheSize = options.maxCacheSize;
     this.axios = axios.create({
       baseURL: baseUrl,
       headers: options.headers,
@@ -215,6 +258,7 @@ class ImageProxy {
       const files = await promises.readdir(directory);
 
       await promises.rm(directory, { recursive: true });
+      (await ImageProxy.cacheIndexes.get(this.key))?.delete(cacheKey);
 
       logger.debug(`Cleared ${files[0]} from cache 'avatar'`, {
         label: 'Image Cache',
@@ -259,7 +303,21 @@ class ImageProxy {
     return null;
   }
 
-  private async set(
+  // Parallel writes to one entry would leave files the size limit never counts
+  private set(path: string, cacheKey: string): Promise<ImageResponse | null> {
+    let pendingWrite = this.pendingWrites.get(cacheKey);
+
+    if (!pendingWrite) {
+      pendingWrite = this.fetchAndCache(path, cacheKey).finally(() =>
+        this.pendingWrites.delete(cacheKey)
+      );
+      this.pendingWrites.set(cacheKey, pendingWrite);
+    }
+
+    return pendingWrite;
+  }
+
+  private async fetchAndCache(
     path: string,
     cacheKey: string
   ): Promise<ImageResponse | null> {
@@ -293,6 +351,7 @@ class ImageProxy {
         buffer,
         etag
       );
+      await this.trackCacheWrite(cacheKey, buffer.length);
 
       return {
         meta: {
@@ -331,6 +390,82 @@ class ImageProxy {
 
     await promises.mkdir(dir, { recursive: true });
     await promises.writeFile(filename, buffer);
+  }
+
+  private async trackCacheWrite(cacheKey: string, fileSize: number) {
+    if (!this.maxCacheSize) {
+      return;
+    }
+
+    const cacheIndex = await this.getCacheIndex();
+    cacheIndex.set(cacheKey, fileSize + ENTRY_OVERHEAD);
+
+    await Promise.all(
+      cacheIndex.evictOldest(this.maxCacheSize).map((evictedKey) =>
+        promises
+          .rm(join(this.getCacheDirectory(), evictedKey), {
+            force: true,
+            recursive: true,
+          })
+          .catch((e) => {
+            logger.error('Failed to evict cached image', {
+              label: 'Image Cache',
+              message: e.message,
+            });
+          })
+      )
+    );
+  }
+
+  private getCacheIndex() {
+    let cacheIndex = ImageProxy.cacheIndexes.get(this.key);
+
+    if (!cacheIndex) {
+      cacheIndex = this.loadCacheIndex();
+      ImageProxy.cacheIndexes.set(this.key, cacheIndex);
+    }
+
+    return cacheIndex;
+  }
+
+  private async loadCacheIndex() {
+    const cacheDirectory = this.getCacheDirectory();
+    const cacheKeys = await promises
+      .readdir(cacheDirectory)
+      .catch((): string[] => []);
+    const entries: { cacheKey: string; size: number; writtenAt: number }[] = [];
+
+    await Promise.all(
+      cacheKeys.map(async (cacheKey) => {
+        const directory = join(cacheDirectory, cacheKey);
+
+        try {
+          const files = await promises.readdir(directory);
+          const stats = await Promise.all(
+            files.map((file) => promises.stat(join(directory, file)))
+          );
+
+          entries.push({
+            cacheKey,
+            size: stats.reduce(
+              (total, stat) => total + stat.size,
+              ENTRY_OVERHEAD
+            ),
+            writtenAt: Math.max(0, ...stats.map((stat) => stat.mtimeMs)),
+          });
+        } catch {
+          // Removed mid-scan, so there is nothing to count
+        }
+      })
+    );
+
+    const cacheIndex = new CacheIndex();
+
+    entries
+      .sort((a, b) => a.writtenAt - b.writtenAt)
+      .forEach((entry) => cacheIndex.set(entry.cacheKey, entry.size));
+
+    return cacheIndex;
   }
 
   private getCacheKey(path: string) {

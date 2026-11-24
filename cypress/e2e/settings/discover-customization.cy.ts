@@ -1,7 +1,8 @@
 describe('Discover Customization', () => {
   beforeEach(() => {
     cy.loginAsAdmin();
-    cy.intercept('/api/v1/settings/discover').as('getDiscoverSliders');
+    cy.request('/api/v1/settings/discover/reset');
+    cy.intercept('POST', '/api/v1/settings/discover').as('saveDiscoverSliders');
   });
 
   it('show the discover customization settings', () => {
@@ -45,7 +46,7 @@ describe('Discover Customization', () => {
       .should('contain', 'Recently Added');
 
     cy.get('[data-testid=discover-customize-submit').click();
-    cy.wait('@getDiscoverSliders');
+    cy.wait('@saveDiscoverSliders');
 
     cy.reload();
 
@@ -72,12 +73,13 @@ describe('Discover Customization', () => {
       .should('contain', 'Recent Requests');
 
     cy.get('[data-testid=discover-customize-submit').click();
-    cy.wait('@getDiscoverSliders');
+    cy.wait('@saveDiscoverSliders');
   });
 
   it('can create a new discover option and remove it', () => {
     cy.visit('/');
-    cy.intercept('/api/v1/settings/discover/*').as('discoverSlider');
+    cy.intercept('POST', '/api/v1/settings/discover/add').as('createSlider');
+    cy.intercept('DELETE', '/api/v1/settings/discover/*').as('deleteSlider');
 
     cy.get('[data-testid=discover-start-editing]').click();
 
@@ -107,9 +109,7 @@ describe('Discover Customization', () => {
 
     cy.get('[data-testid=create-discover-option-form]').submit();
 
-    cy.wait('@discoverSlider');
-    cy.wait('@getDiscoverSliders');
-    cy.wait(1000);
+    cy.wait('@createSlider');
 
     cy.get('[data-testid=discover-slider-edit-mode]')
       .first()
@@ -138,7 +138,7 @@ describe('Discover Customization', () => {
       .click();
 
     cy.get('[data-testid=discover-customize-submit').click();
-    cy.wait('@getDiscoverSliders');
+    cy.wait('@saveDiscoverSliders');
 
     cy.visit('/');
 
@@ -154,9 +154,7 @@ describe('Discover Customization', () => {
       .find('[data-testid=discover-slider-remove-button]')
       .click();
 
-    cy.wait('@discoverSlider');
-    cy.wait('@getDiscoverSliders');
-    cy.wait(1000);
+    cy.wait('@deleteSlider');
 
     cy.get('[data-testid=discover-slider-edit-mode]')
       .first()

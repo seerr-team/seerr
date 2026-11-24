@@ -386,6 +386,13 @@ router.delete<{ id: string; endpoint: string }>(
         return res.status(204).send();
       }
 
+      if (!canModifyUser(userPushSub.user, req.user)) {
+        return next({
+          status: 403,
+          message: "You do not have permission to modify this user's settings.",
+        });
+      }
+
       await userPushSubRepository.remove(userPushSub);
       return res.status(204).send();
     } catch (e) {
@@ -508,6 +515,12 @@ export const canMakePermissionsChange = (
   // Only let the owner grant admin privileges
   !(hasPermission(Permission.ADMIN, permissions) && user?.id !== 1);
 
+// Only the owner can modify another admin's account
+export const canModifyUser = (user: User, requester?: User): boolean =>
+  !user.hasPermission(Permission.ADMIN) ||
+  requester?.id === 1 ||
+  requester?.id === user.id;
+
 router.put<
   Record<string, never>,
   Partial<User>[],
@@ -525,13 +538,16 @@ router.put<
 
     const userRepository = getRepository(User);
 
-    const users: User[] = await userRepository.find({
+    const requestedUsers = await userRepository.find({
       where: {
         id: In(
           isOwner ? req.body.ids : req.body.ids.filter((id) => Number(id) !== 1)
         ),
       },
     });
+    const users = requestedUsers.filter(
+      (user) => user.id !== req.user?.id && canModifyUser(user, req.user)
+    );
 
     const updatedUsers = await Promise.all(
       users.map(async (user) => {
@@ -561,6 +577,18 @@ router.put<{ id: string }>(
 
       // Only let the owner user modify themselves
       if (user.id === 1 && req.user?.id !== 1) {
+        return next({
+          status: 403,
+          message: 'You do not have permission to modify this user',
+        });
+      }
+
+      if (
+        !canModifyUser(user, req.user) ||
+        (req.user?.id === user.id &&
+          req.body.permissions !== undefined &&
+          req.body.permissions !== user.permissions)
+      ) {
         return next({
           status: 403,
           message: 'You do not have permission to modify this user',

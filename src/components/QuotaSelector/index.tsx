@@ -57,6 +57,7 @@ const QuotaSelector = ({
         {
           quotaLimit: (
             <select
+              id={limitFieldName}
               className="short inline"
               value={limitOverride ?? quotaLimit}
               onChange={(e) => setQuotaLimit(Number(e.target.value))}
@@ -74,6 +75,7 @@ const QuotaSelector = ({
           ),
           quotaDays: (
             <select
+              id={dayFieldName}
               className="short inline"
               value={dayOverride ?? quotaDays}
               onChange={(e) => setQuotaDays(Number(e.target.value))}

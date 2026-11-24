@@ -11,6 +11,9 @@ body:
 
         Use this template for documentation issues (typos, unclear steps, missing info, outdated screenshots).
         For app bugs or feature ideas, please use the other templates.
+
+        > [!IMPORTANT]
+        > Our [AI policy](https://github.com/seerr-team/seerr/blob/develop/CONTRIBUTING.md#issues) applies to issues too. Write this issue yourself and disclose any AI use below. Issues that read as unreviewed AI output will be closed and locked.
   - type: input
     id: doc-location
     attributes:
@@ -39,6 +42,13 @@ body:
     validations:
       required: true
   - type: textarea
+    id: ai-disclosure
+    attributes:
+      label: AI Disclosure
+      description: How did you use AI to find or write up this issue, if at all? Write "None" if you didn't.
+    validations:
+      required: true
+  - type: textarea
     id: suggested-fix
     attributes:
       label: Suggested change
@@ -52,6 +62,13 @@ body:
       description: Have you searched existing issues to see if this has already been reported?
       options:
         - label: Yes, I have searched existing issues.
+          required: true
+  - type: checkboxes
+    id: ai-policy
+    attributes:
+      label: AI Policy
+      options:
+        - label: I have read the [AI policy](https://github.com/seerr-team/seerr/blob/develop/CONTRIBUTING.md#ai-assistance-notice) and this issue follows it.
           required: true
   - type: checkboxes
     id: terms

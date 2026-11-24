@@ -9,11 +9,21 @@ body:
         Thanks for taking the time to fill out this feature request!
 
         Please note that we use GitHub issues exclusively for bug reports and feature requests. For support requests, please use our other support channels to get help.
+
+        > [!IMPORTANT]
+        > Our [AI policy](https://github.com/seerr-team/seerr/blob/develop/CONTRIBUTING.md#issues) applies to issues too. Write this issue yourself and disclose any AI use below. Issues that read as unreviewed AI output will be closed and locked.
   - type: textarea
     id: description
     attributes:
       label: Description
       description: Is your feature request related to a problem? If so, please provide a clear and concise description of the problem; e.g., "I'm always frustrated when [...]."
+    validations:
+      required: true
+  - type: textarea
+    id: ai-disclosure
+    attributes:
+      label: AI Disclosure
+      description: How did you use AI to find or write up this issue, if at all? Write "None" if you didn't.
     validations:
       required: true
   - type: textarea
@@ -35,6 +45,13 @@ body:
       description: Have you searched existing issues to see if this feature has already been requested?
       options:
         - label: Yes, I have searched existing issues.
+          required: true
+  - type: checkboxes
+    id: ai-policy
+    attributes:
+      label: AI Policy
+      options:
+        - label: I have read the [AI policy](https://github.com/seerr-team/seerr/blob/develop/CONTRIBUTING.md#ai-assistance-notice) and this issue follows it.
           required: true
   - type: checkboxes
     id: terms

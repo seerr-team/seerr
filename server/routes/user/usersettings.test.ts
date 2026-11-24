@@ -6,10 +6,12 @@ import { MediaServerType } from '@server/constants/server';
 import { UserType } from '@server/constants/user';
 import { getRepository } from '@server/datasource';
 import { User } from '@server/entity/User';
+import { Permission } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
 import { checkUser, isAuthenticated } from '@server/middleware/auth';
 import authRoutes from '@server/routes/auth';
 import { setupTestDb } from '@server/test/db';
+import { permissionsOf, seedManagerAndAdmin } from '@server/test/users';
 import type { Express } from 'express';
 import express from 'express';
 import session from 'express-session';
@@ -130,5 +132,123 @@ describe('POST /user/:id/settings/linked-accounts/jellyfin/quickconnect', () => 
       where: { id: userId },
     });
     assert.strictEqual(user.jellyfinUserId, null);
+  });
+});
+
+describe('POST /user/:id/settings/permissions', () => {
+  it('stops a manager from removing admin from another admin', async () => {
+    const { otherAdmin } = await seedManagerAndAdmin();
+    const { agent } = await loginAs('demo@seerr.dev', 'test1234');
+
+    const res = await agent
+      .post(`/user/${otherAdmin.id}/settings/permissions`)
+      .send({ permissions: Permission.REQUEST });
+
+    assert.strictEqual(res.status, 403);
+    assert.strictEqual(await permissionsOf(otherAdmin.id), Permission.ADMIN);
+  });
+});
+
+describe('POST /user/:id/settings/main', () => {
+  it("stops a manager from changing an admin's email", async () => {
+    const { otherAdmin } = await seedManagerAndAdmin();
+    const { agent } = await loginAs('demo@seerr.dev', 'test1234');
+
+    const res = await agent
+      .post(`/user/${otherAdmin.id}/settings/main`)
+      .send({ username: 'admin2', email: 'new@example.com' });
+
+    assert.strictEqual(res.status, 403);
+    const user = await getRepository(User).findOneOrFail({
+      where: { id: otherAdmin.id },
+    });
+    assert.strictEqual(user.email, 'admin2@seerr.dev');
+  });
+
+  it("lets the owner change an admin's email", async () => {
+    const { otherAdmin } = await seedManagerAndAdmin();
+    const { agent } = await loginAs('admin@seerr.dev', 'test1234');
+
+    const res = await agent
+      .post(`/user/${otherAdmin.id}/settings/main`)
+      .send({ username: 'admin2', email: 'new@example.com' });
+
+    assert.strictEqual(res.status, 200);
+    const user = await getRepository(User).findOneOrFail({
+      where: { id: otherAdmin.id },
+    });
+    assert.strictEqual(user.email, 'new@example.com');
+  });
+});
+
+describe('POST /user/:id/settings/password', () => {
+  async function passwordUnchanged(userId: number) {
+    const user = await getRepository(User).findOneOrFail({
+      select: ['id', 'password'],
+      where: { id: userId },
+    });
+    return user.passwordMatch('test1234');
+  }
+
+  it('rejects a wrong current password', async () => {
+    const { agent, userId } = await loginAs('demo@seerr.dev', 'test1234');
+
+    const res = await agent
+      .post(`/user/${userId}/settings/password`)
+      .send({ currentPassword: 'wrong-password', newPassword: 'new-password' });
+
+    assert.strictEqual(res.status, 403);
+    assert.ok(await passwordUnchanged(userId));
+  });
+
+  it('rejects a missing current password', async () => {
+    const { agent, userId } = await loginAs('demo@seerr.dev', 'test1234');
+
+    const res = await agent
+      .post(`/user/${userId}/settings/password`)
+      .send({ newPassword: 'new-password' });
+
+    assert.strictEqual(res.status, 403);
+    assert.ok(await passwordUnchanged(userId));
+  });
+
+  it('stops a manager from demoting an admin to reset their password', async () => {
+    const { otherAdmin } = await seedManagerAndAdmin();
+    const { agent } = await loginAs('demo@seerr.dev', 'test1234');
+
+    const demote = await agent
+      .post(`/user/${otherAdmin.id}/settings/permissions`)
+      .send({ permissions: Permission.REQUEST });
+    const reset = await agent
+      .post(`/user/${otherAdmin.id}/settings/password`)
+      .send({ newPassword: 'takeover1234' });
+
+    assert.strictEqual(demote.status, 403);
+    assert.strictEqual(reset.status, 403);
+    const user = await getRepository(User).findOneOrFail({
+      select: ['id', 'password'],
+      where: { id: otherAdmin.id },
+    });
+    assert.ok(!user.password);
+  });
+
+  it('lets the owner demote an admin and reset their password', async () => {
+    const { otherAdmin } = await seedManagerAndAdmin();
+    const { agent } = await loginAs('admin@seerr.dev', 'test1234');
+
+    const demote = await agent
+      .post(`/user/${otherAdmin.id}/settings/permissions`)
+      .send({ permissions: Permission.REQUEST });
+    const reset = await agent
+      .post(`/user/${otherAdmin.id}/settings/password`)
+      .send({ newPassword: 'reset12345' });
+
+    assert.strictEqual(demote.status, 200);
+    assert.strictEqual(reset.status, 204);
+    const user = await getRepository(User).findOneOrFail({
+      select: ['id', 'password'],
+      where: { id: otherAdmin.id },
+    });
+    assert.ok(await user.passwordMatch('reset12345'));
   });
 });
