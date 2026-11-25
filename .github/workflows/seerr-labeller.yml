@@ -163,6 +163,8 @@ jobs:
               console.log('Could not look up author permission:', e.message);
             }
             if (['admin', 'write'].includes(permission)) return 'false';
+            // issue-template already asks for a new issue through the form
+            if (!issue.labels.some((l) => l.name === 'awaiting triage')) return 'false';
 
             const body = (issue.body ?? '').replace(/\r\n?/g, '\n');
             const match = body.match(/(?:^|\n)### AI Disclosure[ \t]*(?=\n|$)([\s\S]*?)(?=\n### |$)/);
@@ -192,3 +194,57 @@ jobs:
         run: |
           retry() { n=0; until "$@"; do n=$((n+1)); [ $n -ge 3 ] && break; echo "retry $n: $*" >&2; sleep 2; done; }
           retry gh issue edit "$NUMBER" -R "$GH_REPO" --add-label ai-disclosure || true
+
+  issue-template:
+    if: >
+      github.event_name == 'issues' &&
+      github.event.action == 'opened' &&
+      github.event.issue.user.type != 'Bot'
+    runs-on: ubuntu-26.04
+    concurrency:
+      group: issue-template-${{ github.event.issue.number }}
+    permissions:
+      issues: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+      NUMBER: ${{ github.event.issue.number }}
+      ISSUE_AUTHOR: ${{ github.event.issue.user.login }}
+    steps:
+      - name: Detect an issue opened outside the issue forms
+        id: detect
+        uses: actions/github-script@v9.0.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          result-encoding: string
+          script: |
+            // every form applies it, and GitHub drops labels set by users without push access
+            const labels = context.payload.issue.labels.map((l) => l.name);
+            if (labels.includes('awaiting triage')) return 'false';
+
+            // sender, not author, so issues a maintainer transfers in pass
+            let permission = 'none';
+            try {
+              const { data } = await github.rest.repos.getCollaboratorPermissionLevel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                username: context.payload.sender.login,
+              });
+              permission = data.permission;
+            } catch (e) {
+              console.log('Could not look up sender permission:', e.message);
+            }
+            return String(!['admin', 'write'].includes(permission));
+
+      - name: Label and comment
+        if: steps.detect.outputs.result == 'true'
+        shell: bash
+        env:
+          BODY: >
+            :wave: @${{ env.ISSUE_AUTHOR }}, this issue wasn't opened through one of our issue forms. The forms add the labels and issue type we triage with, along with the required AI Policy and Code of Conduct checkboxes, so issues filed outside them break our [contributing guidelines](https://github.com/seerr-team/seerr/blob/develop/CONTRIBUTING.md#issues).
+
+            Please open a new issue using the form. Issues filed outside the forms may be closed without review.
+        run: |
+          retry() { n=0; until "$@"; do n=$((n+1)); [ $n -ge 3 ] && break; echo "retry $n: $*" >&2; sleep 2; done; }
+          retry gh issue edit "$NUMBER" -R "$GH_REPO" --add-label "blocked:template" || true
+          retry gh issue comment "$NUMBER" -R "$GH_REPO" -b "$BODY" || true
