@@ -1,4 +1,4 @@
-FROM node:22.23.5-alpine3.23@sha256:6868d4695b947ee120bffaa463fecd68cde370d7bfec92955e7c8ac576b4f475 AS base
+FROM dhi.io/node:22-alpine3.24-dev@sha256:31a9f092cdf2d7e2eddebf5d80494341daa7efe344f6f5aebce01a5b19ad9944 AS base
 ARG SOURCE_DATE_EPOCH
 ARG TARGETPLATFORM
 ENV TARGETPLATFORM=${TARGETPLATFORM:-linux/amd64}
@@ -7,7 +7,7 @@ ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
 
-COPY . ./app
+COPY . /app
 WORKDIR /app
 
 FROM base AS prod-deps
@@ -25,10 +25,9 @@ ENV COMMIT_TAG=${COMMIT_TAG}
 
 RUN \
   case "${TARGETPLATFORM}" in \
-  'linux/arm64' | 'linux/arm/v7') \
+  'linux/arm64') \
   apk update && \
-  apk add --no-cache python3 make g++ gcc libc6-compat bash && \
-  npm install --global node-gyp \
+  apk add --no-cache python3 make g++ gcc libc6-compat bash \
   ;; \
   esac
 
@@ -36,13 +35,13 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store CYPRESS_INSTALL_BINARY=0 pnpm 
 
 RUN pnpm build
 
-FROM node:22.23.5-alpine3.23@sha256:6868d4695b947ee120bffaa463fecd68cde370d7bfec92955e7c8ac576b4f475
+FROM dhi.io/node:22-alpine3.24-dev@sha256:31a9f092cdf2d7e2eddebf5d80494341daa7efe344f6f5aebce01a5b19ad9944
 ARG SOURCE_DATE_EPOCH
 ARG COMMIT_TAG
 ENV NODE_ENV=production
 ENV COMMIT_TAG=${COMMIT_TAG}
 
-RUN apk add --no-cache tzdata
+RUN apk add --no-cache tzdata && chown node:node /app
 
 USER node:node
 
