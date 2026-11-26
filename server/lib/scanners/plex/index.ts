@@ -20,6 +20,7 @@ import type {
 import BaseScanner from '@server/lib/scanners/baseScanner';
 import type { Library } from '@server/lib/settings';
 import { getSettings } from '@server/lib/settings';
+import { getUnignoredPlexMedia } from '@server/utils/mediaFilter';
 import { uniqWith } from 'lodash';
 
 const imdbRegex = new RegExp(/imdb:\/\/(tt[0-9]+)/);
@@ -228,11 +229,17 @@ class PlexScanner
   }
 
   private async processPlexMovie(plexitem: PlexLibraryItem) {
+    const media = getUnignoredPlexMedia(plexitem.Media ?? []);
+    if (media.length === 0) {
+      this.log(
+        `Skipping movie ${plexitem.title} (file path matched ignore pattern)`
+      );
+      return;
+    }
+
     const mediaIds = await this.getMediaIds(plexitem);
 
-    const has4k = plexitem.Media.some(
-      (media) => media.videoResolution === '4k'
-    );
+    const has4k = media.some((mediaItem) => mediaItem.videoResolution === '4k');
 
     await this.processMovie(mediaIds.tmdbId, {
       is4k: has4k && this.enable4kMovie,
@@ -246,9 +253,15 @@ class PlexScanner
     plexitem: PlexMetadata,
     tmdbId: number
   ) {
-    const has4k = plexitem.Media.some(
-      (media) => media.videoResolution === '4k'
-    );
+    const media = getUnignoredPlexMedia(plexitem.Media ?? []);
+    if (media.length === 0) {
+      this.log(
+        `Skipping movie ${plexitem.title} (file path matched ignore pattern)`
+      );
+      return;
+    }
+
+    const has4k = media.some((mediaItem) => mediaItem.videoResolution === '4k');
 
     await this.processMovie(tmdbId, {
       is4k: has4k && this.enable4kMovie,
@@ -326,6 +339,9 @@ class PlexScanner
     const processableSeasons: ProcessableSeason[] = [];
 
     const settings = getSettings();
+    const hasIgnoredPatterns =
+      (settings.main.ignoredPathPatterns ?? []).length > 0;
+
     const filteredSeasons = settings.main.enableSpecialEpisodes
       ? seasons
       : seasons.filter((sn) => sn.season_number !== 0);
@@ -337,20 +353,33 @@ class PlexScanner
 
       if (matchedPlexSeason) {
         // If we have a matched Plex season, get its children metadata so we can check details
-        const episodes = await this.plexClient.getChildrenMetadata(
+        const allEpisodes = await this.plexClient.getChildrenMetadata(
           matchedPlexSeason.ratingKey
         );
+
+        const episodes = hasIgnoredPatterns
+          ? allEpisodes
+              .map((episode) => ({
+                episode,
+                media: getUnignoredPlexMedia(episode.Media ?? []),
+              }))
+              .filter(({ media }) => media.length > 0)
+          : allEpisodes.map((episode) => ({
+              episode,
+              media: episode.Media ?? [],
+            }));
+
         // Total episodes that are in standard definition (not 4k)
-        const totalStandard = episodes.filter((episode) =>
+        const totalStandard = episodes.filter(({ media }) =>
           !this.enable4kShow
             ? true
-            : episode.Media.some((media) => media.videoResolution !== '4k')
+            : media.some((mediaItem) => mediaItem.videoResolution !== '4k')
         ).length;
 
         // Total episodes that are in 4k
         const total4k = this.enable4kShow
-          ? episodes.filter((episode) =>
-              episode.Media.some((media) => media.videoResolution === '4k')
+          ? episodes.filter(({ media }) =>
+              media.some((mediaItem) => mediaItem.videoResolution === '4k')
             ).length
           : 0;
 
@@ -370,16 +399,19 @@ class PlexScanner
       }
     }
 
-    await this.processShow(
-      mediaIds.tmdbId,
-      mediaIds.tvdbId ?? tvShow.external_ids.tvdb_id,
-      processableSeasons,
-      {
+    const hasAnyEpisodes = processableSeasons.some(
+      (s) => s.episodes > 0 || s.episodes4k > 0
+    );
+
+    const tvdbId = mediaIds.tvdbId ?? tvShow.external_ids?.tvdb_id;
+
+    if (hasAnyEpisodes || !hasIgnoredPatterns) {
+      await this.processShow(mediaIds.tmdbId, tvdbId, processableSeasons, {
         mediaAddedAt: new Date(metadata.addedAt * 1000),
         ratingKey: ratingKey,
         title: metadata.title,
-      }
-    );
+      });
+    }
   }
 
   private async getMediaIds(plexitem: PlexLibraryItem): Promise<MediaIds> {
@@ -547,7 +579,13 @@ class PlexScanner
         season.ratingKey
       );
       if (episodes) {
-        await this.processPlexMovieByTmdbId(episodes[0], tmdbId);
+        const candidateEpisode = episodes.find(
+          (episode) => getUnignoredPlexMedia(episode.Media ?? []).length > 0
+        );
+
+        if (candidateEpisode) {
+          await this.processPlexMovieByTmdbId(candidateEpisode, tmdbId);
+        }
       }
     }
   }
@@ -563,6 +601,9 @@ class PlexScanner
       );
       if (episodes) {
         for (const episode of episodes) {
+          if (getUnignoredPlexMedia(episode.Media ?? []).length === 0) {
+            continue;
+          }
           const special = animeList.getSpecialEpisode(tvdbId, episode.index);
           if (special) {
             if (special.tmdbId) {
