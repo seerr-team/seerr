@@ -14,10 +14,16 @@ import {
   getRequestDownloadStatus,
   refreshIntervalHelper,
 } from '@app/utils/refreshIntervalHelper';
+import {
+  canRetryRequest,
+  canSearchAnotherListing,
+  formatFailureReason,
+} from '@app/utils/requestFailureHelpers';
 import { withProperties } from '@app/utils/typeHelpers';
 import {
   ArrowPathIcon,
   CheckIcon,
+  MagnifyingGlassIcon,
   PencilIcon,
   TrashIcon,
   XMarkIcon,
@@ -149,11 +155,19 @@ const RequestCardError = ({ requestData }: RequestCardErrorProps) => {
                   </span>
                   {requestData.status === MediaRequestStatus.DECLINED ||
                   requestData.status === MediaRequestStatus.FAILED ? (
-                    <Badge badgeType="danger">
-                      {requestData.status === MediaRequestStatus.DECLINED
-                        ? intl.formatMessage(globalMessages.declined)
-                        : intl.formatMessage(globalMessages.failed)}
-                    </Badge>
+                    <Tooltip
+                      content={formatFailureReason(
+                        intl,
+                        requestData.type,
+                        requestData.failureReason
+                      )}
+                    >
+                      <Badge badgeType="danger">
+                        {requestData.status === MediaRequestStatus.DECLINED
+                          ? intl.formatMessage(globalMessages.declined)
+                          : intl.formatMessage(globalMessages.failed)}
+                      </Badge>
+                    </Tooltip>
                   ) : (
                     <StatusBadge
                       status={
@@ -442,12 +456,20 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
                 {intl.formatMessage(globalMessages.declined)}
               </Badge>
             ) : requestData.status === MediaRequestStatus.FAILED ? (
-              <Badge
-                badgeType="danger"
-                href={`/${requestData.type}/${requestData.media.tmdbId}?manage=1`}
+              <Tooltip
+                content={formatFailureReason(
+                  intl,
+                  requestData.type,
+                  requestData.failureReason
+                )}
               >
-                {intl.formatMessage(globalMessages.failed)}
-              </Badge>
+                <Badge
+                  badgeType="danger"
+                  href={`/${requestData.type}/${requestData.media.tmdbId}?manage=1`}
+                >
+                  {intl.formatMessage(globalMessages.failed)}
+                </Badge>
+              </Tooltip>
             ) : requestData.status === MediaRequestStatus.PENDING &&
               requestData.media[requestData.is4k ? 'status4k' : 'status'] ===
                 MediaStatus.DELETED ? (
@@ -480,20 +502,56 @@ const RequestCard = ({ request, onTitleData }: RequestCardProps) => {
           <div className="flex flex-1 items-end space-x-2">
             {requestData.status === MediaRequestStatus.FAILED &&
               hasPermission(Permission.MANAGE_REQUESTS) && (
-                <Button
-                  buttonType="primary"
-                  buttonSize="sm"
-                  disabled={isRetrying}
-                  onClick={() => retryRequest()}
+                <Tooltip
+                  content={
+                    canRetryRequest(requestData.failureReason)
+                      ? undefined
+                      : intl.formatMessage(globalMessages.retryunavailable)
+                  }
                 >
-                  <ArrowPathIcon
-                    className={isRetrying ? 'animate-spin' : ''}
-                    style={{ marginRight: '0', animationDirection: 'reverse' }}
-                  />
-                  <span className="ml-1.5 hidden sm:block">
-                    {intl.formatMessage(globalMessages.retry)}
-                  </span>
-                </Button>
+                  <Button
+                    buttonType="primary"
+                    buttonSize="sm"
+                    disabled={
+                      isRetrying || !canRetryRequest(requestData.failureReason)
+                    }
+                    onClick={() => retryRequest()}
+                  >
+                    <ArrowPathIcon
+                      className={isRetrying ? 'animate-spin' : ''}
+                      style={{
+                        marginRight: '0',
+                        animationDirection: 'reverse',
+                      }}
+                    />
+                    <span className="ml-1.5 hidden sm:block">
+                      {intl.formatMessage(globalMessages.retry)}
+                    </span>
+                  </Button>
+                </Tooltip>
+              )}
+            {requestData.status === MediaRequestStatus.FAILED &&
+              canSearchAnotherListing(requestData.failureReason) &&
+              title && (
+                <Link
+                  href={`/search?query=${encodeURIComponent(
+                    isMovie(title) ? title.title : title.name
+                  )}`}
+                  passHref
+                  legacyBehavior
+                >
+                  <Button
+                    as="a"
+                    buttonType="default"
+                    buttonSize="sm"
+                    title={intl.formatMessage(globalMessages.findlisting)}
+                  >
+                    <MagnifyingGlassIcon style={{ marginRight: '0' }} />
+                    <span className="ml-1.5 hidden sm:block">
+                      {intl.formatMessage(globalMessages.findlisting)}
+                    </span>
+                  </Button>
+                </Link>
               )}
             {requestData.status === MediaRequestStatus.PENDING &&
               hasPermission(Permission.MANAGE_REQUESTS) && (
