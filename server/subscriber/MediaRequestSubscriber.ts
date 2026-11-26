@@ -11,6 +11,7 @@ import type { TmdbTvSeasonResult } from '@server/api/themoviedb/interfaces';
 import Tvdb from '@server/api/tvdb';
 import type { TvdbOfficialSeason } from '@server/api/tvdb/interfaces';
 import {
+  MediaRequestFailureReason,
   MediaRequestStatus,
   MediaStatus,
   MediaType,
@@ -494,6 +495,8 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
 
               if (entity.status !== MediaRequestStatus.FAILED) {
                 entity.status = MediaRequestStatus.FAILED;
+                entity.failureReason =
+                  MediaRequestFailureReason.DISPATCH_FAILED;
                 await requestRepository.save(entity);
               }
             } catch (saveError) {
@@ -545,6 +548,7 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
 
         if (media) {
           entity.status = MediaRequestStatus.FAILED;
+          entity.failureReason = MediaRequestFailureReason.SERVICE_UNREACHABLE;
           await requestRepository.save(entity);
 
           logger.warn(
@@ -728,6 +732,7 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
         if (!resolvedTvdbId) {
           const requestRepository = manager.getRepository(MediaRequest);
           entity.status = MediaRequestStatus.FAILED;
+          entity.failureReason = MediaRequestFailureReason.TVDB_ID_UNRESOLVED;
           await requestRepository.save(entity);
 
           logger.warn(
@@ -758,6 +763,8 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           if (!tvdbSeasons) {
             const requestRepository = manager.getRepository(MediaRequest);
             entity.status = MediaRequestStatus.FAILED;
+            entity.failureReason =
+              MediaRequestFailureReason.SEASON_NUMBERING_UNVERIFIED;
             await requestRepository.save(entity);
 
             logger.warn(
@@ -796,6 +803,8 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           if (tvdbSeasons.length > 0 && unmatchedSeasons.length > 0) {
             const requestRepository = manager.getRepository(MediaRequest);
             entity.status = MediaRequestStatus.FAILED;
+            entity.failureReason =
+              MediaRequestFailureReason.SEASON_NUMBERING_MISMATCH;
             await requestRepository.save(entity);
 
             logger.warn(
@@ -997,6 +1006,8 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
 
               if (entity.status !== MediaRequestStatus.FAILED) {
                 entity.status = MediaRequestStatus.FAILED;
+                entity.failureReason =
+                  MediaRequestFailureReason.DISPATCH_FAILED;
                 await requestRepository.save(entity);
               }
             } catch (saveError) {
@@ -1049,6 +1060,7 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
 
         if (media) {
           entity.status = MediaRequestStatus.FAILED;
+          entity.failureReason = MediaRequestFailureReason.SERVICE_UNREACHABLE;
           await requestRepository.save(entity);
 
           logger.warn(
