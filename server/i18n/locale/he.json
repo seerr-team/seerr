@@ -1,1 +1,16 @@
-{}
+{
+  "notifications.agents.email.approvedRequest": "בקשתך לסוג המדיה הבא {mediaType} אושרה:",
+  "notifications.agents.email.approvedRequest4k": "בקשתך לסוג המדיה הבא {mediaType} באיכות 4K אושרה:",
+  "notifications.agents.email.autoApproved": "בקשה חדשה עבור ה-{mediaType} הבא אושרה אוטומטית:",
+  "notifications.agents.email.autoApproved4k": "בקשה חדשה עבור ה-{mediaType} הבא באיכות 4K אושרה אוטומטית:",
+  "notifications.agents.email.autoRequested": "בקשה חדשה עבור ה-{mediaType} הבא הוגשה אוטומטית:",
+  "notifications.agents.email.autoRequested4k": "בקשה חדשה עבור ה-{mediaType} הבא ב-4K הוגשה אוטומטית:",
+  "notifications.agents.email.availableRequest": "בקשתך עבור ה-{mediaType} הבא זמינה כעת:",
+  "notifications.agents.email.availableRequest4k": "בקשתך לסוג המדיה הבא {mediaType} באיכות 4K זמינה כעת:",
+  "notifications.agents.email.declinedRequest": "בקשתך לסוג ה-{mediaType} הבא נדחתה:",
+  "notifications.agents.email.declinedRequest4k": "בקשתך לסוג ה-{mediaType} הבא באיכות 4K נדחתה:",
+  "notifications.agents.email.failedRequest": "בקשה עבור ה-{mediaType} הבא נכשלה בהוספת ה-{service}:",
+  "notifications.agents.email.failedRequest4k": "בקשה עבור ה-{mediaType} הבא באיכות 4K נכשלה בהוספת ה-{service}:",
+  "notifications.agents.email.issue": "בעיה",
+  "notifications.agents.email.issueComment": "{userName} הגיב על {issueType} עבור {subject} של {mediaType}:"
+}
