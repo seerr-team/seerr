@@ -5,6 +5,25 @@ import type {
   PermissionCheckOptions,
 } from '@server/lib/permissions';
 import { getSettings } from '@server/lib/settings';
+import type { Request } from 'express';
+
+export const setLoggedInSession = async (req: Request, user: User) => {
+  const sessionVersion =
+    user.sessionVersion ??
+    (
+      await getRepository(User).findOneOrFail({
+        select: { id: true, sessionVersion: true },
+        where: { id: user.id },
+      })
+    ).sessionVersion;
+
+  await new Promise<void>((resolve, reject) =>
+    req.session.regenerate((err) => (err ? reject(err) : resolve()))
+  );
+
+  req.session.userId = user.id;
+  req.session.sessionVersion = sessionVersion;
+};
 
 export const checkUser: Middleware = async (req, _res, next) => {
   const settings = getSettings();
@@ -24,8 +43,12 @@ export const checkUser: Middleware = async (req, _res, next) => {
   } else if (req.session?.userId) {
     const userRepository = getRepository(User);
 
+    // Sessions that predate sessionVersion carry none and count as 0
     user = await userRepository.findOne({
-      where: { id: req.session.userId },
+      where: {
+        id: req.session.userId,
+        sessionVersion: req.session.sessionVersion ?? 0,
+      },
     });
   }
 

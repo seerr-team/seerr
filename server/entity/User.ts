@@ -18,6 +18,7 @@ import {
   AfterLoad,
   Column,
   Entity,
+  IsNull,
   Not,
   OneToMany,
   OneToOne,
@@ -48,6 +49,7 @@ export class User {
     'jellyfinDeviceId',
     'jellyfinAuthToken',
     'plexToken',
+    'sessionVersion',
     'settings',
   ];
 
@@ -123,6 +125,9 @@ export class User {
 
   @OneToMany(() => Watchlist, (watchlist) => watchlist.requestedBy)
   public watchlists: Watchlist[];
+
+  @Column({ default: 0, select: false })
+  public sessionVersion: number;
 
   @Column({ nullable: true })
   public movieQuotaLimit?: number;
@@ -205,6 +210,57 @@ export class User {
   public async setPassword(password: string): Promise<void> {
     const hashedPassword = await bcrypt.hash(password, 12);
     this.password = hashedPassword;
+  }
+
+  public async savePassword(
+    password: string,
+    {
+      expectedVersion,
+      endSessions = true,
+      resetPasswordGuid,
+    }: {
+      expectedVersion?: number;
+      endSessions?: boolean;
+      resetPasswordGuid?: string;
+    } = {}
+  ): Promise<boolean> {
+    const userRepository = getRepository(User);
+    const version =
+      expectedVersion ??
+      (
+        await userRepository.findOneOrFail({
+          select: { id: true, sessionVersion: true },
+          where: { id: this.id },
+        })
+      ).sessionVersion;
+
+    const newVersion = endSessions ? version + 1 : version;
+    await this.setPassword(password);
+
+    // Overlapping password changes would otherwise end up with the same version
+    const { affected } = await userRepository.update(
+      {
+        id: this.id,
+        sessionVersion: version,
+        // Opt-out changes keep the version, so a reset also needs its link still live
+        ...(resetPasswordGuid
+          ? { resetPasswordGuid, recoveryLinkExpirationDate: Not(IsNull()) }
+          : {}),
+      },
+      {
+        password: this.password,
+        sessionVersion: newVersion,
+        recoveryLinkExpirationDate: null,
+      }
+    );
+
+    if (affected !== 1) {
+      return false;
+    }
+
+    this.sessionVersion = newVersion;
+    this.recoveryLinkExpirationDate = null;
+    return true;
   }
 
   public async generatePassword(): Promise<void> {

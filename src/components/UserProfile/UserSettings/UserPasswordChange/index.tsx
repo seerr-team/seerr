@@ -11,7 +11,7 @@ import ErrorPage from '@app/pages/_error';
 import defineMessages from '@app/utils/defineMessages';
 import { ArrowDownOnSquareIcon } from '@heroicons/react/24/outline';
 import axios from 'axios';
-import { Form, Formik } from 'formik';
+import { Field, Form, Formik } from 'formik';
 import { useRouter } from 'next/router';
 import { useIntl } from 'react-intl';
 import useSWR from 'swr';
@@ -26,6 +26,12 @@ const messages = defineMessages(
     currentpassword: 'Current Password',
     newpassword: 'New Password',
     confirmpassword: 'Confirm Password',
+    signOutOtherDevices: 'Sign Out of Other Devices',
+    signOutOtherDevicesTip:
+      'Other devices will need the new password to sign in again',
+    signOutAllDevices: 'Sign Out of All Devices',
+    signOutAllDevicesTip:
+      'The user will need the new password to sign in again on every device',
     toastSettingsSuccess: 'Password saved successfully!',
     toastSettingsFailure: 'Something went wrong while saving the password.',
     toastSettingsFailureVerifyCurrent:
@@ -127,6 +133,7 @@ const UserPasswordChange = () => {
           currentPassword: '',
           newPassword: '',
           confirmPassword: '',
+          endOtherSessions: true,
         }}
         validationSchema={PasswordChangeSchema}
         enableReinitialize
@@ -136,6 +143,7 @@ const UserPasswordChange = () => {
               currentPassword: values.currentPassword,
               newPassword: values.newPassword,
               confirmPassword: values.confirmPassword,
+              endOtherSessions: values.endOtherSessions,
             });
 
             addToast(intl.formatMessage(messages.toastSettingsSuccess), {
@@ -236,6 +244,29 @@ const UserPasswordChange = () => {
                     typeof errors.confirmPassword === 'string' && (
                       <div className="error">{errors.confirmPassword}</div>
                     )}
+                </div>
+              </div>
+              <div className="form-row">
+                <label htmlFor="endOtherSessions" className="checkbox-label">
+                  {intl.formatMessage(
+                    user?.id === currentUser?.id
+                      ? messages.signOutOtherDevices
+                      : messages.signOutAllDevices
+                  )}
+                  <span className="label-tip">
+                    {intl.formatMessage(
+                      user?.id === currentUser?.id
+                        ? messages.signOutOtherDevicesTip
+                        : messages.signOutAllDevicesTip
+                    )}
+                  </span>
+                </label>
+                <div className="form-input-area">
+                  <Field
+                    type="checkbox"
+                    id="endOtherSessions"
+                    name="endOtherSessions"
+                  />
                 </div>
               </div>
               <div className="actions">
