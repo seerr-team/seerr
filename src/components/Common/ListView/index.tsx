@@ -87,6 +87,7 @@ const ListView = ({
                     }
                     image={title.posterPath}
                     status={title.mediaInfo?.status}
+                    status4k={title.mediaInfo?.status4k}
                     summary={title.overview}
                     title={title.title}
                     userScore={title.voteAverage}
@@ -94,6 +95,9 @@ const ListView = ({
                     mediaType={title.mediaType}
                     inProgress={
                       (title.mediaInfo?.downloadStatus ?? []).length > 0
+                    }
+                    inProgress4k={
+                      (title.mediaInfo?.downloadStatus4k ?? []).length > 0
                     }
                     canExpand
                   />
@@ -109,6 +113,7 @@ const ListView = ({
                     }
                     image={title.posterPath}
                     status={title.mediaInfo?.status}
+                    status4k={title.mediaInfo?.status4k}
                     summary={title.overview}
                     title={title.name}
                     userScore={title.voteAverage}
@@ -116,6 +121,9 @@ const ListView = ({
                     mediaType={title.mediaType}
                     inProgress={
                       (title.mediaInfo?.downloadStatus ?? []).length > 0
+                    }
+                    inProgress4k={
+                      (title.mediaInfo?.downloadStatus4k ?? []).length > 0
                     }
                     canExpand
                   />
