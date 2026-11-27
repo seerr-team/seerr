@@ -1,6 +1,5 @@
 import { ANIME_KEYWORD_ID } from '@server/api/themoviedb/constants';
 import type {
-  TmdbKeyword,
   TmdbMovieDetails,
   TmdbTvDetails,
 } from '@server/api/themoviedb/interfaces';
@@ -8,12 +7,20 @@ import { MediaType } from '@server/constants/media';
 import { getRepository } from '@server/datasource';
 import OverrideRule from '@server/entity/OverrideRule';
 import type { User } from '@server/entity/User';
-import { getSettings } from '@server/lib/settings';
+import type { RuleCoverage } from '@server/lib/serviceDefaults';
+import {
+  isAnimeMedia,
+  mediaKeywords,
+  resolveService,
+  resolveServiceDefaults,
+  servicesFor,
+} from '@server/lib/serviceDefaults';
 
 export type OverrideRulesResult = {
   rootFolder: string | null;
   profileId: number | null;
   tags: number[] | null;
+  covered: RuleCoverage;
 };
 
 async function overrideRules({
@@ -29,47 +36,30 @@ async function overrideRules({
   tmdbMedia: TmdbMovieDetails | TmdbTvDetails;
   requestUser: User;
   tags?: number[] | null;
-  serviceId?: number;
+  serviceId?: number | null;
 }): Promise<OverrideRulesResult> {
-  const settings = getSettings();
-
   let rootFolder: string | null = null;
   let profileId: number | null = null;
 
   const serviceIdField =
     mediaType === MediaType.MOVIE ? 'radarrServiceId' : 'sonarrServiceId';
-  if (serviceId === undefined) {
-    const defaultRadarrId = is4k
-      ? settings.radarr.find((r) => r.is4k && r.isDefault)?.id
-      : settings.radarr.find((r) => !r.is4k && r.isDefault)?.id;
-    const defaultSonarrId = is4k
-      ? settings.sonarr.find((s) => s.is4k && s.isDefault)?.id
-      : settings.sonarr.find((s) => !s.is4k && s.isDefault)?.id;
-    serviceId =
-      mediaType === MediaType.MOVIE ? defaultRadarrId : defaultSonarrId;
-  }
+  const { service } = resolveService(servicesFor(mediaType), is4k, serviceId);
+  const isAnime = isAnimeMedia(tmdbMedia);
 
   const overrideRuleRepository = getRepository(OverrideRule);
-  const rules =
-    serviceId === undefined
-      ? []
-      : await overrideRuleRepository.find({
-          where: { [serviceIdField]: serviceId },
-        });
+  const rules = service
+    ? await overrideRuleRepository.find({
+        where: { [serviceIdField]: service.id },
+      })
+    : [];
 
   const appliedOverrideRules = rules.filter((rule) => {
-    const hasAnimeKeyword =
-      'results' in tmdbMedia.keywords &&
-      tmdbMedia.keywords.results.some(
-        (keyword: TmdbKeyword) => keyword.id === ANIME_KEYWORD_ID
-      );
-
     // Skip override rules if the media is an anime TV show as anime TV
     // is handled by default and override rules do not explicitly include
     // the anime keyword
     if (
       mediaType === MediaType.TV &&
-      hasAnimeKeyword &&
+      isAnime &&
       (!rule.keywords ||
         !rule.keywords.split(',').map(Number).includes(ANIME_KEYWORD_ID))
     ) {
@@ -102,19 +92,11 @@ async function overrideRules({
     }
     if (
       rule.keywords &&
-      !rule.keywords.split(',').some((keywordId) => {
-        let keywordList: TmdbKeyword[] = [];
-
-        if ('keywords' in tmdbMedia.keywords) {
-          keywordList = tmdbMedia.keywords.keywords;
-        } else if ('results' in tmdbMedia.keywords) {
-          keywordList = tmdbMedia.keywords.results;
-        }
-
-        return keywordList
-          .map((keyword: TmdbKeyword) => keyword.id)
-          .includes(Number(keywordId));
-      })
+      !rule.keywords.split(',').some((keywordId) =>
+        mediaKeywords(tmdbMedia)
+          .map((keyword) => keyword.id)
+          .includes(Number(keywordId))
+      )
     ) {
       return false;
     }
@@ -151,16 +133,31 @@ async function overrideRules({
       profileId = prioritizedRule.profileId;
     }
     if (prioritizedRule.tags) {
+      // Rule tags extend the server's defaults unless the request has its own
+      const baseTags =
+        tags ??
+        (service
+          ? resolveServiceDefaults(mediaType, service, isAnime).tags
+          : []);
       tags = [
         ...new Set([
-          ...(tags || []),
+          ...baseTags,
           ...prioritizedRule.tags.split(',').map((tag) => Number(tag)),
         ]),
       ];
     }
   }
 
-  return { rootFolder, profileId, tags };
+  return {
+    rootFolder,
+    profileId,
+    tags,
+    covered: {
+      rootFolder: !!prioritizedRule?.rootFolder,
+      profileId: !!prioritizedRule?.profileId,
+      tags: !!prioritizedRule?.tags,
+    },
+  };
 }
 
 export default overrideRules;
