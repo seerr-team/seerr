@@ -10,3 +10,9 @@ export enum ServerType {
   EMBY = 'Emby',
   PLEX = 'Plex',
 }
+
+export enum TagRequestsFormat {
+  USERID = 'userid',
+  USERID_USERNAME = 'userid-username',
+  USERNAME = 'username',
+}
