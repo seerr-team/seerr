@@ -1,3 +1,5 @@
+@import './theme-tokens.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -8,11 +10,11 @@
     padding: env(safe-area-inset-top) env(safe-area-inset-right)
       calc(4rem + env(safe-area-inset-bottom)) env(safe-area-inset-left);
     scrollbar-width: thin;
-    scrollbar-color: #4b5563 #1f2937;
+    scrollbar-color: rgb(var(--color-gray-600)) rgb(var(--color-gray-800));
   }
 
   html:hover {
-    scrollbar-color: #6b7280 #1f2937;
+    scrollbar-color: rgb(var(--color-gray-500)) rgb(var(--color-gray-800));
   }
 
   /* WebKit scrollbar styles */
@@ -21,15 +23,15 @@
   }
 
   html::-webkit-scrollbar-track {
-    background: #1f2937;
+    background: rgb(var(--color-gray-800));
   }
 
   html::-webkit-scrollbar-thumb {
-    background-color: #4b5563;
+    background-color: rgb(var(--color-gray-600));
   }
 
   html:hover::-webkit-scrollbar-thumb {
-    background-color: #6b7280;
+    background-color: rgb(var(--color-gray-500));
   }
 
   @media (min-width: 640px) {
@@ -39,7 +41,7 @@
   }
 
   body {
-    @apply bg-gray-900;
+    @apply bg-bg;
     -webkit-overflow-scrolling: touch;
   }
 
@@ -62,7 +64,11 @@
     @apply border-r border-gray-700;
     padding-top: env(safe-area-inset-top);
     padding-left: env(safe-area-inset-left);
-    background: linear-gradient(180deg, rgba(31, 41, 55, 1) 0%, #131928 100%);
+    background: linear-gradient(
+      180deg,
+      rgb(var(--color-sidebar-start)) 0%,
+      rgb(var(--color-sidebar-end)) 100%
+    );
   }
 
   .slideover {
@@ -75,7 +81,7 @@
   }
 
   .server-type-button {
-    @apply rounded-md border border-gray-500 bg-gray-700 px-4 py-2 text-white transition duration-150 ease-in-out hover:bg-gray-500;
+    @apply rounded-md border border-gray-500 bg-gray-700 px-4 py-2 text-gray-100 transition duration-150 ease-in-out hover:bg-gray-500;
   }
   .jellyfin-server svg {
     @apply h-6 w-6;
@@ -114,7 +120,7 @@
   }
 
   a.slider-title {
-    @apply transition duration-300 hover:text-white;
+    @apply transition duration-300 hover:text-gray-50;
   }
 
   a.slider-title svg {
@@ -145,7 +151,7 @@
   }
 
   .media-title {
-    @apply mt-4 flex flex-1 flex-col text-center text-white xl:mr-4 xl:mt-0 xl:text-left;
+    @apply mt-4 flex flex-1 flex-col text-center text-gray-100 xl:mr-4 xl:mt-0 xl:text-left;
   }
 
   .media-title > h1 {
@@ -161,7 +167,7 @@
   }
 
   .media-attributes a {
-    @apply transition duration-300 hover:text-white hover:underline;
+    @apply transition duration-300 hover:text-gray-50 hover:underline;
   }
 
   .media-actions {
@@ -173,7 +179,7 @@
   }
 
   .media-overview {
-    @apply flex flex-col pb-4 pt-8 text-white lg:flex-row;
+    @apply flex flex-col pb-4 pt-8 text-gray-100 lg:flex-row;
   }
 
   .media-overview-left {
@@ -255,11 +261,11 @@
   }
 
   .card-field a {
-    @apply transition duration-300 hover:text-white hover:underline;
+    @apply transition duration-300 hover:text-gray-50 hover:underline;
   }
 
   .section {
-    @apply mb-10 mt-6 text-white;
+    @apply mb-10 mt-6 text-gray-100;
   }
 
   .form-row {
@@ -267,7 +273,7 @@
   }
 
   .form-input-area {
-    @apply text-sm text-white sm:col-span-2;
+    @apply text-sm text-gray-100 sm:col-span-2;
   }
 
   .form-input-field {
@@ -275,7 +281,7 @@
   }
 
   .actions {
-    @apply mt-8 border-t border-gray-700 pt-5 text-white;
+    @apply mt-8 border-t border-gray-700 pt-5 text-gray-100;
   }
 
   label,
@@ -292,7 +298,7 @@
   }
 
   label a {
-    @apply text-gray-100 transition duration-300 hover:text-white hover:underline;
+    @apply text-gray-100 transition duration-300 hover:text-gray-50 hover:underline;
   }
 
   .label-required {
@@ -318,7 +324,7 @@
   input[type='password'],
   select,
   textarea {
-    @apply block w-full min-w-0 flex-1 rounded-md border border-gray-500 bg-gray-700 text-white transition duration-150 ease-in-out sm:text-sm sm:leading-5;
+    @apply block w-full min-w-0 flex-1 rounded-md border border-gray-500 bg-gray-700 text-gray-100 transition duration-150 ease-in-out sm:text-sm sm:leading-5;
   }
 
   input.rounded-l-only,
@@ -387,7 +393,7 @@
   }
 
   .form-group {
-    @apply mt-6 text-white;
+    @apply mt-6 text-gray-100;
   }
 
   .toast {
@@ -399,11 +405,11 @@
   }
 
   .react-select-container:has(+ .input-action) .react-select__control {
-    @apply rounded-r-none border border-gray-500 bg-gray-700 text-white hover:border-gray-500;
+    @apply rounded-r-none border border-gray-500 bg-gray-700 text-gray-100 hover:border-gray-500;
   }
 
   .react-select-container .react-select__control {
-    @apply rounded-md border border-gray-500 bg-gray-700 text-white hover:border-gray-500;
+    @apply rounded-md border border-gray-500 bg-gray-700 text-gray-100 hover:border-gray-500;
   }
 
   .react-select-container-dark .react-select__control {
@@ -411,7 +417,7 @@
   }
 
   .react-select-container .react-select__control--is-focused {
-    @apply rounded-md border border-gray-500 bg-gray-700 text-white shadow;
+    @apply rounded-md border border-gray-500 bg-gray-700 text-gray-100 shadow;
   }
 
   .react-select-container-dark .react-select__control--is-focused {
@@ -427,7 +433,7 @@
   }
 
   .react-select-container .react-select__option--is-focused {
-    @apply bg-gray-600 text-white;
+    @apply bg-gray-600 text-gray-100;
   }
 
   .react-select-container-dark .react-select__option--is-focused {
@@ -451,7 +457,7 @@
   }
 
   .react-select-container .react-select__multi-value__label {
-    @apply text-white;
+    @apply text-gray-100;
   }
 
   .react-select-container .react-select__multi-value__remove {
@@ -468,7 +474,7 @@
   }
 
   .react-select-container .react-select__input-container {
-    @apply text-white;
+    @apply text-gray-100;
   }
 
   .react-select-container .react-select__single-value {
