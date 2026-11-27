@@ -20,6 +20,7 @@ import * as Yup from 'yup';
 const messages = defineMessages('components.Login', {
   loginwithapp: 'Login with {appName}',
   username: 'Username',
+  email: 'Email Address',
   password: 'Password',
   validationusernamerequired: 'Username required',
   validationpasswordrequired: 'Password required',
@@ -140,7 +141,14 @@ const JellyfinLogin = ({ revalidate, serverType }: JellyfinLoginProps) => {
                         id="username"
                         name="username"
                         type="text"
-                        placeholder={intl.formatMessage(messages.username)}
+                        placeholder={
+                          settings.currentSettings.mediaServerType ===
+                          MediaServerType.EMBY
+                            ? `${intl.formatMessage(
+                                messages.email
+                              )} / ${intl.formatMessage(messages.username)}`
+                            : intl.formatMessage(messages.username)
+                        }
                         className="!bg-gray-700/80 placeholder:text-gray-400"
                         data-form-type="username"
                       />

@@ -78,6 +78,8 @@ tsconfig.tsbuildinfo
 # Config Cache Directory
 config/cache
 
+# Mise
+mise.toml
 # Docker compose
 compose.override.yaml
 
