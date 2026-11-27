@@ -52,8 +52,8 @@ class DiscoverSlider {
   // use translations for them.
   public title?: string;
 
-  @Column({ nullable: true })
-  public data?: string;
+  @Column({ type: 'text', nullable: true })
+  public data?: string | null;
 
   @DbAwareColumn({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   public createdAt: Date;
