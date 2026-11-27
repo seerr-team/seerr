@@ -109,6 +109,18 @@ export interface LanguageProfile {
   name: string;
 }
 
+export class SonarrMissingSeasonsError extends Error {
+  constructor(
+    missingSeasons: number[],
+    title: string,
+    public readonly series?: SonarrSeries
+  ) {
+    super(
+      `Sonarr does not have seasons ${missingSeasons.join(', ')} of ${title}`
+    );
+  }
+}
+
 class SonarrAPI extends ServarrBase<{
   seriesId: number;
   episodeId: number;
@@ -211,6 +223,19 @@ class SonarrAPI extends ServarrBase<{
     try {
       const series = await this.getSeriesByTvdbId(options.tvdbid);
 
+      const missingSeasons = options.seasons.filter(
+        (seasonNumber) =>
+          !series.seasons.some((season) => season.seasonNumber === seasonNumber)
+      );
+
+      // With none of the seasons to apply, an update would only search unrelated ones
+      if (
+        missingSeasons.length > 0 &&
+        missingSeasons.length === options.seasons.length
+      ) {
+        throw new SonarrMissingSeasonsError(missingSeasons, series.title);
+      }
+
       // If the series already exists, we will simply just update it
       if (series.id) {
         series.monitored = options.monitored ?? series.monitored;
@@ -267,6 +292,14 @@ class SonarrAPI extends ServarrBase<{
             this.searchSeries(newSeriesResponse.data.id);
           }
 
+          if (missingSeasons.length > 0) {
+            throw new SonarrMissingSeasonsError(
+              missingSeasons,
+              series.title,
+              newSeriesResponse.data
+            );
+          }
+
           return newSeriesResponse.data;
         } else {
           logger.error('Failed to update series in Sonarr', {
@@ -319,6 +352,14 @@ class SonarrAPI extends ServarrBase<{
         throw new Error('Failed to add series to Sonarr');
       }
 
+      if (missingSeasons.length > 0) {
+        throw new SonarrMissingSeasonsError(
+          missingSeasons,
+          series.title,
+          createdSeriesResponse.data
+        );
+      }
+
       return createdSeriesResponse.data;
     } catch (e) {
       logger.error('Something went wrong while adding a series to Sonarr.', {
@@ -327,6 +368,11 @@ class SonarrAPI extends ServarrBase<{
         options,
         response: e?.response?.data,
       });
+
+      if (e instanceof SonarrMissingSeasonsError) {
+        throw e;
+      }
+
       throw new Error('Failed to add series', { cause: e });
     }
   }

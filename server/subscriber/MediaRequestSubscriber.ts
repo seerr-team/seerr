@@ -4,7 +4,9 @@ import type {
   AddSeriesOptions,
   SonarrSeries,
 } from '@server/api/servarr/sonarr';
-import SonarrAPI from '@server/api/servarr/sonarr';
+import SonarrAPI, {
+  SonarrMissingSeasonsError,
+} from '@server/api/servarr/sonarr';
 import TheMovieDb from '@server/api/themoviedb';
 import { ANIME_KEYWORD_ID } from '@server/api/themoviedb/constants';
 import {
@@ -181,6 +183,22 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
     }
   }
 
+  // A series can be AVAILABLE before a requested season Sonarr lacked has a row
+  private isRequestAvailable(entity: MediaRequest, media: Media): boolean {
+    const statusKey = entity.is4k ? 'status4k' : 'status';
+
+    return entity.type === MediaType.TV
+      ? entity.seasons.length > 0 &&
+          entity.seasons.every((rs) =>
+            media.seasons.some(
+              (s) =>
+                s.seasonNumber === rs.seasonNumber &&
+                s[statusKey] === MediaStatus.AVAILABLE
+            )
+          )
+      : media[statusKey] === MediaStatus.AVAILABLE;
+  }
+
   // Only a stale explicit serverId fails; no default with no override is a supported setup.
   private async handleUnresolvedServer(
     entity: MediaRequest,
@@ -212,20 +230,7 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
       return false;
     }
 
-    const statusKey = entity.is4k ? 'status4k' : 'status';
-    const isAvailable =
-      entity.type === MediaType.TV
-        ? entity.seasons.length > 0 &&
-          entity.seasons.every((rs) =>
-            media.seasons.some(
-              (s) =>
-                s.seasonNumber === rs.seasonNumber &&
-                s[statusKey] === MediaStatus.AVAILABLE
-            )
-          )
-        : media[statusKey] === MediaStatus.AVAILABLE;
-
-    if (isAvailable) {
+    if (this.isRequestAvailable(entity, media)) {
       logger.warn('Media already exists, marking request as COMPLETED', {
         label: 'Media Request',
         requestId: entity.id,
@@ -632,9 +637,7 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           throw new Error('Media data not found');
         }
 
-        if (
-          media[entity.is4k ? 'status4k' : 'status'] === MediaStatus.AVAILABLE
-        ) {
+        if (this.isRequestAvailable(entity, media)) {
           logger.warn('Media already exists, marking request as COMPLETED', {
             label: 'Media Request',
             requestId: entity.id,
@@ -660,9 +663,25 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
 
         if (!tvdbId) {
           const requestRepository = manager.getRepository(MediaRequest);
-          await mediaRepository.remove(media);
-          await requestRepository.remove(entity);
-          throw new Error('TVDB ID not found');
+          entity.status = MediaRequestStatus.FAILED;
+          await requestRepository.save(entity);
+
+          logger.warn(
+            'Could not resolve a TVDB ID for series request, marking status as FAILED',
+            {
+              label: 'Media Request',
+              requestId: entity.id,
+              mediaId: entity.media.id,
+              tmdbId: media.tmdbId,
+            }
+          );
+
+          MediaRequest.sendNotification(
+            entity,
+            media,
+            Notification.MEDIA_FAILED
+          );
+          return false;
         }
 
         const isAnime = series.keywords.results.some(
@@ -814,31 +833,44 @@ export class MediaRequestSubscriber implements EntitySubscriberInterface<MediaRe
           searchNow: !sonarrSettings.preventSearch,
         };
 
+        const linkSeries = async (sonarrSeries: SonarrSeries) => {
+          // Needs its own repository as this runs detached from the request transaction
+          const mediaRepository = getRepository(Media);
+          // We grab media again here to make sure we have the latest version of it
+          const media = await mediaRepository.findOne({
+            where: { id: entity.media.id },
+          });
+
+          if (!media) {
+            throw new Error('Media data not found');
+          }
+
+          media[entity.is4k ? 'externalServiceId4k' : 'externalServiceId'] =
+            sonarrSeries.id;
+          media[entity.is4k ? 'externalServiceSlug4k' : 'externalServiceSlug'] =
+            sonarrSeries.titleSlug;
+          media[entity.is4k ? 'serviceId4k' : 'serviceId'] = sonarrSettings?.id;
+          await mediaRepository.save(media);
+        };
+
         // Run entity asynchronously so we don't wait for it on the UI side
         sonarr
           .addSeries(sonarrSeriesOptions)
-          .then(async (sonarrSeries) => {
-            // Needs its own repository as this runs detached from the request transaction
-            const mediaRepository = getRepository(Media);
-            // We grab media again here to make sure we have the latest version of it
-            const media = await mediaRepository.findOne({
-              where: { id: entity.media.id },
-            });
-
-            if (!media) {
-              throw new Error('Media data not found');
+          .then(linkSeries)
+          .catch(async (e) => {
+            if (e instanceof SonarrMissingSeasonsError && e.series) {
+              await linkSeries(e.series).catch((linkError) => {
+                logger.error('Failed to save the Sonarr series link', {
+                  label: 'Media Request',
+                  requestId: entity.id,
+                  errorMessage:
+                    linkError instanceof Error
+                      ? linkError.message
+                      : String(linkError),
+                });
+              });
             }
 
-            media[entity.is4k ? 'externalServiceId4k' : 'externalServiceId'] =
-              sonarrSeries.id;
-            media[
-              entity.is4k ? 'externalServiceSlug4k' : 'externalServiceSlug'
-            ] = sonarrSeries.titleSlug;
-            media[entity.is4k ? 'serviceId4k' : 'serviceId'] =
-              sonarrSettings?.id;
-            await mediaRepository.save(media);
-          })
-          .catch(async () => {
             try {
               const requestRepository = getRepository(MediaRequest);
 
