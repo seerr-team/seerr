@@ -40,6 +40,14 @@ DB_CONNECT_TIMEOUT_MS="30000" # (optional) How long to wait for a free connectio
 DB_LOG_QUERIES="false" # (optional) Whether to log the DB queries for debugging. The default is "false".
 ```
 
+Credentials can also be loaded from files. Direct environment variables take precedence over `*_FILE` variants, which take precedence over files under `CREDENTIALS_DIRECTORY` (see [File-based secrets](#file-based-secrets-docker--systemd) below).
+
+```dotenv
+DB_USER_FILE= # (optional) Path to a file containing the database username.
+DB_PASS_FILE= # (optional) Path to a file containing the database password.
+DB_NAME_FILE= # (optional) Path to a file containing the database name.
+```
+
 ### Unix Socket Connection
 
 If your PostgreSQL server is configured to accept Unix socket connections, you can specify the path to the socket directory using the `DB_SOCKET_PATH` environment variable. This is useful for local connections where the server uses a Unix socket.
@@ -54,6 +62,8 @@ DB_POOL_SIZE="10" # (optional) The number of connections to maintain in the conn
 DB_CONNECT_TIMEOUT_MS="30000" # (optional) How long to wait for a free connection from the pool before erroring, in milliseconds. The default is "30000". Set to "0" to wait indefinitely.
 DB_LOG_QUERIES="false" # (optional) Whether to log the DB queries for debugging. The default is "false".
 ```
+
+The same `DB_USER_FILE` / `DB_PASS_FILE` / `DB_NAME_FILE` options from [TCP Connection](#tcp-connection) apply here.
 
 :::info
 **Finding Your PostgreSQL Socket Path**
@@ -90,6 +100,33 @@ DB_SSL_KEY_FILE= # (optional) Path to the private key for the connection in PEM 
 DB_SSL_CERT= # (optional) Certificate chain in pem format for the private key, provided as a string. The default is "".
 DB_SSL_CERT_FILE= # (optional) Path to certificate chain in pem format for the private key. The default is "".
 ```
+
+### File-based secrets (Docker / systemd)
+
+Seerr can load database credentials from files instead of plain environment variables. Resolution order:
+
+1. Direct env var (`DB_PASS`, …)
+2. `*_FILE` path (`DB_PASS_FILE`, …)
+3. File named under `CREDENTIALS_DIRECTORY` when set (systemd), or under `/run/secrets` when that directory exists (Docker)
+
+| Env var | Credential filename |
+| --- | --- |
+| `DB_USER` | `db-user` |
+| `DB_PASS` | `db-pass` |
+| `DB_NAME` | `db-name` |
+
+When `CREDENTIALS_DIRECTORY` is unset, Seerr uses `/run/secrets` if that directory exists (Docker Swarm/Compose's default secrets mount). Secrets named `db-pass` (etc.) are picked up automatically. You can also set `DB_PASS_FILE=/run/secrets/my-custom-name` explicitly, or set `CREDENTIALS_DIRECTORY` yourself.
+
+For systemd, use `LoadCredential=` (systemd sets `CREDENTIALS_DIRECTORY` for the service):
+
+```ini
+[Service]
+LoadCredential=db-user:/etc/seerr/secrets/db-user
+LoadCredential=db-pass:/etc/seerr/secrets/db-pass
+LoadCredential=db-name:/etc/seerr/secrets/db-name
+```
+
+See also [API Key](/using-seerr/settings/general#api-key) for the same pattern with `API_KEY` / `api-key`.
 
 ---
 
