@@ -12,7 +12,7 @@ import type {
   MediaWatchDataResponse,
 } from '@server/interfaces/api/mediaInterfaces';
 import { Permission } from '@server/lib/permissions';
-import { getSettings } from '@server/lib/settings';
+import { getSettings, type SonarrSettings } from '@server/lib/settings';
 import logger from '@server/logger';
 import { isAuthenticated } from '@server/middleware/auth';
 import { Router } from 'express';
@@ -257,29 +257,23 @@ mediaRoutes.delete(
         });
       }
 
-      let service;
       if (isMovie) {
-        service = new RadarrAPI({
-          apiKey: serviceSettings?.apiKey,
+        const service = new RadarrAPI({
+          apiKey: serviceSettings.apiKey,
           url: RadarrAPI.buildUrl(serviceSettings, '/api/v3'),
         });
+        await service.removeMovie(media.tmdbId);
       } else {
-        service = new SonarrAPI({
-          apiKey: serviceSettings?.apiKey,
-          url: SonarrAPI.buildUrl(serviceSettings, '/api/v3'),
-        });
-      }
-
-      if (isMovie) {
-        await (service as RadarrAPI).removeMovie(media.tmdbId);
-      } else {
+        const sonarr = await SonarrAPI.fromSettings(
+          serviceSettings as SonarrSettings
+        );
         const tmdb = new TheMovieDb();
         const series = await tmdb.getTvShow({ tvId: media.tmdbId });
         const tvdbId = series.external_ids.tvdb_id ?? media.tvdbId;
         if (!tvdbId) {
           throw new Error('TVDB ID not found');
         }
-        await (service as SonarrAPI).removeSeries(tvdbId);
+        await sonarr.removeSeries(tvdbId);
 
         for (const season of media.seasons) {
           season[is4k ? 'status4k' : 'status'] = MediaStatus.DELETED;

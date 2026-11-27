@@ -117,19 +117,14 @@ serviceRoutes.get<{ sonarrId: string }>(
       });
     }
 
-    const sonarr = new SonarrAPI({
-      apiKey: sonarrSettings.apiKey,
-      url: SonarrAPI.buildUrl(sonarrSettings, '/api/v3'),
-    });
+    const sonarr = await SonarrAPI.fromSettings(sonarrSettings);
 
     try {
-      const systemStatus = await sonarr.getSystemStatus();
-      const sonarrMajorVersion = Number(systemStatus.version.split('.')[0]);
-
       const profiles = await sonarr.getProfiles();
       const rootFolders = await sonarr.getRootFolders();
-      const languageProfiles =
-        sonarrMajorVersion <= 3 ? await sonarr.getLanguageProfiles() : null;
+      const languageProfiles = sonarr.capabilities.languageProfiles
+        ? await sonarr.getLanguageProfiles()
+        : null;
       const tags = await sonarr.getTags();
 
       return res.status(200).json({
@@ -185,10 +180,7 @@ serviceRoutes.get<{ tmdbId: string }>(
       });
     }
 
-    const sonarr = new SonarrAPI({
-      apiKey: sonarrSettings.apiKey,
-      url: SonarrAPI.buildUrl(sonarrSettings, '/api/v3'),
-    });
+    const sonarr = await SonarrAPI.fromSettings(sonarrSettings);
 
     try {
       const tv = await tmdb.getTvShow({
