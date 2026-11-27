@@ -18,3 +18,18 @@ export interface WatchlistResponse {
   totalResults: number;
   results: WatchlistItem[];
 }
+
+export interface SeasonalAnimeResult {
+  id: number;
+  ratingKey: string;
+  tmdbId: number;
+  mediaType: 'tv';
+  title: string;
+}
+
+export interface SeasonalAnimeResponse {
+  page: number;
+  totalPages: number;
+  totalResults: number;
+  results: SeasonalAnimeResult[];
+}
