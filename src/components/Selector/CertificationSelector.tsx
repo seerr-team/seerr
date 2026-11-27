@@ -1,6 +1,6 @@
 import { SmallLoadingSpinner } from '@app/components/Common/LoadingSpinner';
+import Tooltip from '@app/components/Common/Tooltip';
 import defineMessages from '@app/utils/defineMessages';
-import type { Region } from '@server/lib/settings';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useIntl } from 'react-intl';
 import AsyncSelect from 'react-select/async';
@@ -21,29 +21,18 @@ interface CertificationResponse {
 interface CertificationOption {
   value: string;
   label: string;
-  certification?: string;
+  meaning?: string;
 }
 
 interface CertificationSelectorProps {
-  type: string;
-  certificationCountry?: string;
+  type: 'movie' | 'tv';
   certification?: string;
-  certificationGte?: string;
-  certificationLte?: string;
-  onChange: (params: {
-    certificationCountry?: string;
-    certification?: string;
-    certificationGte?: string;
-    certificationLte?: string;
-  }) => void;
-  showRange?: boolean;
+  isDisabled?: boolean;
+  onChange: (value: string | undefined) => void;
 }
 
 const messages = defineMessages('components.Selector.CertificationSelector', {
-  selectCountry: 'Select a country',
   selectCertification: 'Select a certification',
-  minRating: 'Minimum rating',
-  maxRating: 'Maximum rating',
   noOptions: 'No options available',
   starttyping: 'Starting typing to search.',
   errorLoading: 'Failed to load certifications',
@@ -51,100 +40,68 @@ const messages = defineMessages('components.Selector.CertificationSelector', {
 
 const CertificationSelector: React.FC<CertificationSelectorProps> = ({
   type,
-  certificationCountry,
   certification,
-  certificationGte,
-  certificationLte,
-  showRange = false,
+  isDisabled,
   onChange,
 }) => {
   const intl = useIntl();
-  const [selectedCountry, setSelectedCountry] =
-    useState<CertificationOption | null>(
-      certificationCountry
-        ? { value: certificationCountry, label: certificationCountry }
-        : null
-    );
-  const [selectedCertification, setSelectedCertification] =
-    useState<CertificationOption | null>(null);
-  const [selectedCertificationGte, setSelectedCertificationGte] =
-    useState<CertificationOption | null>(null);
-  const [selectedCertificationLte, setSelectedCertificationLte] =
-    useState<CertificationOption | null>(null);
-
+  const [selectedValues, setSelectedValues] = useState<CertificationOption[]>(
+    []
+  );
   const {
     data: certificationData,
     error: certificationError,
     isLoading: certificationLoading,
   } = useSWR<CertificationResponse>(`/api/v1/certifications/${type}`);
 
-  const { data: regionsData } = useSWR<Region[]>('/api/v1/regions');
-
   // Get the country name from its code
   const getCountryName = useCallback(
     (countryCode: string): string => {
-      const region = regionsData?.find(
-        (region) => region.iso_3166_1 === countryCode
-      );
-      return region?.name || countryCode;
+      const [base, subdivision] = countryCode.split('-');
+      try {
+        const baseName =
+          intl.formatDisplayName(base, { type: 'region', fallback: 'none' }) ??
+          base;
+        return subdivision ? `${baseName} (${subdivision})` : baseName;
+      } catch {
+        return countryCode;
+      }
     },
-    [regionsData]
+    [intl]
   );
+  const allOptions = useCallback((): CertificationOption[] => {
+    if (!certificationData) return [];
+    return Object.entries(certificationData.certifications)
+      .flatMap(([countryCode, certificationValue]) =>
+        certificationValue
+          .filter((c) => c.certification)
+          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+          .map((c) => ({
+            value: `${countryCode}:${c.certification}`,
+            label: `${getCountryName(countryCode)} - ${c.certification}`,
+            meaning: c.meaning,
+          }))
+      )
+      .sort((a, b) =>
+        getCountryName(a.value.split(':')[0]).localeCompare(
+          getCountryName(b.value.split(':')[0])
+        )
+      );
+  }, [certificationData, getCountryName]);
 
   useEffect(() => {
-    if (certificationCountry && regionsData) {
-      setSelectedCountry({
-        value: certificationCountry,
-        label: getCountryName(certificationCountry),
-      });
+    if (!certification || !certificationData) {
+      setSelectedValues([]);
+      return;
     }
-  }, [certificationCountry, regionsData, getCountryName]);
-
-  useEffect(() => {
-    if (!certificationData || !certificationCountry) return;
-
-    const certifications = (
-      certificationData.certifications[certificationCountry] || []
-    )
-      .sort((a, b) => {
-        if (a.order !== undefined && b.order !== undefined) {
-          return a.order - b.order;
-        }
-        return a.certification.localeCompare(b.certification);
-      })
-      .map((cert) => ({
-        value: cert.certification,
-        label: `${cert.certification}${
-          cert.meaning ? ` - ${cert.meaning}` : ''
-        }`,
-        certification: cert.certification,
-      }));
-
-    if (certification) {
-      setSelectedCertification(
-        certifications.find((c) => c.value === certification) || null
-      );
-    }
-
-    if (certificationGte) {
-      setSelectedCertificationGte(
-        certifications.find((c) => c.value === certificationGte) || null
-      );
-    }
-
-    if (certificationLte) {
-      setSelectedCertificationLte(
-        certifications.find((c) => c.value === certificationLte) || null
-      );
-    }
-  }, [
-    certificationData,
-    certificationCountry,
-    certification,
-    certificationGte,
-    certificationLte,
-  ]);
-
+    const entries = certification.split(',');
+    const options = allOptions();
+    setSelectedValues(
+      entries
+        .map((entry) => options.find((o) => o.value === entry))
+        .filter((o): o is CertificationOption => !!o)
+    );
+  }, [certification, certificationData, allOptions]);
   if (certificationError) {
     return (
       <div className="text-red-500">
@@ -157,177 +114,51 @@ const CertificationSelector: React.FC<CertificationSelectorProps> = ({
     return <SmallLoadingSpinner />;
   }
 
-  const loadCountryOptions = async (inputValue: string) => {
-    if (!certificationData || !regionsData) return [];
-
-    return Object.keys(certificationData.certifications)
-      .filter(
-        (code) =>
-          certificationData.certifications[code] &&
-          certificationData.certifications[code].length > 0 &&
-          (code.toLowerCase().includes(inputValue.toLowerCase()) ||
-            getCountryName(code)
-              .toLowerCase()
-              .includes(inputValue.toLowerCase()))
-      )
-      .sort((a, b) => getCountryName(a).localeCompare(getCountryName(b)))
-      .map((code) => ({
-        value: code,
-        label: getCountryName(code),
-      }));
-  };
-
   const loadCertificationOptions = async (inputValue: string) => {
-    if (!certificationData || !certificationCountry) return [];
-
-    return (certificationData.certifications[certificationCountry] || [])
-      .sort((a, b) => {
-        if (a.order !== undefined && b.order !== undefined) {
-          return a.order - b.order;
-        }
-        return a.certification.localeCompare(b.certification);
-      })
-      .map((cert) => ({
-        value: cert.certification,
-        label: `${cert.certification}${
-          cert.meaning ? ` - ${cert.meaning}` : ''
-        }`,
-        certification: cert.certification,
-      }))
-      .filter((cert) =>
-        cert.label.toLowerCase().includes(inputValue.toLowerCase())
-      );
+    return allOptions().filter((option) =>
+      option.label.toLowerCase().includes(inputValue.toLowerCase())
+    );
   };
-
-  const handleCountryChange = (option: CertificationOption | null) => {
-    setSelectedCountry(option);
-    setSelectedCertification(null);
-    setSelectedCertificationGte(null);
-    setSelectedCertificationLte(null);
-
-    onChange({
-      certificationCountry: option?.value,
-      certification: undefined,
-      certificationGte: undefined,
-      certificationLte: undefined,
-    });
-  };
-
-  const handleCertificationChange = (option: CertificationOption | null) => {
-    setSelectedCertification(option);
-
-    onChange({
-      certificationCountry,
-      certification: option?.value,
-      certificationGte: undefined,
-      certificationLte: undefined,
-    });
-  };
-
-  const handleMinCertificationChange = (option: CertificationOption | null) => {
-    setSelectedCertificationGte(option);
-
-    onChange({
-      certificationCountry,
-      certification: undefined,
-      certificationGte: option?.value,
-      certificationLte: certificationLte,
-    });
-  };
-
-  const handleMaxCertificationChange = (option: CertificationOption | null) => {
-    setSelectedCertificationLte(option);
-
-    onChange({
-      certificationCountry,
-      certification: undefined,
-      certificationGte: certificationGte,
-      certificationLte: option?.value,
-    });
-  };
-
-  const formatCertificationLabel = (
-    option: CertificationOption,
-    { context }: { context: string }
-  ) => {
-    if (context === 'value') {
-      return option.certification || option.value;
-    }
-    // Show the full label with description in the menu
-    return option.label;
+  const handleChange = (options: readonly CertificationOption[] | null) => {
+    const values = options ?? [];
+    setSelectedValues(values as CertificationOption[]);
+    onChange(
+      values.length > 0 ? values.map((o) => o.value).join(',') : undefined
+    );
   };
 
   return (
-    <div className="space-y-2">
-      <AsyncSelect
-        className="react-select-container"
-        classNamePrefix="react-select"
-        cacheOptions
-        defaultOptions
-        loadOptions={loadCountryOptions}
-        value={selectedCountry}
-        onChange={handleCountryChange}
-        placeholder={intl.formatMessage(messages.selectCountry)}
-        isClearable
-        noOptionsMessage={({ inputValue }) =>
-          inputValue === ''
-            ? intl.formatMessage(messages.starttyping)
-            : intl.formatMessage(messages.noOptions)
-        }
-      />
-
-      {certificationCountry && !showRange && (
-        <AsyncSelect
-          className="react-select-container"
-          classNamePrefix="react-select"
-          cacheOptions
-          defaultOptions
-          loadOptions={loadCertificationOptions}
-          value={selectedCertification}
-          onChange={handleCertificationChange}
-          placeholder={intl.formatMessage(messages.selectCertification)}
-          formatOptionLabel={formatCertificationLabel}
-          isClearable
-          noOptionsMessage={() => intl.formatMessage(messages.noOptions)}
-        />
-      )}
-
-      {certificationCountry && showRange && (
-        <div className="flex space-x-2">
-          <div className="flex-1">
-            <AsyncSelect
-              className="react-select-container"
-              classNamePrefix="react-select"
-              cacheOptions
-              defaultOptions
-              loadOptions={loadCertificationOptions}
-              value={selectedCertificationGte}
-              onChange={handleMinCertificationChange}
-              placeholder={intl.formatMessage(messages.minRating)}
-              formatOptionLabel={formatCertificationLabel}
-              isClearable
-              noOptionsMessage={() => intl.formatMessage(messages.noOptions)}
-            />
-          </div>
-          <div className="flex-1">
-            <AsyncSelect
-              className="react-select-container"
-              classNamePrefix="react-select"
-              cacheOptions
-              defaultOptions
-              loadOptions={loadCertificationOptions}
-              value={selectedCertificationLte}
-              onChange={handleMaxCertificationChange}
-              placeholder={intl.formatMessage(messages.maxRating)}
-              formatOptionLabel={formatCertificationLabel}
-              isClearable
-              noOptionsMessage={() => intl.formatMessage(messages.noOptions)}
-            />
-          </div>
-        </div>
-      )}
-    </div>
+    <AsyncSelect
+      key={`certification-select-${type}`}
+      className="react-select-container"
+      classNamePrefix="react-select"
+      isMulti
+      isDisabled={isDisabled}
+      cacheOptions
+      defaultOptions
+      loadOptions={loadCertificationOptions}
+      value={selectedValues}
+      onChange={handleChange}
+      formatOptionLabel={(option, { context }) =>
+        context === 'menu' && option.meaning ? (
+          <Tooltip
+            content={option.meaning}
+            className="max-w-md whitespace-normal"
+          >
+            <span className="block w-full">{option.label}</span>
+          </Tooltip>
+        ) : (
+          option.label
+        )
+      }
+      placeholder={intl.formatMessage(messages.selectCertification)}
+      isClearable
+      noOptionsMessage={({ inputValue }) =>
+        inputValue === ''
+          ? intl.formatMessage(messages.starttyping)
+          : intl.formatMessage(messages.noOptions)
+      }
+    />
   );
 };
-
 export default CertificationSelector;
