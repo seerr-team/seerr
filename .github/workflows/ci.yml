@@ -172,7 +172,7 @@ jobs:
         run: pnpm test
 
       - name: Publish test report
-        uses: mikepenz/action-junit-report@v6.7.0
+        uses: mikepenz/action-junit-report@v6.7.1
         if: success() || failure() # always run even if the previous step fails
         with:
           report_paths: 'report.xml'

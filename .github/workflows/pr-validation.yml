@@ -26,7 +26,7 @@ jobs:
       checks: write
       issues: write
     steps:
-      - uses: amannn/action-semantic-pull-request@v6.1.2
+      - uses: amannn/action-semantic-pull-request@v6.1.3
         id: lint_pr_title
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
